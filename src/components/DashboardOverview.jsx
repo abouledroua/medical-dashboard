@@ -15,7 +15,7 @@ export default function DashboardOverview({
 }) {
   const t = translations[lang] || translations.fr;
   const todayStr = new Date().toISOString().split('T')[0];
-  const criticalPatients = patients.filter(p => p.status === 'Critical' || p.status === 'Inpatient');
+
   const recentPatients = patients.slice(0, 5);
   const todaysAppointments = appointments.filter(a => a.date === todayStr);
 
@@ -29,9 +29,9 @@ export default function DashboardOverview({
             <h2 className="text-2xl font-bold text-white tracking-tight">{lang === 'fr' ? "Aperçu des Opérations Cliniques" : "Clinical Operations Overview"}</h2>
             <p className="text-sm text-slate-400 mt-1 max-w-xl">
               {lang === 'fr' ? (
-                <>Bienvenue. Vous avez <span className="text-teal-400 font-semibold">{stats.todayAppointments || 0} rendez-vous</span> aujourd'hui et <span className="text-rose-400 font-semibold">{stats.criticalCases || 0} cas critiques</span> sous surveillance.</>
+                <>Bienvenue. Vous avez <span className="text-teal-400 font-semibold">{stats.todayAppointments || 0} rendez-vous</span> aujourd'hui.</>
               ) : (
-                <>Welcome back. You have <span className="text-teal-400 font-semibold">{stats.todayAppointments || 0} appointments</span> scheduled for today and <span className="text-rose-400 font-semibold">{stats.criticalCases || 0} critical patients</span> requiring attention.</>
+                <>Welcome back. You have <span className="text-teal-400 font-semibold">{stats.todayAppointments || 0} appointments</span> scheduled for today.</>
               )}
             </p>
           </div>
@@ -44,7 +44,7 @@ export default function DashboardOverview({
               {t.newPatientBtn}
             </button>
             <button
-              onClick={onOpenNewAppointment}
+              onClick={() => onOpenNewAppointment()}
               className="px-4 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-slate-950 rounded-xl text-sm font-bold flex items-center gap-2 transition shadow-lg shadow-teal-500/20"
             >
               <Calendar className="w-4 h-4 stroke-[2.5]" />
@@ -55,7 +55,7 @@ export default function DashboardOverview({
       </div>
 
       {/* Metrics Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Card 1: Total Patients */}
         <div className="glass-panel p-5 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
           <div className="flex items-center justify-between">
@@ -71,7 +71,7 @@ export default function DashboardOverview({
             </span>
           </div>
           <div className="mt-2 text-xs text-slate-500 flex items-center gap-1">
-            <span>+12 {lang === 'fr' ? 'nouveaux dossiers ce mois' : 'new records this month'}</span>
+            <span>+{stats.newPatientsThisMonth || 0} {lang === 'fr' ? 'nouveaux dossiers ce mois' : 'new records this month'}</span>
           </div>
         </div>
 
@@ -90,28 +90,15 @@ export default function DashboardOverview({
             </span>
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            {lang === 'fr' ? 'Prochain RDV : 09:30 (Eleanor Vance)' : 'Next visit: 09:30 AM (Eleanor Vance)'}
+            {stats.nextAppointment ? (
+              `${lang === 'fr' ? 'Prochain RDV' : 'Next visit'}: ${stats.nextAppointment.time} (${stats.nextAppointment.patientName})`
+            ) : (
+              lang === 'fr' ? 'Aucun RDV prévu pour aujourd\'hui' : 'No appointments scheduled for today'
+            )}
           </div>
         </div>
 
-        {/* Card 3: Critical Cases */}
-        <div className="glass-panel p-5 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-slate-400 tracking-wider">{t.metricCriticalCases}</span>
-            <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold text-white tracking-tight">{stats.criticalCases || 0}</span>
-            <span className="text-xs font-semibold text-rose-400 bg-rose-950/60 px-2 py-0.5 rounded border border-rose-800/40">
-              {t.statusCritical}
-            </span>
-          </div>
-          <div className="mt-2 text-xs text-slate-500">
-            {lang === 'fr' ? 'Télémétrie Cardiologie • Hospitalisé' : 'Cardiology Telemetry • Inpatient'}
-          </div>
-        </div>
+
 
         {/* Card 4: Active Treatments */}
         <div className="glass-panel p-5 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
@@ -262,36 +249,7 @@ export default function DashboardOverview({
 
         {/* Right Column: Upcoming Schedule & Critical Alerts */}
         <div className="space-y-6">
-          {/* Critical Patients Widget if any */}
-          {criticalPatients.length > 0 && (
-            <div className="glass-panel rounded-2xl border border-rose-500/30 p-5 bg-rose-950/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-rose-400 uppercase tracking-wide flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 text-rose-400" /> Critical Care Watchlist
-                </span>
-                <span className="text-xs bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded font-mono">
-                  {criticalPatients.length} High Risk
-                </span>
-              </div>
-              <div className="space-y-2.5">
-                {criticalPatients.map(p => (
-                  <div key={p.id} className="p-3 bg-slate-900/90 rounded-xl border border-rose-500/20 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-bold text-white">{p.lastName} {p.firstName}</div>
-                      <div className="text-xs text-rose-300">{p.chronicConditions.join(', ') || 'Inpatient Telemetry'}</div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">BP: {p.vitals.bloodPressure} | SpO2: {p.vitals.oxygenSat}</div>
-                    </div>
-                    <button
-                      onClick={() => onSelectPatient(p)}
-                      className="p-2 text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/30 text-xs font-semibold"
-                    >
-                      Inspect
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+
 
           {/* Today's Schedule */}
           <div className="glass-panel rounded-2xl border border-slate-800 p-5 space-y-4">

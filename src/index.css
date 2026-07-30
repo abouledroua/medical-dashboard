@@ -6,6 +6,10 @@
   body {
     @apply bg-slate-950 text-slate-100 antialiased selection:bg-teal-500 selection:text-white;
   }
+
+  html[data-theme='light'] body {
+    @apply bg-slate-200 text-slate-900 selection:bg-teal-500 selection:text-white;
+  }
 }
 
 /* Custom Glassmorphism & Scrollbar styling */
@@ -20,6 +24,75 @@
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+html[data-theme='light'] .glass-panel {
+  background: rgba(226, 232, 240, 0.78);
+  border-color: rgba(71, 85, 105, 0.16);
+}
+
+html[data-theme='light'] .glass-card {
+  background: rgba(241, 245, 249, 0.72);
+  border-color: rgba(71, 85, 105, 0.12);
+}
+
+html[data-theme='light'] .text-white {
+  color: #0f172a;
+}
+
+html[data-theme='light'] .text-slate-100,
+html[data-theme='light'] .text-slate-200 {
+  color: #0f172a;
+}
+
+html[data-theme='light'] .text-slate-300 {
+  color: #475569;
+}
+
+html[data-theme='light'] .text-slate-400 {
+  color: #64748b;
+}
+
+html[data-theme='light'] .bg-slate-950,
+html[data-theme='light'] .bg-slate-900,
+html[data-theme='light'] .bg-slate-900\/60,
+html[data-theme='light'] .bg-slate-900\/80 {
+  background-color: #e2e8f0;
+}
+
+html[data-theme='light'] .border-slate-800,
+html[data-theme='light'] .border-slate-700,
+html[data-theme='light'] .border-slate-700\/70,
+html[data-theme='light'] .border-slate-700\/80 {
+  border-color: rgba(100, 116, 139, 0.22);
+}
+
+html[data-theme='light'] .bg-slate-900\/90 {
+  background-color: rgba(226, 232, 240, 0.9);
+}
+
+html[data-theme='light'] .placeholder-slate-500::placeholder {
+  color: #64748b;
+}
+
+.working-time-input::-webkit-calendar-picker-indicator {
+  filter: invert(78%) sepia(34%) saturate(1263%) hue-rotate(146deg) brightness(94%) contrast(88%);
+  opacity: 1;
+  cursor: pointer;
+}
+
+.working-time-input {
+  color-scheme: dark;
+}
+
+.working-time-input:disabled {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+.working-time-input::-webkit-clear-button,
+.working-time-input::-webkit-inner-spin-button {
+  display: none;
 }
 
 /* Custom scrollbars */

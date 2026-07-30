@@ -20,6 +20,15 @@ export default function App() {
     }
   });
 
+  const [theme, setThemeState] = useState(() => {
+    try {
+      const savedTheme = localStorage.getItem('el_iyada_theme');
+      return savedTheme === 'light' ? 'light' : 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
+
   const setLang = (newLang) => {
     setLangState(newLang);
     try {
@@ -27,6 +36,14 @@ export default function App() {
     } catch (e) {
       // ignore
     }
+  };
+
+  const setTheme = (newTheme) => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem('el_iyada_theme', newTheme);
+      document.documentElement.dataset.theme = newTheme;
+    } catch (e) {}
   };
 
   const [currentUser, setCurrentUser] = useState(() => {
@@ -80,6 +97,15 @@ export default function App() {
       window.removeEventListener('hashchange', handleLocationChange);
     };
   }, []);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem('el_iyada_theme')) {
+        localStorage.setItem('el_iyada_theme', 'dark');
+      }
+      document.documentElement.dataset.theme = theme;
+    } catch (e) {}
+  }, [theme]);
 
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -259,6 +285,32 @@ export default function App() {
     } catch (e) {}
   };
 
+  useEffect(() => {
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (input, init = {}) => {
+      const headers = new Headers(init.headers || {});
+      try {
+        const savedUser = localStorage.getItem('el_iyada_user');
+        if (savedUser) {
+          const parsedUser = JSON.parse(savedUser);
+          if (parsedUser?.id) {
+            headers.set('x-user-id', String(parsedUser.id));
+          }
+        }
+      } catch (e) {}
+
+      const response = await originalFetch(input, { ...init, headers });
+      if (response.status === 401) {
+        handleLogout();
+      }
+      return response;
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
+
   // If user is not authenticated, show Login Screen
   if (!currentUser) {
     return <LoginScreen onLogin={handleLogin} lang={lang} setLang={setLang} />;
@@ -283,6 +335,8 @@ export default function App() {
         onLogout={handleLogout}
         lang={lang}
         setLang={setLang}
+        theme={theme}
+        setTheme={setTheme}
         clinicInfo={clinicInfo}
       />
 
@@ -402,6 +456,8 @@ export default function App() {
                 <ClinicSettings
                   clinicInfo={clinicInfo}
                   onUpdateClinicInfo={setClinicInfo}
+                  currentUser={currentUser}
+                  onLogout={handleLogout}
                   lang={lang}
                 />
               )}
@@ -418,6 +474,7 @@ export default function App() {
         defaultPatient={appointmentDefaultPatient}
         onAppointmentCreated={handleAppointmentCreated}
         lang={lang}
+        clinicInfo={clinicInfo}
       />
 
       <AddConsultationModal

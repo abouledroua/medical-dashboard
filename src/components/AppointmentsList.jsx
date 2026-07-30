@@ -164,6 +164,7 @@ export default function AppointmentsList({
               <table className="w-full text-left text-sm text-slate-300">
                 <thead className="text-xs uppercase bg-slate-900 text-slate-400 border-b border-slate-800">
                   <tr>
+                    <th className="py-3 px-4">{t.numRdvLabel || (lang === 'fr' ? 'N° RDV' : 'Appt. No.')}</th>
                     <th className="py-3 px-4">{lang === 'fr' ? 'Date & Heure' : 'Date & Time'}</th>
                     <th className="py-3 px-4">{lang === 'fr' ? 'Patient' : 'Patient'}</th>
                     <th className="py-3 px-4">{lang === 'fr' ? 'Motif RDV' : 'Reason'}</th>
@@ -177,10 +178,13 @@ export default function AppointmentsList({
 
                     return (
                       <tr key={apt.id} className="hover:bg-slate-800/40 transition">
+                        <td className="py-3.5 px-4 font-mono text-xs text-center">
+                          <span className="bg-slate-700 text-slate-200 rounded-full px-2 py-0.5 font-bold">{apt.num_rdv}</span>
+                        </td>
                         <td className="py-3.5 px-4">
                           <div className="font-mono font-bold text-teal-300 text-xs">{apt.date}</div>
                           <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                            <Clock className="w-3 h-3 text-slate-500" /> {apt.time}
+                            {apt.time && <Clock className="w-3 h-3 text-slate-500" />} <span className="font-bold">{apt.time}</span>
                           </div>
                         </td>
 
@@ -209,14 +213,7 @@ export default function AppointmentsList({
                         </td>
 
                         <td className="py-3.5 px-4 text-right space-x-2">
-                          {apt.status !== 'Completed' && (
-                            <button
-                              onClick={() => onUpdateAppointmentStatus(apt.id, 'Completed')}
-                              className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-semibold border border-emerald-500/30 transition inline-flex items-center gap-1"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5" /> {lang === 'fr' ? 'Marquer Terminé' : 'Complete'}
-                            </button>
-                          )}
+
 
                           {matchedPatient && (
                             <button

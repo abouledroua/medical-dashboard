@@ -8,6 +8,35 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+async function requireExistingUser(req, res, next) {
+  if (req.path === "/login") {
+    return next();
+  }
+
+  try {
+    const userId = Number(req.headers["x-user-id"]);
+    if (!userId) {
+      return res.status(401).json({ error: "Session expired" });
+    }
+
+    const [rows] = await pool.query(
+      "SELECT ID_USER FROM users WHERE ID_USER = ? LIMIT 1",
+      [userId],
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ error: "Session expired" });
+    }
+
+    return next();
+  } catch (err) {
+    console.error("Auth guard error:", err);
+    return res.status(500).json({ error: "Authentication check failed" });
+  }
+}
+
+// app.use("/api", requireExistingUser);
+
 // Helper: Map Blood Group int from DB (1=A+, 2=A-, 3=B+, 4=B-, 5=AB+, 6=AB-, 7=O+, 8=O-, -1=None)
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -38,8 +67,24 @@ function normalizeConsultationOption(value) {
   return Number(value) === 1 ? 1 : 0;
 }
 
+function normalizeRadioOption(value, defaultValue = 1) {
+  return Number(value) || defaultValue;
+}
+
 function normalizeCheckboxOption(value) {
   return Number(value) === 1 ? 1 : 0;
+}
+
+function normalizeHoraireRow(row) {
+  return {
+    JOUR: row.JOUR ?? "",
+    originalHEURE_DEBUT: row.HEURE_DEBUT ?? "0000",
+    originalHEURE_FIN: row.HEURE_FIN ?? "0000",
+    originalCONGE: Number(row.CONGE) === 1 ? 1 : 0,
+    HEURE_DEBUT: row.HEURE_DEBUT ?? "0000",
+    HEURE_FIN: row.HEURE_FIN ?? "0000",
+    CONGE: Number(row.CONGE) === 1 ? 1 : 0,
+  };
 }
 
 // WinDev algorithm for generating CODE_MALADE
@@ -154,8 +199,9 @@ app.get("/api/stats", async (req, res) => {
     const [[totPatients]] = await pool.query(
       "SELECT COUNT(*) as count FROM malade",
     );
+
     const [[totAppts]] = await pool.query(
-      "SELECT COUNT(*) as count FROM rdv WHERE ETAT_RDV IS NULL OR ETAT_RDV != 3",
+      "SELECT COUNT(*) as count FROM rdv WHERE (ETAT_RDV IS NULL OR ETAT_RDV != 3) AND DATE(DATE_RDV) = CURDATE()",
     );
     const [[critCases]] = await pool.query(
       "SELECT COUNT(*) as count FROM malade WHERE DETTE > 0",
@@ -163,12 +209,30 @@ app.get("/api/stats", async (req, res) => {
     const [[activeCases]] = await pool.query(
       "SELECT COUNT(*) as count FROM malade WHERE TYPE = 2",
     );
+    const [[newPatientsThisMonth]] = await pool.query(
+      "SELECT COUNT(*) as count FROM malade WHERE MONTH(DATE_CREATION) = MONTH(CURDATE()) AND YEAR(DATE_CREATION) = YEAR(CURDATE())"
+    );
+
+    const [nextAppointmentRows] = await pool.query(
+      `SELECT r.HEURE_RDV, r.HEURE_ARRIVEE, r.MOTIF_RAPPEL, m.NOM, m.PRENOM
+       FROM rdv r
+       LEFT JOIN malade m ON r.ID_MALADE = m.CODE_BARRE OR r.ID_MALADE = m.CODE_MALADE
+       WHERE (r.ETAT_RDV IS NULL OR r.ETAT_RDV != 3) AND DATE(r.DATE_RDV) = CURDATE()
+       ORDER BY r.HEURE_RDV ASC
+       LIMIT 1`
+    );
+    const nextAppointment = nextAppointmentRows[0] || null;
 
     res.json({
       totalPatients: totPatients.count || 0,
       todayAppointments: totAppts.count || 0,
       criticalCases: critCases.count || 0,
       activeTreatments: activeCases.count || 0,
+      newPatientsThisMonth: newPatientsThisMonth.count || 0,
+      nextAppointment: nextAppointment ? {
+        time: nextAppointment.HEURE_ARRIVEE || nextAppointment.HEURE_RDV,
+        patientName: `${nextAppointment.PRENOM || ''} ${nextAppointment.NOM || ''}`.trim()
+      } : null,
     });
   } catch (err) {
     console.error("API /api/stats Error:", err);
@@ -183,59 +247,55 @@ app.get("/api/clinic", async (req, res) => {
     const [consultRows] = await pool.query(
       "SELECT * FROM param_consult LIMIT 1",
     );
-    console.log("📊 DEBUG - Raw DB row:", rows[0]);
+
 
     if (rows.length > 0) {
       const p = rows[0];
       const consultationOptions = consultRows[0] || {};
-      console.log(
-        "📊 GEST_ORDONNANCE from DB:",
-        p.GEST_ORDONNANCE,
-        typeof p.GEST_ORDONNANCE,
-      );
-      console.log("📊 GEST_BILAN from DB:", p.GEST_BILAN, typeof p.GEST_BILAN);
-      console.log("📊 FREQ_MEDIC from DB:", p.FREQ_MEDIC, typeof p.FREQ_MEDIC);
-      console.log(
-        "📊 INFO_SUP_ORD from DB:",
-        p.INFO_SUP_ORD,
-        typeof p.INFO_SUP_ORD,
-      );
-
       res.json({
         raw: p,
-        nomCabinet: p.NOM_CABINET || "Cabinet Dr. A. BENKERMI Ep. TATI",
-        doctorNameFr: p.NOM_FR || "Dr. A. BENKERMI Ep. TATI",
-        doctorNameAr: p.NOM_AR || "",
-        specialtyFr: (p.SPECIALITE_FR || "").replace(/\r\n/g, " • "),
-        specialtyAr: (p.SPECIALITE_AR || "").replace(/\r\n/g, " • "),
-        detailsSpecialite: p.DETAILS_SPECIALITE || "",
-        phone: p.TEL || "",
-        fixe: p.FIXE || "",
-        addressFr: p.ADRESSE_FR || "El Bouni ANNABA",
-        addressAr: p.ADRESSE_AR || "",
-        city: p.VILLE || "El Bouni",
-        email: p.EMAIL || "",
-        msgOrd: p.MSG_ORD || "Sauver des vies - Donnez de votre sang",
-        msgJaune: p.MSG_JAUNE || "",
-        msgCloture: p.MSG_CLOTURE || "",
-        ordre: p.ORDRE || "",
-        prixConsultation: p.PRIX_CONSULTATION || 0,
-        prixOrdonnance: p.PRIX_ORDONNANCE || 0,
-        nbrRdv: p.NBR_RDV || 0,
-        nbMinuteRdv: p.NB_MINUTE_RDV || 10,
-        facebookPage: p.PAGE_FACEBOOK || "",
-        website: p.SITE_WEB || "",
-        minExercice: p.MIN_EXERCICE_DETAILS_ORD || 2011,
-        maxExercice: p.MAX_EXERCICE_DETAILS_ORD || 2026,
+        nomCabinet: p.NOM_CABINET ?? "",
+        doctorNameFr: p.NOM_FR ?? "",
+        doctorNameAr: p.NOM_AR ?? "",
+        specialtyFr: (p.SPECIALITE_FR ?? "").replace(/\r\n/g, " • "),
+        specialtyAr: (p.SPECIALITE_AR ?? "").replace(/\r\n/g, " • "),
+        detailsSpecialite: p.DETAILS_SPECIALITE ?? "",
+        phone: p.TEL ?? "",
+        fixe: p.FIXE ?? "",
+        addressFr: p.ADRESSE_FR ?? "",
+        addressAr: p.ADRESSE_AR ?? "",
+        city: p.VILLE ?? "",
+        email: p.EMAIL ?? "",
+        msgOrd: p.MSG_ORD ?? "",
+        msgJaune: p.MSG_JAUNE ?? "",
+        msgCloture: p.MSG_CLOTURE ?? "",
+        ordre: p.ORDRE ?? "",
+        prixConsultation: p.PRIX_CONSULTATION ?? 0,
+        prixOrdonnance: p.PRIX_ORDONNANCE ?? 0,
+        nbrRdv: p.NBR_RDV ?? 0,
+        nbMinuteRdv: p.NB_MINUTE_RDV ?? 10,
+        facebookPage: p.PAGE_FACEBOOK ?? "",
+        website: p.SITE_WEB ?? "",
+        minExercice: p.MIN_EXERCICE_DETAILS_ORD ?? 2011,
+        maxExercice: p.MAX_EXERCICE_DETAILS_ORD ?? 2026,
         printerA4A5: p.PRINTER_A4_A5 || "",
         printerA3: p.PRINTER_A3 || "",
         printerBonTicket: p.PRINTER_BON_TICKET || "",
         printerBadge: p.PRINTER_BADGE || "",
         printerLabeler: p.PRINTER_LABELER || "",
-        GEST_ORDONNANCE: p.GEST_ORDONNANCE,
-        GEST_BILAN: p.GEST_BILAN,
-        FREQ_MEDIC: p.FREQ_MEDIC,
-        INFO_SUP_ORD: p.INFO_SUP_ORD,
+        IMPR_ORD: normalizeRadioOption(p.IMPR_ORD),
+        IMPR_ARRET: normalizeRadioOption(p.IMPR_ARRET),
+        MODELE_ORD: normalizeRadioOption(p.MODELE_ORD),
+        IMPR_ORIENTATION: normalizeRadioOption(p.IMPR_ORIENTATION),
+        IMPR_PAPIER_PRE_IMPRIME: normalizeRadioOption(p.IMPR_PAPIER_PRE_IMPRIME),
+        BAS_PAGE: normalizeRadioOption(p.BAS_PAGE),
+        IMPR_BILAN: normalizeRadioOption(p.IMPR_BILAN),
+        GEST_ORDONNANCE: normalizeRadioOption(p.GEST_ORDONNANCE),
+        GEST_BILAN: normalizeRadioOption(p.GEST_BILAN),
+        FREQ_MEDIC: normalizeRadioOption(p.FREQ_MEDIC),
+        INFO_SUP_ORD: normalizeRadioOption(p.INFO_SUP_ORD, 2),
+        MOTIF_RDV: normalizeRadioOption(p.MOTIF_RDV),
+        NUM_RDV: normalizeRadioOption(p.NUM_RDV),
         GEST_RDV: normalizeCheckboxOption(p.GEST_RDV),
         RESUME_DERN_CONS: normalizeCheckboxOption(p.RESUME_DERN_CONS),
         GEST_IMAGE: normalizeCheckboxOption(p.GEST_IMAGE),
@@ -273,6 +333,205 @@ app.get("/api/clinic", async (req, res) => {
   }
 });
 
+// 1d. GET /api/horaire - Working hours table
+app.get("/api/horaire", async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT *
+       FROM horaire
+       ORDER BY FIELD(
+         UPPER(JOUR),
+         'SAMEDI',
+         'SATURDAY',
+         'DIMANCHE',
+         'SUNDAY',
+         'LUNDI',
+         'MONDAY',
+         'MARDI',
+         'TUESDAY',
+         'MERCREDI',
+         'WEDNESDAY',
+         'JEUDI',
+         'THURSDAY',
+         'VENDREDI',
+         'FRIDAY'
+       ) ASC`,
+    );
+    res.json(rows.map(normalizeHoraireRow));
+  } catch (err) {
+    console.error("API /api/horaire Error:", err);
+    res.status(500).json({ error: "Failed to fetch horaire table" });
+  }
+});
+
+// 1e. PUT /api/horaire - Update a row in horaire
+app.put("/api/horaire", requireExistingUser, async (req, res) => {
+  try {
+    const {
+      JOUR,
+      originalHEURE_DEBUT,
+      originalHEURE_FIN,
+      originalCONGE,
+      HEURE_DEBUT,
+      HEURE_FIN,
+      CONGE,
+    } = req.body;
+
+    if (
+      JOUR === undefined ||
+      originalHEURE_DEBUT === undefined ||
+      originalHEURE_FIN === undefined ||
+      originalCONGE === undefined
+    ) {
+      return res.status(400).json({ error: "Original row values are required" });
+    }
+
+    const nextRow = {
+      HEURE_DEBUT: CONGE === 1 ? "0000" : String(HEURE_DEBUT || "0000"),
+      HEURE_FIN: CONGE === 1 ? "0000" : String(HEURE_FIN || "0000"),
+      CONGE: Number(CONGE) === 1 ? 1 : 0,
+    };
+    const nextConge = Number(nextRow.CONGE) === 1 ? 1 : 0;
+
+    const [result] = await pool.query(
+      `UPDATE horaire
+       SET HEURE_DEBUT = ?, HEURE_FIN = ?, CONGE = ?
+       WHERE JOUR = ?
+         AND HEURE_DEBUT = ?
+         AND HEURE_FIN = ?
+         AND CONGE = ?`,
+      [
+        nextRow.HEURE_DEBUT,
+        nextRow.HEURE_FIN,
+        nextConge,
+        JOUR,
+        originalHEURE_DEBUT,
+        originalHEURE_FIN,
+        Number(originalCONGE) === 1 ? 1 : 0,
+      ],
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Horaire row not found" });
+    }
+
+    res.json({
+      success: true,
+      row: {
+        JOUR,
+        originalHEURE_DEBUT: nextRow.HEURE_DEBUT,
+        originalHEURE_FIN: nextRow.HEURE_FIN,
+        originalCONGE: nextConge,
+        ...nextRow,
+      },
+    });
+  } catch (err) {
+    console.error("API PUT /api/horaire Error:", err);
+    res.status(500).json({ error: "Failed to update horaire row" });
+  }
+});
+
+// 1f. GET /api/users - Minimal user list for settings
+app.get("/api/users", requireExistingUser, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT ID_USER, USERNAME, PASS_MOB, TYPE
+       FROM users
+       ORDER BY ID_USER ASC`,
+    );
+
+    res.json(
+      rows.map((row) => ({
+        id: row.ID_USER,
+        username: row.USERNAME ?? "",
+        password: row.PASS_MOB ?? "",
+        type: Number(row.TYPE) === 1 ? 1 : 0,
+      })),
+    );
+  } catch (err) {
+    console.error("API /api/users Error:", err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+app.post("/api/users", requireExistingUser, async (req, res) => {
+  try {
+    const { username, password, type } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: "Username and password are required" });
+    }
+
+    const nextType = Number(type) === 1 ? 1 : 0;
+    const [result] = await pool.query(
+      `INSERT INTO users (USERNAME, PASSWORD, PASS_MOB, TYPE, FONCTION)
+       VALUES (?, ?, ?, ?, ?)`,
+      [username, password, password, nextType, nextType],
+    );
+
+    res.status(201).json({
+      success: true,
+      user: {
+        id: result.insertId,
+        username,
+        password,
+        type: nextType,
+      },
+    });
+  } catch (err) {
+    console.error("API POST /api/users Error:", err);
+    res.status(500).json({ error: "Failed to create user" });
+  }
+});
+
+app.put("/api/users/:id", requireExistingUser, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { username, password, type } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: "Username and password are required" });
+    }
+
+    const nextType = Number(type) === 1 ? 1 : 0;
+    const [result] = await pool.query(
+      `UPDATE users
+       SET USERNAME = ?, PASSWORD = ?, PASS_MOB = ?, TYPE = ?, FONCTION = ?
+       WHERE ID_USER = ?`,
+      [username, password, password, nextType, nextType, id],
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: Number(id),
+        username,
+        password,
+        type: nextType,
+      },
+    });
+  } catch (err) {
+    console.error("API PUT /api/users/:id Error:", err);
+    res.status(500).json({ error: "Failed to update user" });
+  }
+});
+
+app.delete("/api/users/:id", requireExistingUser, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await pool.query("DELETE FROM users WHERE ID_USER = ?", [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error("API DELETE /api/users/:id Error:", err);
+    res.status(500).json({ error: "Failed to delete user" });
+  }
+});
+
 app.get("/api/printers", (req, res) => {
   if (process.platform !== "win32") {
     return res
@@ -294,6 +553,145 @@ app.get("/api/printers", (req, res) => {
     res.json(printers);
   });
 });
+
+// MOTIF RDV (APPOINTMENT REASON) ROUTES
+app.get("/api/motif_rdv", async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT * FROM motif_rdv ORDER BY DESIGNATION ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("API /api/motif_rdv GET Error:", err);
+    res.status(500).json({ error: "Failed to fetch appointment reasons" });
+  }
+});
+
+app.post("/api/motif_rdv", async (req, res) => {
+  try {
+    const { DESIGNATION } = req.body;
+    if (!DESIGNATION) {
+      return res.status(400).json({ error: "Designation is required" });
+    }
+    const [result] = await pool.query(
+      "INSERT INTO motif_rdv (DESIGNATION) VALUES (?)",
+      [DESIGNATION]
+    );
+    res.status(201).json({
+      ID_MOTIF_RDV: result.insertId,
+      DESIGNATION,
+    });
+  } catch (err) {
+    console.error("API /api/motif_rdv POST Error:", err);
+    res.status(500).json({ error: "Failed to create appointment reason" });
+  }
+});
+
+app.put("/api/motif_rdv/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { DESIGNATION } = req.body;
+    if (!DESIGNATION) {
+      return res.status(400).json({ error: "Designation is required" });
+    }
+    const [result] = await pool.query(
+      "UPDATE motif_rdv SET DESIGNATION = ? WHERE ID_MOTIF_RDV = ?",
+      [DESIGNATION, id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Appointment reason not found" });
+    }
+    res.json({ success: true, ID_MOTIF_RDV: id, DESIGNATION });
+  } catch (err) {
+    console.error("API /api/motif_rdv PUT Error:", err);
+    res.status(500).json({ error: "Failed to update appointment reason" });
+  }
+});
+
+app.delete("/api/motif_rdv/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await pool.query(
+      "DELETE FROM motif_rdv WHERE ID_MOTIF_RDV = ?",
+      [id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Appointment reason not found" });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error("API /api/motif_rdv DELETE Error:", err);
+    res.status(500).json({ error: "Failed to delete appointment reason" });
+  }
+});
+
+// REGION ROUTES
+app.get("/api/region", async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT * FROM region ORDER BY DESIGNATION ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("API /api/region GET Error:", err);
+    res.status(500).json({ error: "Failed to fetch regions" });
+  }
+});
+
+app.post("/api/region", async (req, res) => {
+  try {
+    const { DESIGNATION } = req.body;
+    if (!DESIGNATION) {
+      return res.status(400).json({ error: "Designation is required" });
+    }
+    const [result] = await pool.query(
+      "INSERT INTO region (DESIGNATION) VALUES (?)",
+      [DESIGNATION]
+    );
+    res.status(201).json({
+      ID_REGION: result.insertId,
+      DESIGNATION,
+    });
+  } catch (err) {
+    console.error("API /api/region POST Error:", err);
+    res.status(500).json({ error: "Failed to create region" });
+  }
+});
+
+app.put("/api/region/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { DESIGNATION } = req.body;
+    if (!DESIGNATION) {
+      return res.status(400).json({ error: "Designation is required" });
+    }
+    const [result] = await pool.query(
+      "UPDATE region SET DESIGNATION = ? WHERE ID_REGION = ?",
+      [DESIGNATION, id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Region not found" });
+    }
+    res.json({ success: true, ID_REGION: id, DESIGNATION });
+  } catch (err) {
+    console.error("API /api/region PUT Error:", err);
+    res.status(500).json({ error: "Failed to update region" });
+  }
+});
+
+app.delete("/api/region/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await pool.query(
+      "DELETE FROM region WHERE ID_REGION = ?",
+      [id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Region not found" });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error("API /api/region DELETE Error:", err);
+    res.status(500).json({ error: "Failed to delete region" });
+  }
+});
+
 
 // 1c. PUT /api/clinic - Update clinic parameters in parametre and param_consult tables
 app.put("/api/clinic", async (req, res) => {
@@ -327,6 +725,15 @@ app.put("/api/clinic", async (req, res) => {
       GEST_BILAN,
       FREQ_MEDIC,
       INFO_SUP_ORD,
+      MOTIF_RDV,
+      NUM_RDV,
+      IMPR_ORD,
+      IMPR_ARRET,
+      MODELE_ORD,
+      IMPR_ORIENTATION,
+      IMPR_PAPIER_PRE_IMPRIME,
+      BAS_PAGE,
+      IMPR_BILAN,
       GEST_RDV,
       RESUME_DERN_CONS,
       GEST_IMAGE,
@@ -352,7 +759,7 @@ app.put("/api/clinic", async (req, res) => {
           ID_PARAMETRE, NOM_CABINET, NOM_FR, NOM_AR, SPECIALITE_FR, SPECIALITE_AR, DETAILS_SPECIALITE, TEL, FIXE,
           ADRESSE_FR, ADRESSE_AR, VILLE, EMAIL, MSG_ORD, MSG_JAUNE, MSG_CLOTURE, ORDRE,
           PRIX_CONSULTATION, PRIX_ORDONNANCE, NBR_RDV, NB_MINUTE_RDV, PAGE_FACEBOOK, SITE_WEB,
-          MIN_EXERCICE_DETAILS_ORD, MAX_EXERCICE_DETAILS_ORD, GEST_ORDONNANCE, GEST_BILAN, FREQ_MEDIC, INFO_SUP_ORD, GEST_RDV, RESUME_DERN_CONS, GEST_IMAGE, APERCU
+          MIN_EXERCICE_DETAILS_ORD, MAX_EXERCICE_DETAILS_ORD, GEST_ORDONNANCE, GEST_BILAN, FREQ_MEDIC, INFO_SUP_ORD, MOTIF_RDV, NUM_RDV, IMPR_ORD, IMPR_ARRET, MODELE_ORD, IMPR_ORIENTATION, IMPR_PAPIER_PRE_IMPRIME, BAS_PAGE, IMPR_BILAN, GEST_RDV, RESUME_DERN_CONS, GEST_IMAGE, APERCU
         ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           nomCabinet || "",
@@ -383,6 +790,15 @@ app.put("/api/clinic", async (req, res) => {
           GEST_BILAN || null,
           FREQ_MEDIC || null,
           INFO_SUP_ORD || null,
+          MOTIF_RDV || 0,
+          NUM_RDV || 0,
+          IMPR_ORD || 1,
+          IMPR_ARRET || 1,
+          MODELE_ORD || 1,
+          IMPR_ORIENTATION || 1,
+          IMPR_PAPIER_PRE_IMPRIME || 1,
+          BAS_PAGE || 1,
+          IMPR_BILAN || 1,
           gestRdvValue,
           resumeDernConsValue,
           gestImageValue,
@@ -395,7 +811,8 @@ app.put("/api/clinic", async (req, res) => {
           NOM_CABINET = ?, NOM_FR = ?, NOM_AR = ?, SPECIALITE_FR = ?, SPECIALITE_AR = ?, DETAILS_SPECIALITE = ?, TEL = ?, FIXE = ?,
           ADRESSE_FR = ?, ADRESSE_AR = ?, VILLE = ?, EMAIL = ?, MSG_ORD = ?, MSG_JAUNE = ?, MSG_CLOTURE = ?, ORDRE = ?,
           PRIX_CONSULTATION = ?, PRIX_ORDONNANCE = ?, NBR_RDV = ?, NB_MINUTE_RDV = ?, PAGE_FACEBOOK = ?, SITE_WEB = ?,
-          MIN_EXERCICE_DETAILS_ORD = ?, MAX_EXERCICE_DETAILS_ORD = ?, GEST_ORDONNANCE = ?, GEST_BILAN = ?, FREQ_MEDIC = ?, INFO_SUP_ORD = ?, GEST_RDV = ?, RESUME_DERN_CONS = ?, GEST_IMAGE = ?, APERCU = ?
+          MIN_EXERCICE_DETAILS_ORD = ?, MAX_EXERCICE_DETAILS_ORD = ?, GEST_ORDONNANCE = ?, GEST_BILAN = ?, FREQ_MEDIC = ?, INFO_SUP_ORD = ?, MOTIF_RDV = ?, NUM_RDV = ?, GEST_RDV = ?, RESUME_DERN_CONS = ?, GEST_IMAGE = ?, APERCU = ?,
+          IMPR_ORD = ?, IMPR_ARRET = ?, MODELE_ORD = ?, IMPR_ORIENTATION = ?, IMPR_PAPIER_PRE_IMPRIME = ?, BAS_PAGE = ?, IMPR_BILAN = ?
         WHERE ID_PARAMETRE = ?`,
         [
           nomCabinet || "",
@@ -426,10 +843,19 @@ app.put("/api/clinic", async (req, res) => {
           GEST_BILAN || null,
           FREQ_MEDIC || null,
           INFO_SUP_ORD || null,
+          MOTIF_RDV || 0,
+          NUM_RDV || 0,
           gestRdvValue,
           resumeDernConsValue,
           gestImageValue,
           apercuValue,
+          IMPR_ORD || 1,
+          IMPR_ARRET || 1,
+          MODELE_ORD || 1,
+          IMPR_ORIENTATION || 1,
+          IMPR_PAPIER_PRE_IMPRIME || 1,
+          BAS_PAGE || 1,
+          IMPR_BILAN || 1,
           rows[0].ID_PARAMETRE,
         ],
       );
@@ -536,7 +962,7 @@ app.get("/api/patients", async (req, res) => {
       params.push(sexeVal);
     }
 
-    query += ` ORDER BY CAST(CODE_BARRE AS UNSIGNED) DESC LIMIT ?`;
+    query += ` ORDER BY NOM ASC, PRENOM ASC LIMIT ?`;
     params.push(Number(limit));
 
     const [rows] = await pool.query(query, params);
@@ -1147,8 +1573,8 @@ app.get("/api/appointments", async (req, res) => {
     }
 
     if (patientId) {
-      query += ` AND (r.ID_MALADE = ? OR m.CODE_BARRE = ? OR m.CODE_MALADE = ?)`;
-      params.push(patientId, patientId, patientId);
+      query += ` AND r.ID_MALADE = ?`;
+      params.push(patientId);
     }
 
     if (search) {
@@ -1157,7 +1583,7 @@ app.get("/api/appointments", async (req, res) => {
       params.push(q, q, q, q);
     }
 
-    query += ` ORDER BY r.DATE_RDV DESC, r.ID_RDV DESC LIMIT ?`;
+    query += ` ORDER BY r.DATE_RDV DESC, r.NUM_RDV ASC, m.NOM ASC, m.PRENOM ASC LIMIT ?`;
     params.push(Number(limit));
 
     const [rows] = await pool.query(query, params);
@@ -1184,6 +1610,8 @@ app.get("/api/appointments", async (req, res) => {
         status = "Scheduled";
       }
 
+      const displayTime = hasArrival ? r.HEURE_ARRIVEE : "";
+
       return {
         id: `apt-${r.ID_RDV}`,
         rawId: r.ID_RDV,
@@ -1194,13 +1622,13 @@ app.get("/api/appointments", async (req, res) => {
         mrn: r.CODE_MALADE || r.CODE_BARRE || r.ID_MALADE,
         phone: r.TEL || "N/A",
         date: dateStr,
-        time: r.HEURE_ARRIVEE || r.HEURE_RDV || "09:00 AM",
+        time: displayTime,
         doctor: "Dr. A. BENKERMI Ep. TATI",
         department: "ORL",
         reason: r.MOTIF_RAPPEL || "Consultation RDV",
         type: "In-Person",
         status,
-        queueNumber: r.NUM_RDV || 0,
+        num_rdv: r.NUM_RDV || 0,
       };
     });
 
@@ -1216,18 +1644,80 @@ app.get("/api/appointments", async (req, res) => {
 // 8. POST /api/appointments - Schedule new appointment in rdv
 app.post("/api/appointments", async (req, res) => {
   try {
-    const { patientId, date, time, reason } = req.body;
+    const { patientId, date, time, reason, motifId, regionId } = req.body;
+    const userId = Number(req.headers["x-user-id"]) || 0;
+
     if (!patientId || !date) {
       return res
         .status(400)
         .json({ error: "Patient ID and date are required." });
     }
 
+    // Get max ID_RDV and add 1
+    const [[maxIdRow]] = await pool.query(
+      "SELECT MAX(ID_RDV) as maxId FROM rdv",
+    );
+    const nextId = (maxIdRow.maxId || 0) + 1;
+
+    // Delete existing scheduled (non-completed, non-canceled) appointments for the patient
+    await pool.query(
+      "DELETE FROM rdv WHERE ID_MALADE = ? AND (ETAT_RDV IS NULL OR ETAT_RDV NOT IN (1, 3))",
+      [patientId],
+    );
+
+    // --- Start of new logic for NUM_RDV ---
+    const [[parametre]] = await pool.query("SELECT NUM_RDV FROM parametre LIMIT 1");
+    const numRdvSetting = parametre ? parametre.NUM_RDV : 1; // Default to 1 if parametre not found
+
+    let nextNumRdv = 1;
+
+    if (numRdvSetting === 1) {
+      // Get the latest NUM_RDV from the entire table
+      const [[maxNumRdvRow]] = await pool.query(
+        "SELECT MAX(NUM_RDV) as maxNum FROM rdv"
+      );
+      nextNumRdv = (maxNumRdvRow.maxNum || 0) + 1;
+    } else {
+      // Get the latest NUM_RDV for the specified date
+      const [[maxNumRdvDateRow]] = await pool.query(
+        "SELECT MAX(NUM_RDV) as maxNum FROM rdv WHERE DATE(DATE_RDV) = ?",
+        [date]
+      );
+      nextNumRdv = (maxNumRdvDateRow.maxNum || 0) + 1;
+    }
+    // --- End of new logic for NUM_RDV ---
+
+    // --- Logic for HEURE_RDV and HEURE_ARRIVEE ---
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    let heureArrivee = null;
+    if (date === todayString) {
+      heureArrivee = today.toTimeString().split(' ')[0]; // HH:MM:SS
+    }
+    const heureRdv = ''; // Always empty
+    // --- End of logic for time ---
+
     // ETAT_RDV = 0 is Scheduled
-    const [result] = await pool.query(
-      `INSERT INTO rdv (ID_MALADE, DATE_RDV, HEURE_RDV, ETAT_RDV, MOTIF_RAPPEL, NUM_RDV, SMS_ALERT, CALLS, SMS_CONFIRM, ID_MOTIF_RDV, ID_REGION)
-       VALUES (?, ?, ?, 0, ?, 1, 0, 0, 0, 0, 0)`,
-      [patientId, date, time || "09:00:00", reason || "Consultation"],
+    await pool.query(
+      `INSERT INTO rdv (ID_RDV, ID_MALADE, DATE_RDV, HEURE_RDV, HEURE_ARRIVEE, ETAT_RDV, MOTIF_RAPPEL, NUM_RDV, SMS_ALERT, CALLS, SMS_CONFIRM, ID_MOTIF_RDV, ID_REGION, ID_USER, TYPE_RDV)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        nextId,
+        patientId,
+        date,
+        heureRdv,         // HEURE_RDV
+        heureArrivee,     // HEURE_ARRIVEE
+        0,                // ETAT_RDV
+        reason || "Consultation",
+        nextNumRdv,
+        0, // SMS_ALERT
+        0, // CALLS
+        0, // SMS_CONFIRM
+        motifId || 0,
+        regionId || 0,
+        userId,
+        1, // TYPE_RDV
+      ],
     );
 
     // Get patient details
@@ -1238,20 +1728,21 @@ app.post("/api/appointments", async (req, res) => {
     const pat = patRows[0] || {};
 
     res.status(201).json({
-      id: `apt-${result.insertId}`,
-      rawId: result.insertId,
+      id: `apt-${nextId}`,
+      rawId: nextId,
       patientId: pat.CODE_BARRE || patientId,
       patientName: pat.NOM
         ? `${pat.NOM || ""} ${pat.PRENOM || ""}`.trim()
         : `Patient #${patientId}`,
       mrn: pat.CODE_MALADE || patientId,
       date,
-      time: time || "09:00 AM",
+      time: heureArrivee, // Return the arrival time if it was set
       doctor: "Dr. A. BENKERMI Ep. TATI",
       department: "ORL",
       reason: reason || "Consultation",
       type: "In-Person",
       status: "Scheduled",
+      num_rdv: nextNumRdv,
     });
   } catch (err) {
     console.error("API POST /api/appointments Error:", err);
@@ -1340,3 +1831,5 @@ app.listen(PORT, () => {
     `MediPulse Backend connected to MySQL (docteur4) running on http://localhost:${PORT}`,
   );
 });
+
+

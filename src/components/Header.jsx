@@ -1,9 +1,16 @@
-import React from 'react';
-import { Search, Bell, ShieldCheck, Calendar as CalendarIcon, LogOut, Globe } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Search, ShieldCheck, Calendar as CalendarIcon, LogOut, Globe, MoonStar, SunMedium, Clock3 } from 'lucide-react';
 import { translations } from '../translations';
 
-export default function Header({ searchQuery, setSearchQuery, onSelectTab, activeTab, currentUser, onLogout, lang = 'fr', setLang, clinicInfo }) {
+export default function Header({ searchQuery, setSearchQuery, onSelectTab, activeTab, currentUser, onLogout, lang = 'fr', setLang, clinicInfo, theme = 'dark', setTheme }) {
   const t = translations[lang] || translations.fr;
+  const [currentTime, setCurrentTime] = useState(() =>
+    new Date().toLocaleTimeString(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  );
 
   const currentDate = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', {
     weekday: 'short',
@@ -11,6 +18,19 @@ export default function Header({ searchQuery, setSearchQuery, onSelectTab, activ
     day: 'numeric',
     year: 'numeric'
   });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(
+        new Date().toLocaleTimeString(undefined, {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        })
+      );
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lang]);
 
   return (
     <header className="sticky top-0 z-30 glass-panel border-b border-slate-800 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
@@ -20,10 +40,7 @@ export default function Header({ searchQuery, setSearchQuery, onSelectTab, activ
           <img src="/el_iyada_logo.png" alt="EL IYADA Icon" className="w-full h-full object-cover" />
         </div>
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-white font-sans">EL <span className="text-teal-400">IYADA</span></h1>
-            <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wider text-teal-300 bg-teal-950/80 border border-teal-800/50 rounded-full uppercase">{t.hubTitle}</span>
-          </div>
+          <h1 className="text-xl font-bold tracking-tight text-white font-sans">EL <span className="text-teal-400">IYADA</span></h1>
           <p className="text-xs text-slate-400">
             {clinicInfo?.doctorNameFr 
               ? `${clinicInfo.doctorNameFr} • ${clinicInfo.addressFr || clinicInfo.city || 'Cabinet ORL'}` 
@@ -86,14 +103,24 @@ export default function Header({ searchQuery, setSearchQuery, onSelectTab, activ
           </button>
         </div>
 
-        <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
-          <CalendarIcon className="w-3.5 h-3.5 text-teal-400" />
-          <span>{currentDate}</span>
+        <div className="hidden sm:flex flex-col items-start gap-1 text-xs text-slate-400 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="w-3.5 h-3.5 text-teal-400" />
+            <span>{currentDate}</span>
+          </div>
+          <div className="flex items-center gap-2 text-[11px] text-teal-300 font-medium">
+            <Clock3 className="w-3.5 h-3.5 text-teal-300" />
+            <span>{currentTime}</span>
+          </div>
         </div>
 
-        <button className="relative p-2 text-slate-300 hover:text-white bg-slate-900/60 rounded-lg border border-slate-800 hover:border-slate-700 transition">
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-teal-400 rounded-full ring-2 ring-slate-900 animate-pulse"></span>
+        <button
+          type="button"
+          onClick={() => setTheme && setTheme(theme === 'dark' ? 'light' : 'dark')}
+          title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          className="relative p-2 text-slate-300 hover:text-white bg-slate-900/60 rounded-lg border border-slate-800 hover:border-slate-700 transition"
+        >
+          {theme === 'dark' ? <SunMedium className="w-4 h-4" /> : <MoonStar className="w-4 h-4" />}
         </button>
 
         <div className="h-6 w-[1px] bg-slate-800 hidden sm:block"></div>

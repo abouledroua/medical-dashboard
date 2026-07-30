@@ -1,25 +1,182 @@
-import React, { useState } from 'react';
-import { X, Calendar, Clock, User, Stethoscope, FileText, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { X, Calendar, Search } from 'lucide-react';
 import { translations } from '../translations';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
+import { format } from 'date-fns';
+import { debounce } from '../utils.js';
 
-export default function NewAppointmentModal({ isOpen, onClose, patients, defaultPatient, onAppointmentCreated, lang = 'fr' }) {
+export default function NewAppointmentModal({ isOpen, onClose, patients, defaultPatient, onAppointmentCreated, lang = 'fr', clinicInfo }) {
   if (!isOpen) return null;
   const t = translations[lang] || translations.fr;
 
-  const [patientId, setPatientId] = useState(defaultPatient ? defaultPatient.id : (patients[0]?.id || ''));
-  const [date, setDate] = useState('2026-07-27');
-  const [time, setTime] = useState('10:00 AM');
-  const [doctor, setDoctor] = useState('Dr. Sarah Jenkins, MD');
-  const [department, setDepartment] = useState('Cardiology');
+  const [patientId, setPatientId] = useState('');
+  const [patientSearch, setPatientSearch] = useState('');
+  const [isPatientListOpen, setIsPatientListOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+
+  const [date, setDate] = useState(new Date());
+  const [month, setMonth] = useState(date);
   const [reason, setReason] = useState('');
-  const [type, setType] = useState('In-Person');
+  const [motifId, setMotifId] = useState('');
+  const [regionId, setRegionId] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [leaveDays, setLeaveDays] = useState([]);
+  
+  const [motifsList, setMotifsList] = useState([]);
+  const [regionsList, setRegionsList] = useState([]);
+
+  const findNextAvailableDate = useCallback((startDate, daysToSkip) => {
+    let currentDate = new Date(startDate);
+    currentDate.setHours(0, 0, 0, 0);
+    while (daysToSkip.includes(currentDate.getDay())) {
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return currentDate;
+  }, []);
+
+  useEffect(() => {
+    setMonth(date);
+  }, [date]);
+
+  useEffect(() => {
+    async function fetchHoraire() {
+      try {
+        const res = await fetch('/api/horaire');
+        const data = await res.json();
+        const offDays = data.filter(d => d.CONGE === 1).map(d => {
+          const dayName = d.JOUR.toUpperCase();
+          if (dayName.includes('DIMANCHE') || dayName.includes('SUNDAY')) return 0;
+          if (dayName.includes('LUNDI') || dayName.includes('MONDAY')) return 1;
+          if (dayName.includes('MARDI') || dayName.includes('TUESDAY')) return 2;
+          if (dayName.includes('MERCREDI') || dayName.includes('WEDNESDAY')) return 3;
+          if (dayName.includes('JEUDI') || dayName.includes('THURSDAY')) return 4;
+          if (dayName.includes('VENDREDI') || dayName.includes('FRIDAY')) return 5;
+          if (dayName.includes('SAMEDI') || dayName.includes('SATURDAY')) return 6;
+          return -1;
+        }).filter(d => d !== -1);
+        setLeaveDays(offDays);
+      } catch (err) {
+        console.error("Failed to fetch horaire", err);
+      }
+    }
+    fetchHoraire();
+  }, []);
+
+  const fetchDropdownData = useCallback(async () => {
+    if (clinicInfo?.MOTIF_RDV === 2) {
+      try {
+        const [motifsRes, regionsRes] = await Promise.all([
+          fetch('/api/motif_rdv'),
+          fetch('/api/region')
+        ]);
+        if (motifsRes.ok) setMotifsList(await motifsRes.json());
+        if (regionsRes.ok) setRegionsList(await regionsRes.json());
+      } catch (err) {
+        console.error("Failed to fetch motifs or regions", err);
+        setError("Failed to load appointment reasons.");
+      }
+    }
+  }, [clinicInfo?.MOTIF_RDV]);
+
+  useEffect(() => {
+      fetchDropdownData();
+    }, [fetchDropdownData]);
+
+
+  useEffect(() => {
+    if (leaveDays.length === 0) {
+      // Set a temporary date while leave days are loading
+      setDate(new Date());
+      setMonth(new Date());
+      return;
+    };
+
+    if (patientId) {
+      const fetchAppointments = async () => {
+        try {
+          const res = await fetch(`/api/appointments?patientId=${patientId}`);
+          const appointments = await res.json();
+          const activeAppointment = appointments.find(apt => {
+            const aptDate = new Date(apt.date.replace(/-/g, '/'));
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const isFutureOrToday = aptDate >= today;
+            const isActiveStatus = apt.status === 'Scheduled' || apt.status === 'In Progress';
+            
+            return isActiveStatus && isFutureOrToday;
+          });
+          if (activeAppointment && activeAppointment.date) {
+            const newDate = new Date(activeAppointment.date.replace(/-/g, '/'));
+            setDate(newDate);
+            setMonth(newDate);
+          } else {
+            const nextAvailableDate = findNextAvailableDate(new Date(), leaveDays);
+            setDate(nextAvailableDate);
+            setMonth(nextAvailableDate);
+          }
+        } catch (err) {
+          console.error("Failed to fetch patient appointments", err);
+        }
+      };
+      fetchAppointments();
+    } else {
+      const nextAvailableDate = findNextAvailableDate(new Date(), leaveDays);
+      setDate(nextAvailableDate);
+      setMonth(nextAvailableDate);
+    }
+  }, [patientId, leaveDays, findNextAvailableDate]);
+
+  const searchPatients = async (query) => {
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/patients?search=${query}`);
+      const data = await res.json();
+      setSearchResults(data);
+    } catch (err) {
+      console.error("Failed to search patients", err);
+    }
+  };
+  
+  const debouncedSearch = useCallback(debounce(searchPatients, 300), []);
+
+  useEffect(() => {
+    if(patientSearch) {
+      debouncedSearch(patientSearch);
+    } else {
+      setSearchResults([]);
+    }
+  }, [patientSearch, debouncedSearch]);
+
+
+  const handlePatientSelect = (patient) => {
+    setPatientId(patient.id);
+    setPatientSearch(`${patient.lastName} ${patient.firstName}`);
+    setIsPatientListOpen(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!patientId || !date || !reason.trim()) {
-      setError('Please select a patient, date, and enter the reason for visit.');
+    let finalReason = reason.trim();
+
+    if (clinicInfo?.MOTIF_RDV === 2) {
+      if (motifId === '' || regionId === '') {
+        setError('Please select a motif and a region.');
+        return;
+      }
+      const selectedMotif = motifsList.find(m => m.ID_MOTIF === parseInt(motifId));
+      const selectedRegion = regionsList.find(r => r.ID_REGION === parseInt(regionId));
+      finalReason = `Motif: ${selectedMotif?.DESIGNATION}, Région: ${selectedRegion?.DESIGNATION}`;
+    }
+
+    if (!patientId || !date) {
+      setError('Please select a patient and date.');
       return;
     }
 
@@ -27,22 +184,24 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
     setError('');
 
     try {
+      const body = {
+        patientId,
+        date: format(date, 'yyyy-MM-dd'),
+        time: '09:00:00',
+        reason: finalReason,
+        motifId,
+        regionId,
+      };
+
       const res = await fetch('/api/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patientId,
-          date,
-          time,
-          doctor,
-          department,
-          reason: reason.trim(),
-          type
-        })
+        body: JSON.stringify(body)
       });
 
       if (!res.ok) {
-        throw new Error('Failed to schedule appointment.');
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to schedule appointment.');
       }
 
       const newApt = await res.json();
@@ -54,15 +213,21 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
       setLoading(false);
     }
   };
+  
+  const disabledDays = [
+    { before: new Date() },
+    ...leaveDays.map(day => ({ dayOfWeek: day })),
+  ];
+
+  const displayPatients = patientSearch.length > 1 ? searchResults : patients;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-      <div className="glass-panel w-full max-w-lg rounded-2xl border border-slate-700 shadow-2xl overflow-hidden space-y-4">
-        {/* Modal Header */}
-        <div className="p-5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
+      <div className="glass-panel w-full max-w-lg rounded-2xl border border-slate-700 shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="p-5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-teal-400" />
-            <h3 className="text-base font-bold text-white">{t.modalNewApptTitle || (lang === 'fr' ? 'Programmer un Nouveau Rendez-vous' : 'Schedule New Appointment')}</h3>
+            <h3 className="text-base font-bold text-white">{t.modalNewApptTitle || 'Schedule New Appointment'}</h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
             <X className="w-5 h-5" />
@@ -70,102 +235,142 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
         </div>
 
         {error && (
-          <div className="mx-5 p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300 text-xs">
+          <div className="mx-5 mt-4 p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300 text-xs shrink-0">
             {error}
           </div>
         )}
 
-        {/* Modal Body Form */}
-        <form onSubmit={handleSubmit} className="p-5 pt-0 space-y-4 text-xs">
-          <div>
-            <label className="block text-slate-300 font-medium mb-1">{t.selectPatient || (lang === 'fr' ? 'Sélectionner un Patient' : 'Select Patient')} *</label>
-            <select
-              value={patientId}
-              onChange={(e) => setPatientId(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-slate-900 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500"
-            >
-              {patients.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.lastName} {p.firstName} ({p.mrn})
-                </option>
-              ))}
-            </select>
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+          {/* Scrollable content area */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+            <div className="relative">
+            <label className="block text-slate-300 font-medium mb-1">{t.selectPatient || 'Select Patient'} *</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type="text"
+                value={patientSearch}
+                onChange={(e) => { setPatientSearch(e.target.value); setIsPatientListOpen(true); }}
+                onFocus={() => setIsPatientListOpen(true)}
+                onBlur={() => {
+                  setTimeout(() => {
+                    setIsPatientListOpen(false);
+                    // Check for exact barcode match
+                    const exactMatch = displayPatients.find(p => p.codeBarre.toLowerCase() === patientSearch.toLowerCase());
+                    if (exactMatch && patientSearch.length > 0) {
+                      handlePatientSelect(exactMatch);
+                    } else if (patientSearch.length > 0 && !patientId) { // Clear if no exact match and input is not empty and no patient is selected
+                      setPatientSearch('');
+                      setPatientId('');
+                    }
+                  }, 200);
+                }}
+                placeholder={t.searchPatientPlaceholder || 'Search by name, MRN, or Barcode...'}
+                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-900 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500"
+              />
+            </div>
+            {isPatientListOpen && (
+              <div className="absolute z-10 w-full max-h-48 overflow-y-auto mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-lg">
+                {displayPatients.map(p => (
+                  <div
+                    key={p.id}
+                    onMouseDown={() => handlePatientSelect(p)}
+                    className="px-4 py-2 text-sm text-slate-200 hover:bg-teal-500/20 cursor-pointer"
+                  >
+                    {p.lastName} {p.firstName} ({p.mrn})
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-2 flex flex-col items-center">
+              <label className="block text-slate-300 font-medium self-start">{lang === 'fr' ? 'Date du Rendez-vous' : 'Appointment Date'}</label>
+              <DayPicker
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                month={month}
+                onMonthChange={setMonth}
+                disabled={disabledDays}
+                className="bg-slate-900 p-2 rounded-xl border border-slate-700 text-sm"
+                classNames={{
+                  caption: "flex justify-center items-center mb-2 text-sm",
+                  caption_label: "text-sm font-bold text-white",
+                  nav_button: "h-6 w-6 flex items-center justify-center rounded-full hover:bg-slate-800 text-slate-300",
+                  head_row: "flex justify-around text-slate-400 mb-1 text-sm",
+                  cell: "w-8 h-8 flex items-center justify-center rounded-full",
+                  day: "hover:bg-slate-800 cursor-pointer",
+                  day_selected: "bg-teal-500 text-slate-950 font-bold hover:bg-teal-600",
+                  day_today: "font-bold text-teal-400",
+                  day_disabled: "text-slate-600 cursor-not-allowed",
+                }}
+                modifiers={{
+                  leave: leaveDays.map(day => ({ dayOfWeek: day }))
+                }}
+                modifiersStyles={{
+                  leave: { color: '#f77' }
+                }}
+              />
+            </div>
+          </div>
+
+          {clinicInfo?.MOTIF_RDV === 2 ? (
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Motif *</label>
+                <div className="w-full bg-slate-900 border border-slate-700 rounded-xl focus-within:border-teal-500">
+                  <select
+                    value={motifId}
+                    onChange={(e) => setMotifId(e.target.value)}
+                    className="w-full px-3 py-2 text-sm bg-transparent text-slate-100 outline-none"
+                  >
+                    <option value="" disabled>Select a motif</option>
+                    {motifsList.map(m => <option key={m.ID_MOTIF} value={m.ID_MOTIF} className="bg-slate-800 text-slate-100">{m.DESIGNATION}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Région *</label>
+                <div className="w-full bg-slate-900 border border-slate-700 rounded-xl focus-within:border-teal-500">
+                  <select
+                    value={regionId}
+                    onChange={(e) => {
+                      const selectedIndex = e.target.selectedIndex;
+                      if (selectedIndex > 0) {
+                        const selectedRegion = regionsList[selectedIndex - 1];
+                        setRegionId(selectedRegion.ID_REGION);
+                      }
+                    }}
+                    className="w-full px-3 py-2 text-sm bg-transparent text-slate-100 outline-none"
+                  >
+                    <option value="" disabled>Select a region</option>
+                    {regionsList.map(r => <option key={r.ID_REGION} value={r.ID_REGION} className="bg-slate-800 text-slate-100">{r.DESIGNATION}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+          ) : (
             <div>
-              <label className="block text-slate-300 font-medium mb-1">{lang === 'fr' ? 'Date du Rendez-vous' : 'Appointment Date'} *</label>
+              <label className="block text-slate-300 font-medium mb-1">{t.reason || 'Reason for Visit'}</label>
               <input
-                type="date"
-                required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                type="text"
+                placeholder={lang === 'fr' ? 'ex: Consultation ORL de contrôle' : 'e.g. Follow-up consultation'}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
                 className="w-full px-3 py-2 text-sm bg-slate-900 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500"
               />
             </div>
-            <div>
-              <label className="block text-slate-300 font-medium mb-1">{t.time || (lang === 'fr' ? 'Heure' : 'Time')} *</label>
-              <select
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-slate-900 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500"
-              >
-                <option value="09:00 AM">09:00 AM</option>
-                <option value="09:30 AM">09:30 AM</option>
-                <option value="10:15 AM">10:15 AM</option>
-                <option value="11:00 AM">11:00 AM</option>
-                <option value="01:30 PM">01:30 PM</option>
-                <option value="02:45 PM">02:45 PM</option>
-                <option value="04:00 PM">04:00 PM</option>
-              </select>
-            </div>
+          )}
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-slate-300 font-medium mb-1">{t.doctor || (lang === 'fr' ? 'Médecin Traitant' : 'Physician')}</label>
-              <select
-                value={doctor}
-                onChange={(e) => setDoctor(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-slate-900 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500"
-              >
-                <option value="Dr. A. BENKERMI Ep. TATI">Dr. A. BENKERMI Ep. TATI</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-slate-300 font-medium mb-1">{t.type || (lang === 'fr' ? 'Type de Visite' : 'Visit Type')}</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-slate-900 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500"
-              >
-                <option value="In-Person">{lang === 'fr' ? 'En Présentiel' : 'In-Person Visit'}</option>
-                <option value="Follow-up">{lang === 'fr' ? 'Suivi' : 'Follow-up'}</option>
-                <option value="Telehealth">{lang === 'fr' ? 'Téléconsultation' : 'Telehealth'}</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-slate-300 font-medium mb-1">{t.reason || (lang === 'fr' ? 'Motif RDV' : 'Reason for Visit')} *</label>
-            <input
-              type="text"
-              required
-              placeholder={lang === 'fr' ? 'ex: Consultation ORL de contrôle' : 'e.g. Follow-up consultation'}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-slate-900 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500"
-            />
-          </div>
-
-          <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-800">
+          <div className="p-5 pt-3 flex items-center justify-end gap-3 border-t border-slate-800 shrink-0">
             <button
               type="button"
               onClick={onClose}
               className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-semibold border border-slate-700"
             >
-              {t.cancelBtn || (lang === 'fr' ? 'Annuler' : 'Cancel')}
+              {t.cancelBtn || 'Cancel'}
             </button>
             <button
               type="submit"
