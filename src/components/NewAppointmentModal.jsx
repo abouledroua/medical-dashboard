@@ -6,7 +6,7 @@ import 'react-day-picker/dist/style.css';
 import { format } from 'date-fns';
 import { debounce } from '../utils.js';
 
-export default function NewAppointmentModal({ isOpen, onClose, patients, defaultPatient, onAppointmentCreated, lang = 'fr', clinicInfo }) {
+export default function NewAppointmentModal({ isOpen, onClose, patients, defaultPatient, appointmentToEdit, onAppointmentCreated, onAppointmentUpdated, lang = 'fr', clinicInfo }) {
   if (!isOpen) return null;
   const t = translations[lang] || translations.fr;
 
@@ -27,6 +27,34 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
   
   const [motifsList, setMotifsList] = useState([]);
   const [regionsList, setRegionsList] = useState([]);
+
+  useEffect(() => {
+    if (appointmentToEdit) {
+      setPatientId(appointmentToEdit.patientId || appointmentToEdit.mrn || '');
+      setPatientSearch(appointmentToEdit.patientName || '');
+      if (appointmentToEdit.date) {
+        const parsedDate = new Date(appointmentToEdit.date.replace(/-/g, '/'));
+        if (!isNaN(parsedDate.getTime())) {
+          setDate(parsedDate);
+          setMonth(parsedDate);
+        }
+      }
+      setReason(appointmentToEdit.reason || '');
+      setMotifId(appointmentToEdit.motifId ? String(appointmentToEdit.motifId) : '');
+      setRegionId(appointmentToEdit.regionId ? String(appointmentToEdit.regionId) : '');
+    } else if (defaultPatient) {
+      setPatientId(defaultPatient.id || defaultPatient.codeBarre || '');
+      setPatientSearch(`${defaultPatient.lastName || ''} ${defaultPatient.firstName || ''}`.trim());
+      setMotifId('');
+      setRegionId('');
+    } else {
+      setPatientId('');
+      setPatientSearch('');
+      setReason('');
+      setMotifId('');
+      setRegionId('');
+    }
+  }, [appointmentToEdit, defaultPatient, isOpen]);
 
   const findNextAvailableDate = useCallback((startDate, daysToSkip) => {
     let currentDate = new Date(startDate);
@@ -66,29 +94,26 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
   }, []);
 
   const fetchDropdownData = useCallback(async () => {
-    if (clinicInfo?.MOTIF_RDV === 2) {
-      try {
-        const [motifsRes, regionsRes] = await Promise.all([
-          fetch('/api/motif_rdv'),
-          fetch('/api/region')
-        ]);
-        if (motifsRes.ok) setMotifsList(await motifsRes.json());
-        if (regionsRes.ok) setRegionsList(await regionsRes.json());
-      } catch (err) {
-        console.error("Failed to fetch motifs or regions", err);
-        setError("Failed to load appointment reasons.");
-      }
+    try {
+      const [motifsRes, regionsRes] = await Promise.all([
+        fetch('/api/motif_rdv'),
+        fetch('/api/region')
+      ]);
+      if (motifsRes.ok) setMotifsList(await motifsRes.json());
+      if (regionsRes.ok) setRegionsList(await regionsRes.json());
+    } catch (err) {
+      console.error("Failed to fetch motifs or regions", err);
     }
-  }, [clinicInfo?.MOTIF_RDV]);
+  }, []);
 
   useEffect(() => {
-      fetchDropdownData();
-    }, [fetchDropdownData]);
-
+    fetchDropdownData();
+  }, [fetchDropdownData]);
 
   useEffect(() => {
+    if (appointmentToEdit) return; // Do not auto-override date if editing existing appointment
+
     if (leaveDays.length === 0) {
-      // Set a temporary date while leave days are loading
       setDate(new Date());
       setMonth(new Date());
       return;
@@ -128,15 +153,15 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
       setDate(nextAvailableDate);
       setMonth(nextAvailableDate);
     }
-  }, [patientId, leaveDays, findNextAvailableDate]);
+  }, [patientId, leaveDays, findNextAvailableDate, appointmentToEdit]);
 
   const searchPatients = async (query) => {
-    if (query.length < 2) {
+    if (!query || query.trim().length < 1) {
       setSearchResults([]);
       return;
     }
     try {
-      const res = await fetch(`/api/patients?search=${query}`);
+      const res = await fetch(`/api/patients?search=${encodeURIComponent(query.trim())}`);
       const data = await res.json();
       setSearchResults(data);
     } catch (err) {
@@ -147,13 +172,12 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
   const debouncedSearch = useCallback(debounce(searchPatients, 300), []);
 
   useEffect(() => {
-    if(patientSearch) {
+    if (patientSearch) {
       debouncedSearch(patientSearch);
     } else {
       setSearchResults([]);
     }
   }, [patientSearch, debouncedSearch]);
-
 
   const handlePatientSelect = (patient) => {
     setPatientId(patient.id);
@@ -184,28 +208,48 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
     setError('');
 
     try {
+      const formattedDate = format(date, 'yyyy-MM-dd');
       const body = {
         patientId,
-        date: format(date, 'yyyy-MM-dd'),
+        date: formattedDate,
         time: '09:00:00',
         reason: finalReason,
         motifId,
         regionId,
+        status: appointmentToEdit ? (appointmentToEdit.status || 'Scheduled') : 'Scheduled'
       };
 
-      const res = await fetch('/api/appointments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
+      if (appointmentToEdit) {
+        const res = await fetch(`/api/appointments/${appointmentToEdit.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to schedule appointment.');
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to update appointment.');
+        }
+
+        if (onAppointmentUpdated) {
+          await onAppointmentUpdated(appointmentToEdit.id, body);
+        }
+      } else {
+        const res = await fetch('/api/appointments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to schedule appointment.');
+        }
+
+        const newApt = await res.json();
+        onAppointmentCreated(newApt);
       }
 
-      const newApt = await res.json();
-      onAppointmentCreated(newApt);
       onClose();
     } catch (err) {
       setError(err.message);
@@ -227,7 +271,11 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
         <div className="p-5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-teal-400" />
-            <h3 className="text-base font-bold text-white">{t.modalNewApptTitle || 'Schedule New Appointment'}</h3>
+            <h3 className="text-base font-bold text-white">
+              {appointmentToEdit
+                ? (lang === 'fr' ? 'Modifier le Rendez-vous' : 'Edit Appointment')
+                : (t.modalNewApptTitle || (lang === 'fr' ? 'Nouveau Rendez-vous' : 'Schedule New Appointment'))}
+            </h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
             <X className="w-5 h-5" />
@@ -287,32 +335,51 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
           <div className="grid grid-cols-1 gap-3">
             <div className="space-y-2 flex flex-col items-center">
               <label className="block text-slate-300 font-medium self-start">{lang === 'fr' ? 'Date du Rendez-vous' : 'Appointment Date'}</label>
-              <DayPicker
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                month={month}
-                onMonthChange={setMonth}
-                disabled={disabledDays}
-                className="bg-slate-900 p-2 rounded-xl border border-slate-700 text-sm"
-                classNames={{
-                  caption: "flex justify-center items-center mb-2 text-sm",
-                  caption_label: "text-sm font-bold text-white",
-                  nav_button: "h-6 w-6 flex items-center justify-center rounded-full hover:bg-slate-800 text-slate-300",
-                  head_row: "flex justify-around text-slate-400 mb-1 text-sm",
-                  cell: "w-8 h-8 flex items-center justify-center rounded-full",
-                  day: "hover:bg-slate-800 cursor-pointer",
-                  day_selected: "bg-teal-500 text-slate-950 font-bold hover:bg-teal-600",
-                  day_today: "font-bold text-teal-400",
-                  day_disabled: "text-slate-600 cursor-not-allowed",
-                }}
-                modifiers={{
-                  leave: leaveDays.map(day => ({ dayOfWeek: day }))
-                }}
-                modifiersStyles={{
-                  leave: { color: '#f77' }
-                }}
-              />
+              <div className="flex flex-col items-center w-full">
+                <DayPicker
+                  mode="single"
+                  selected={date}
+                  onSelect={(newDate) => { if (newDate) setDate(newDate); }}
+                  month={month}
+                  onMonthChange={setMonth}
+                  disabled={disabledDays}
+                  className="bg-slate-900 p-2 rounded-xl border border-slate-700 text-sm"
+                  classNames={{
+                    caption: "flex justify-center items-center mb-2 text-sm",
+                    caption_label: "text-sm font-bold text-white",
+                    nav_button: "h-6 w-6 flex items-center justify-center rounded-full hover:bg-slate-800 text-slate-300",
+                    head_row: "flex justify-around text-slate-400 mb-1 text-sm",
+                    cell: "w-8 h-8 flex items-center justify-center rounded-full",
+                    day: "hover:bg-slate-800 cursor-pointer",
+                    day_selected: "bg-teal-500 text-slate-950 font-bold hover:bg-teal-600",
+                    day_today: "font-bold text-teal-400",
+                    day_disabled: "text-slate-600 cursor-not-allowed",
+                  }}
+                  modifiers={{
+                    leave: leaveDays.map(day => ({ dayOfWeek: day }))
+                  }}
+                  modifiersStyles={{
+                    leave: { color: '#f77' }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const today = new Date();
+                    setMonth(today);
+                    const isTodayOnLeave = leaveDays.includes(today.getDay());
+                    if (!isTodayOnLeave) {
+                      setDate(today);
+                    } else {
+                      const nextDate = findNextAvailableDate(today, leaveDays);
+                      setDate(nextDate);
+                    }
+                  }}
+                  className="mt-2 text-xs text-teal-400 hover:text-teal-300 font-bold hover:underline flex items-center gap-1 cursor-pointer transition px-3 py-1 bg-slate-900/80 rounded-lg border border-slate-700/80 shadow-sm"
+                >
+                  📅 {lang === 'fr' ? "Aujourd'hui" : "Today"}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -336,13 +403,7 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
                 <div className="w-full bg-slate-900 border border-slate-700 rounded-xl focus-within:border-teal-500">
                   <select
                     value={regionId}
-                    onChange={(e) => {
-                      const selectedIndex = e.target.selectedIndex;
-                      if (selectedIndex > 0) {
-                        const selectedRegion = regionsList[selectedIndex - 1];
-                        setRegionId(selectedRegion.ID_REGION);
-                      }
-                    }}
+                    onChange={(e) => setRegionId(e.target.value)}
                     className="w-full px-3 py-2 text-sm bg-transparent text-slate-100 outline-none"
                   >
                     <option value="" disabled>Select a region</option>
@@ -377,7 +438,11 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
               disabled={loading}
               className="px-5 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-slate-950 rounded-xl font-bold flex items-center gap-1.5 shadow-lg shadow-teal-500/20"
             >
-              {loading ? (lang === 'fr' ? 'Enregistrement...' : 'Booking...') : (lang === 'fr' ? 'Confirmer le RDV' : 'Confirm Appointment')}
+              {loading
+                ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...')
+                : (appointmentToEdit
+                    ? (lang === 'fr' ? 'Enregistrer les modifications' : 'Save Changes')
+                    : (lang === 'fr' ? 'Confirmer le RDV' : 'Confirm Appointment'))}
             </button>
           </div>
         </form>

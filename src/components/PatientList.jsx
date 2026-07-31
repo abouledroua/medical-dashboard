@@ -31,7 +31,11 @@ export default function PatientList({
         (patient.lastName && patient.lastName.toLowerCase().includes(q)) ||
         fullName1.includes(q) ||
         fullName2.includes(q) ||
-        (patient.mrn && patient.mrn.toLowerCase().includes(q)) ||
+        (patient.codeBarre && String(patient.codeBarre).toLowerCase().includes(q)) ||
+        (patient.codeMalade && String(patient.codeMalade).toLowerCase().includes(q)) ||
+        (patient.barcode && String(patient.barcode).toLowerCase().includes(q)) ||
+        (patient.mrn && String(patient.mrn).toLowerCase().includes(q)) ||
+        (patient.id && String(patient.id).toLowerCase().includes(q)) ||
         (patient.phone && patient.phone.includes(q)) ||
         (patient.email && patient.email.toLowerCase().includes(q)) ||
         (patient.chronicConditions && patient.chronicConditions.some(c => c.toLowerCase().includes(q))) ||
@@ -296,7 +300,7 @@ export default function PatientList({
                     <button
                       onClick={() => onOpenNewConsultation(patient)}
                       className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 text-xs"
-                      title={lang === 'fr' ? 'Ajouter une Note de Consultation' : 'Add Consultation Note'}
+                      title={lang === 'fr' ? 'Ajouter Une Consultation' : 'Add Consultation Note'}
                     >
                       <Plus className="w-4 h-4" />
                     </button>

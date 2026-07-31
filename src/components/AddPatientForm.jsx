@@ -45,11 +45,11 @@ export default function AddPatientForm({ onAddPatient, onUpdatePatient, patientT
     if (unit === 'days') {
       const d = new Date(today);
       d.setDate(d.getDate() - num);
-      return d.toISOString().split('T')[0];
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     } else if (unit === 'months') {
       const d = new Date(today);
       d.setMonth(d.getMonth() - num);
-      return d.toISOString().split('T')[0];
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     } else {
       // Set to 1st of January of calculated birth year (YYYY-01-01)
       const birthYear = today.getFullYear() - num;

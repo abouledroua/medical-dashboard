@@ -10,8 +10,49 @@ import AppointmentsList from './components/AppointmentsList';
 import ClinicSettings from './components/ClinicSettings';
 import NewAppointmentModal from './components/NewAppointmentModal';
 import AddConsultationModal from './components/AddConsultationModal';
+import DeviceNameModal from './components/DeviceNameModal';
+
+function getOrCreateDeviceId() {
+  try {
+    let devId = localStorage.getItem('el_iyada_device_id');
+    // If devId is missing, contains 'DEV-', or length is not between 8 and 10 chars, re-generate clean 8-char ID
+    if (!devId || devId.startsWith('DEV-') || devId.length < 8 || devId.length > 10) {
+      devId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID().replace(/-/g, '').substring(0, 8).toUpperCase()
+        : Math.random().toString(36).substring(2, 10).toUpperCase();
+      localStorage.setItem('el_iyada_device_id', devId);
+    }
+    return devId;
+  } catch (e) {
+    return 'A1B2C3D4';
+  }
+}
 
 export default function App() {
+  const [deviceId] = useState(getOrCreateDeviceId);
+  const [deviceName, setDeviceName] = useState(null);
+  const [showDeviceModal, setShowDeviceModal] = useState(false);
+
+  const checkDevicePoste = async (devId, triggerModalOnMissing = false) => {
+    if (!devId) return;
+    try {
+      const res = await fetch(`/api/poste/${devId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.exists) {
+          setDeviceName(data.nomDevice || '');
+        } else {
+          setDeviceName(null);
+          if (triggerModalOnMissing) {
+            setShowDeviceModal(true);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to check device in poste table:', e);
+    }
+  };
+
   const [lang, setLangState] = useState(() => {
     try {
       return localStorage.getItem('el_iyada_lang') || 'fr';
@@ -58,11 +99,11 @@ export default function App() {
   const getInitialTab = () => {
     try {
       const hash = window.location.hash.replace('#', '').trim();
-      if (hash && ['overview', 'patients', 'add-patient', 'medical-history', 'appointments', 'settings'].includes(hash)) {
+      if (hash && ['overview', 'patients', 'add-patient', 'add-consultation', 'medical-history', 'appointments', 'settings'].includes(hash)) {
         return hash;
       }
       const saved = localStorage.getItem('el_iyada_active_tab');
-      if (saved && ['overview', 'patients', 'add-patient', 'medical-history', 'appointments', 'settings'].includes(saved)) {
+      if (saved && ['overview', 'patients', 'add-patient', 'add-consultation', 'medical-history', 'appointments', 'settings'].includes(saved)) {
         return saved;
       }
     } catch (e) {}
@@ -84,7 +125,7 @@ export default function App() {
   useEffect(() => {
     const handleLocationChange = () => {
       const hash = window.location.hash.replace('#', '').trim();
-      if (hash && ['overview', 'patients', 'add-patient', 'medical-history', 'appointments', 'settings'].includes(hash)) {
+      if (hash && ['overview', 'patients', 'add-patient', 'add-consultation', 'medical-history', 'appointments', 'settings'].includes(hash)) {
         setActiveTabState(hash);
       }
     };
@@ -107,6 +148,12 @@ export default function App() {
     } catch (e) {}
   }, [theme]);
 
+  useEffect(() => {
+    if (deviceId && currentUser) {
+      checkDevicePoste(deviceId, true);
+    }
+  }, [deviceId, currentUser]);
+
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [stats, setStats] = useState({});
@@ -115,10 +162,13 @@ export default function App() {
 
   const setSelectedPatient = (patient) => {
     setSelectedPatientState(patient);
-    if (patient && patient.id) {
-      try {
-        localStorage.setItem('el_iyada_selected_patient_id', patient.id);
-      } catch (e) {}
+    if (patient) {
+      const patId = patient.id || patient.codeBarre || patient.mrn;
+      if (patId) {
+        try {
+          localStorage.setItem('el_iyada_selected_patient_id', String(patId));
+        } catch (e) {}
+      }
     }
   };
 
@@ -130,27 +180,112 @@ export default function App() {
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
   const [appointmentDefaultPatient, setAppointmentDefaultPatient] = useState(null);
+  const [editingAppointment, setEditingAppointment] = useState(null);
+  const [ongoingConsultations, setOngoingConsultations] = useState(() => {
+    try {
+      const saved = localStorage.getItem('el_iyada_ongoing_consultations');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [activeConsultationPatientId, setActiveConsultationPatientId] = useState(() => {
+    try {
+      return localStorage.getItem('el_iyada_active_consultation_patient_id') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('el_iyada_ongoing_consultations', JSON.stringify(ongoingConsultations));
+    } catch (e) {}
+  }, [ongoingConsultations]);
+
+  useEffect(() => {
+    try {
+      if (activeConsultationPatientId) {
+        localStorage.setItem('el_iyada_active_consultation_patient_id', activeConsultationPatientId);
+      } else {
+        localStorage.removeItem('el_iyada_active_consultation_patient_id');
+      }
+    } catch (e) {}
+  }, [activeConsultationPatientId]);
+
+  useEffect(() => {
+    if (patients && patients.length > 0 && ongoingConsultations.length > 0) {
+      setOngoingConsultations(prev => prev.map(draft => {
+        const freshPatient = patients.find(p => String(p.id) === String(draft.patientId) || String(p.codeBarre) === String(draft.patientId));
+        return freshPatient ? { ...draft, patient: freshPatient } : draft;
+      }));
+    }
+  }, [patients]);
+
+  const openEditAppointmentModal = (apt) => {
+    setEditingAppointment(apt);
+    setAppointmentDefaultPatient(null);
+    setIsAppointmentModalOpen(true);
+  };
+
+  const [previousTab, setPreviousTab] = useState('patients');
 
   const handleEditPatient = (patient) => {
+    setPreviousTab(activeTab);
     setEditingPatient(patient);
     setActiveTab('add-patient');
   };
 
   const handlePatientUpdated = (updatedPatient) => {
     setPatients(prev => prev.map(p => (p.id === updatedPatient.id ? updatedPatient : p)));
-    if (selectedPatient && selectedPatient.id === updatedPatient.id) {
+    if (selectedPatient && (selectedPatient.id === updatedPatient.id || selectedPatient.codeBarre === updatedPatient.codeBarre)) {
       setSelectedPatient(updatedPatient);
     }
     setEditingPatient(null);
-    setActiveTab('medical-history');
+    setActiveTab(previousTab || 'medical-history');
   };
 
+
+  const isSyncingRef = React.useRef(false);
+
+  // Silent background sync for Multi-PC multi-user real-time updates (appointments & stats)
+  const fetchSilentSync = async () => {
+    if (isSyncingRef.current) return;
+    isSyncingRef.current = true;
+    try {
+      const [statsRes, aptsRes, patientsRes] = await Promise.all([
+        fetch('/api/stats'),
+        fetch('/api/appointments'),
+        fetch('/api/patients?limit=60')
+      ]);
+
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
+      }
+
+      if (aptsRes.ok) {
+        const aptsData = await aptsRes.json();
+        setAppointments(aptsData);
+      }
+
+      if (patientsRes.ok) {
+        const patientsData = await patientsRes.json();
+        setPatients(patientsData);
+      }
+    } catch (err) {
+      // Ignore background sync errors silently
+    } finally {
+      isSyncingRef.current = false;
+    }
+  };
 
   // Fetch initial data from Node REST API
   const fetchAllData = async () => {
     try {
       const [patientsRes, statsRes, aptsRes, clinicRes] = await Promise.all([
-        fetch('/api/patients'),
+        fetch('/api/patients?limit=60'),
         fetch('/api/stats'),
         fetch('/api/appointments'),
         fetch('/api/clinic')
@@ -161,11 +296,20 @@ export default function App() {
         setPatients(patientsData);
 
         const savedPatId = localStorage.getItem('el_iyada_selected_patient_id');
-        const matched = savedPatId ? patientsData.find(p => p.id === savedPatId || p.codeBarre === savedPatId || p.mrn === savedPatId) : null;
-        if (matched) {
-          setSelectedPatientState(matched);
-        } else if (patientsData.length > 0) {
-          setSelectedPatientState(patientsData[0]);
+        if (savedPatId) {
+          const matched = patientsData.find(p => String(p.id) === String(savedPatId) || String(p.codeBarre) === String(savedPatId) || String(p.mrn) === String(savedPatId));
+          if (matched) {
+            setSelectedPatientState(prev => prev || matched);
+          } else {
+            fetch(`/api/patients/${encodeURIComponent(savedPatId)}`)
+              .then(res => res.json())
+              .then(patData => {
+                if (patData && !patData.error) {
+                  setSelectedPatientState(prev => prev || patData);
+                }
+              })
+              .catch(() => {});
+          }
         }
       }
 
@@ -190,17 +334,38 @@ export default function App() {
     }
   };
 
+  // Automatic Real-Time Multi-PC Sync (10-second silent polling + focus/visibility triggers)
   useEffect(() => {
+    // 1. Initial fetch on mount or tab change
     fetchAllData();
-  }, []);
+
+    // 2. 10s silent background polling for instant multi-PC appointments sync
+    const syncInterval = setInterval(() => {
+      fetchSilentSync();
+    }, 10000);
+
+    // 3. Instant sync when regaining window focus or switching back to browser tab
+    const handleSyncTrigger = () => {
+      fetchSilentSync();
+    };
+
+    window.addEventListener('focus', handleSyncTrigger);
+    document.addEventListener('visibilitychange', handleSyncTrigger);
+
+    return () => {
+      clearInterval(syncInterval);
+      window.removeEventListener('focus', handleSyncTrigger);
+      document.removeEventListener('visibilitychange', handleSyncTrigger);
+    };
+  }, [activeTab]);
 
   // Live debounced search querying table dynamically
   useEffect(() => {
     const timer = setTimeout(async () => {
       try {
         const url = searchQuery.trim()
-          ? `/api/patients?search=${encodeURIComponent(searchQuery.trim())}&limit=200`
-          : '/api/patients?limit=500';
+          ? `/api/patients?search=${encodeURIComponent(searchQuery.trim())}&limit=100`
+          : '/api/patients?limit=60';
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
@@ -241,15 +406,77 @@ export default function App() {
         body: JSON.stringify({ status })
       });
       if (res.ok) {
-        setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+        const updated = await res.json();
+        setAppointments(prev => prev.map(a => a.id === id ? { ...a, status, time: updated.time || a.time } : a));
       }
     } catch (err) {
       console.error('Error updating appointment:', err);
     }
   };
 
-  const handleConsultationAdded = (newConsultation) => {
-    // Refresh selected patient history
+  const handleEditAppointment = async (id, updateData) => {
+    try {
+      const res = await fetch(`/api/appointments/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      });
+      if (res.ok) {
+        setAppointments(prev => prev.map(a => a.id === id ? { ...a, ...updateData } : a));
+        fetchAllData();
+      }
+    } catch (err) {
+      console.error('Error updating appointment details:', err);
+    }
+  };
+
+  const handleUpdateConsultationDraft = (updatedDraft) => {
+    setOngoingConsultations(prev =>
+      prev.map(c => (String(c.patientId) === String(updatedDraft.patientId) ? { ...c, ...updatedDraft } : c))
+    );
+  };
+
+  const handleCancelConsultation = async (patientIdToCancel, isCompleted = false) => {
+    const pId = patientIdToCancel || activeConsultationPatientId;
+    const targetDraft = ongoingConsultations.find(c => String(c.patientId) === String(pId));
+
+    if (!isCompleted && targetDraft && !targetDraft.isExisting && (targetDraft.idConsultation || targetDraft.idVersement)) {
+      try {
+        await fetch('/api/consultations/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            idConsultation: targetDraft.idConsultation,
+            exercice: targetDraft.exercice,
+            idVersement: targetDraft.idVersement
+          })
+        });
+      } catch (e) {
+        console.error('Failed to cancel ongoing consultation on server:', e);
+      }
+    }
+
+    setOngoingConsultations(prev => {
+      const remaining = prev.filter(c => String(c.patientId) !== String(pId));
+      if (remaining.length > 0) {
+        const next = remaining[remaining.length - 1];
+        setActiveConsultationPatientId(next.patientId);
+        setSelectedPatient(next.patient);
+      } else {
+        setActiveConsultationPatientId(null);
+        setActiveTab(previousTab || 'medical-history');
+      }
+      return remaining;
+    });
+  };
+
+  const handleSelectConsultationDraft = (pId, pObj) => {
+    setActiveConsultationPatientId(pId);
+    if (pObj) setSelectedPatient(pObj);
+    setActiveTab('add-consultation');
+  };
+
+  const handleConsultationAdded = (newConsultation, patientIdSaved) => {
     if (selectedPatient) {
       setSelectedPatient(prev => ({
         ...prev,
@@ -257,6 +484,7 @@ export default function App() {
       }));
     }
     fetchAllData();
+    handleCancelConsultation(patientIdSaved || activeConsultationPatientId, true);
   };
 
   const openAppointmentForPatient = (patient = null) => {
@@ -264,11 +492,54 @@ export default function App() {
     setIsAppointmentModalOpen(true);
   };
 
-  const openConsultationForPatient = (patient = null) => {
-    if (patient) {
-      setSelectedPatient(patient);
+  const openConsultationForPatient = async (patient = null) => {
+    setPreviousTab(activeTab);
+    const targetPatient = patient || selectedPatient || (patients && patients.length > 0 ? patients[0] : null);
+    if (targetPatient) {
+      const pId = targetPatient.id || targetPatient.codeBarre;
+      setSelectedPatient(targetPatient);
+      setActiveConsultationPatientId(pId);
+
+      const existingDraft = ongoingConsultations.find(c => String(c.patientId) === String(pId));
+      if (!existingDraft) {
+        let dbRef = {};
+        try {
+          const res = await fetch('/api/consultations/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ patientId: pId, deviceId })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            dbRef = {
+              idConsultation: data.idConsultation,
+              idVersement: data.idVersement,
+              exercice: data.exercice,
+              prixConsultation: data.prixConsultation,
+              isExisting: !!data.isExisting
+            };
+          }
+        } catch (e) {
+          console.error('Failed to start ongoing consultation on server:', e);
+        }
+
+        const newDraft = {
+          patientId: pId,
+          patient: targetPatient,
+          chiefComplaint: '',
+          diagnosis: '',
+          clinicalNotes: '',
+          vitalsAtVisit: `BP: ${targetPatient.vitals?.bloodPressure || '120/80'} | HR: ${targetPatient.vitals?.heartRate || '72 bpm'}`,
+          doctor: clinicInfo?.doctorNameFr || 'Dr. A. BENKERMI Ep. TATI',
+          department: targetPatient.department || 'ORL',
+          prescriptions: [{ name: '', dosage: '', frequency: 'Once daily', duration: '30 days' }],
+          ...dbRef
+        };
+
+        setOngoingConsultations(prev => [...prev, newDraft]);
+      }
     }
-    setIsConsultationModalOpen(true);
+    setActiveTab('add-consultation');
   };
 
   const handleLogin = (user) => {
@@ -276,12 +547,45 @@ export default function App() {
     try {
       localStorage.setItem('el_iyada_user', JSON.stringify(user));
     } catch (e) {}
+    checkDevicePoste(deviceId, true);
+  };
+
+  const handleSaveDeviceName = async (enteredName) => {
+    try {
+      const res = await fetch('/api/poste', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId, nomDevice: enteredName })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDeviceName(data.nomDevice || '');
+      } else {
+        setDeviceName(enteredName || '');
+      }
+    } catch (e) {
+      console.error('Failed to save device name:', e);
+      setDeviceName(enteredName || '');
+    } finally {
+      setShowDeviceModal(false);
+    }
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setSelectedPatientState(null);
+    setPatients([]);
+    setAppointments([]);
+    setStats({});
+    setEditingPatient(null);
+    setEditingAppointment(null);
+    setAppointmentDefaultPatient(null);
+    setActiveTabState('overview');
     try {
       localStorage.removeItem('el_iyada_user');
+      localStorage.removeItem('el_iyada_selected_patient_id');
+      localStorage.removeItem('el_iyada_active_tab');
+      window.history.pushState(null, '', window.location.pathname || '/');
     } catch (e) {}
   };
 
@@ -290,6 +594,9 @@ export default function App() {
     window.fetch = async (input, init = {}) => {
       const headers = new Headers(init.headers || {});
       try {
+        if (deviceId) {
+          headers.set('x-device-id', deviceId);
+        }
         const savedUser = localStorage.getItem('el_iyada_user');
         if (savedUser) {
           const parsedUser = JSON.parse(savedUser);
@@ -309,7 +616,7 @@ export default function App() {
     return () => {
       window.fetch = originalFetch;
     };
-  }, []);
+  }, [deviceId]);
 
   // If user is not authenticated, show Login Screen
   if (!currentUser) {
@@ -338,6 +645,9 @@ export default function App() {
         theme={theme}
         setTheme={setTheme}
         clinicInfo={clinicInfo}
+        onRefreshData={fetchAllData}
+        deviceId={deviceId}
+        deviceName={deviceName}
       />
 
       {/* Main Container */}
@@ -347,11 +657,14 @@ export default function App() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           selectedPatient={selectedPatient}
+          ongoingConsultations={ongoingConsultations}
+          activeConsultationPatientId={activeConsultationPatientId}
+          onSelectConsultationDraft={handleSelectConsultationDraft}
           lang={lang}
         />
 
         {/* Dynamic Main Workspace Content */}
-        <main className="flex-1 p-4 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full">
+        <main className={`flex-1 p-4 md:p-6 overflow-y-auto w-full ${['add-consultation', 'medical-history'].includes(activeTab) ? 'max-w-none' : 'max-w-7xl mx-auto'}`}>
           {loading ? (
             <div className="space-y-6">
               {/* Progress Bar Header */}
@@ -422,11 +735,33 @@ export default function App() {
                   onUpdatePatient={handlePatientUpdated}
                   onCancel={() => {
                     setEditingPatient(null);
-                    setActiveTab('patients');
+                    setActiveTab(previousTab || 'patients');
                   }}
                   lang={lang}
                 />
               )}
+
+              {activeTab === 'add-consultation' && (() => {
+                const activeDraft = ongoingConsultations.find(c => String(c.patientId) === String(activeConsultationPatientId)) || ongoingConsultations[0];
+                return (
+                  <AddConsultationModal
+                    key={activeDraft ? activeDraft.patientId : 'default-consultation'}
+                    draft={activeDraft}
+                    patient={activeDraft?.patient || selectedPatient}
+                    patients={patients}
+                    clinicInfo={clinicInfo}
+                    onSelectPatient={(p) => {
+                      setSelectedPatient(p);
+                      setActiveConsultationPatientId(p.id || p.codeBarre);
+                    }}
+                    onUpdateDraft={handleUpdateConsultationDraft}
+                    onConsultationAdded={handleConsultationAdded}
+                    onCancel={handleCancelConsultation}
+                    onEditPatient={handleEditPatient}
+                    lang={lang}
+                  />
+                );
+              })()}
 
               {activeTab === 'medical-history' && (
                 <PatientMedicalHistory
@@ -446,7 +781,9 @@ export default function App() {
                   appointments={appointments}
                   patients={patients}
                   onOpenNewAppointment={openAppointmentForPatient}
+                  onOpenEditAppointment={openEditAppointmentModal}
                   onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
+                  onEditAppointment={handleEditAppointment}
                   onSelectPatient={handleSelectPatient}
                   lang={lang}
                 />
@@ -469,19 +806,24 @@ export default function App() {
       {/* Global Modals */}
       <NewAppointmentModal
         isOpen={isAppointmentModalOpen}
-        onClose={() => setIsAppointmentModalOpen(false)}
+        onClose={() => {
+          setIsAppointmentModalOpen(false);
+          setEditingAppointment(null);
+        }}
         patients={patients}
         defaultPatient={appointmentDefaultPatient}
+        appointmentToEdit={editingAppointment}
         onAppointmentCreated={handleAppointmentCreated}
+        onAppointmentUpdated={handleEditAppointment}
         lang={lang}
         clinicInfo={clinicInfo}
       />
 
-      <AddConsultationModal
-        isOpen={isConsultationModalOpen}
-        onClose={() => setIsConsultationModalOpen(false)}
-        patient={selectedPatient}
-        onConsultationAdded={handleConsultationAdded}
+      <DeviceNameModal
+        isOpen={showDeviceModal}
+        onClose={() => setShowDeviceModal(false)}
+        onSave={handleSaveDeviceName}
+        currentDeviceId={deviceId}
         lang={lang}
       />
     </div>

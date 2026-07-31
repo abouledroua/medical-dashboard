@@ -14,7 +14,8 @@ export default function DashboardOverview({
   lang = 'fr'
 }) {
   const t = translations[lang] || translations.fr;
-  const todayStr = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const recentPatients = patients.slice(0, 5);
   const todaysAppointments = appointments.filter(a => a.date === todayStr);
@@ -266,12 +267,20 @@ export default function DashboardOverview({
             </div>
 
             <div className="space-y-3">
-              {todaysAppointments.map((apt) => (
-                <div key={apt.id} className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 hover:border-slate-700 transition space-y-2">
+              {todaysAppointments.map((apt, index) => (
+                <div key={apt.id || index} className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 hover:border-slate-700 transition space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-mono text-cyan-400 font-semibold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800/40">
-                      {apt.time}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 bg-teal-500/20 text-teal-300 font-mono font-black border border-teal-500/40 rounded-lg text-xs shadow-sm">
+                        N° {apt.num_rdv || (index + 1)}
+                      </span>
+                      {apt.time ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-amber-500/15 text-amber-300 font-mono font-black border border-amber-400/40 rounded-lg text-xs shadow-sm">
+                          <Clock className="w-3 h-3 text-amber-400 shrink-0" />
+                          {apt.time}
+                        </span>
+                      ) : null}
+                    </div>
                     <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                       apt.status === 'Completed'
                         ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'

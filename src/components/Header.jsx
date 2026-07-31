@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Search, ShieldCheck, Calendar as CalendarIcon, LogOut, Globe, MoonStar, SunMedium, Clock3 } from 'lucide-react';
+import { Search, ShieldCheck, Calendar as CalendarIcon, LogOut, Globe, MoonStar, SunMedium, Clock3, RotateCw, Laptop } from 'lucide-react';
 import { translations } from '../translations';
 
-export default function Header({ searchQuery, setSearchQuery, onSelectTab, activeTab, currentUser, onLogout, lang = 'fr', setLang, clinicInfo, theme = 'dark', setTheme }) {
+export default function Header({ searchQuery, setSearchQuery, onSelectTab, activeTab, currentUser, onLogout, lang = 'fr', setLang, clinicInfo, theme = 'dark', setTheme, onRefreshData, deviceId, deviceName }) {
   const t = translations[lang] || translations.fr;
+  const [isSyncing, setIsSyncing] = useState(false);
   const [currentTime, setCurrentTime] = useState(() =>
     new Date().toLocaleTimeString(undefined, {
       hour: '2-digit',
@@ -32,6 +33,10 @@ export default function Header({ searchQuery, setSearchQuery, onSelectTab, activ
     return () => clearInterval(timer);
   }, [lang]);
 
+  const displayedDeviceText = (deviceName !== null && deviceName !== undefined && deviceName.trim() !== '') 
+    ? deviceName 
+    : deviceId;
+
   return (
     <header className="sticky top-0 z-30 glass-panel border-b border-slate-800 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
       {/* Brand & System Status */}
@@ -40,7 +45,19 @@ export default function Header({ searchQuery, setSearchQuery, onSelectTab, activ
           <img src="/el_iyada_logo.png" alt="EL IYADA Icon" className="w-full h-full object-cover" />
         </div>
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-white font-sans">EL <span className="text-teal-400">IYADA</span></h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-white font-sans">EL <span className="text-teal-400">IYADA</span></h1>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 rounded-full text-[10px] font-bold tracking-wide">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              {lang === 'fr' ? 'Synchro Multi-PC' : 'Multi-PC Sync'}
+            </span>
+            {(displayedDeviceText || deviceId) && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-slate-900/90 text-teal-300 border border-teal-500/30 rounded-full text-[10px] font-mono font-bold tracking-wide shadow-sm" title={lang === 'fr' ? 'Nom / Identifiant du Poste' : 'Device Name / ID'}>
+                <Laptop className="w-3 h-3 text-teal-400" />
+                {displayedDeviceText}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-400">
             {clinicInfo?.doctorNameFr 
               ? `${clinicInfo.doctorNameFr} • ${clinicInfo.addressFr || clinicInfo.city || 'Cabinet ORL'}` 
@@ -122,6 +139,23 @@ export default function Header({ searchQuery, setSearchQuery, onSelectTab, activ
         >
           {theme === 'dark' ? <SunMedium className="w-4 h-4" /> : <MoonStar className="w-4 h-4" />}
         </button>
+
+        {/* Manual Data Sync Button */}
+        {onRefreshData && (
+          <button
+            type="button"
+            onClick={async () => {
+              setIsSyncing(true);
+              await onRefreshData();
+              setTimeout(() => setIsSyncing(false), 500);
+            }}
+            title={lang === 'fr' ? 'Synchroniser les données en direct' : 'Sync live data with server'}
+            className="p-2 text-slate-300 hover:text-teal-300 bg-slate-900/60 hover:bg-teal-950/30 rounded-lg border border-slate-800 hover:border-teal-500/40 transition flex items-center gap-1.5 text-xs"
+          >
+            <RotateCw className={`w-4 h-4 text-teal-400 ${isSyncing ? 'animate-spin text-teal-300' : ''}`} />
+            <span className="hidden xl:inline font-semibold">{lang === 'fr' ? 'Synchro' : 'Sync'}</span>
+          </button>
+        )}
 
         <div className="h-6 w-[1px] bg-slate-800 hidden sm:block"></div>
 

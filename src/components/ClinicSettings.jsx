@@ -955,6 +955,60 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
               </div>
             </div>
 
+            {/* Option disponible dans les Informations Vitaux Section */}
+            <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+              <h3 className="text-sm font-bold text-teal-400 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-800">
+                <Sliders className="w-4 h-4 text-teal-400" />
+                {lang === 'fr' ? 'Option disponible dans les Informations Vitaux' : 'Options available in Vitals Information'}
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[
+                  { key: 'OBS', labelFr: 'Observation', labelEn: 'Observation' },
+                  { key: 'ANT', labelFr: 'Antécédent', labelEn: 'Antecedents' },
+                  { key: 'TA', labelFr: 'TA & Battement', labelEn: 'BP & HR' },
+                  { key: 'TAILLE', labelFr: 'Taille', labelEn: 'Height' },
+                  { key: 'POIDS', labelFr: 'Poids', labelEn: 'Weight' },
+                  { key: 'PC', labelFr: 'Périmètre Crânien', labelEn: 'Head Circumference' },
+                  { key: 'ALIMENTATION', labelFr: 'Alimentation', labelEn: 'Nutrition' },
+                  { key: 'DDR', labelFr: 'DDR && DPA', labelEn: 'LMP && EDD' },
+                  { key: 'DIAG_CONS', labelFr: 'Diagnostic Consultation', labelEn: 'Consultation Diagnosis' },
+                  { key: 'DIAG_G', labelFr: 'Diagnostique Général', labelEn: 'General Diagnosis' },
+                ].map((item) => {
+                  const isChecked = Number(formData?.paramInfoSupp?.[item.key] ?? 1) === 1;
+                  return (
+                    <div key={item.key} className="flex items-center gap-3 p-2 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition">
+                      <input
+                        type="checkbox"
+                        id={`vital_opt_${item.key}`}
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const updatedInfoSupp = {
+                            OBS: 1, ANT: 1, TA: 1, TAILLE: 1, POIDS: 1, PC: 1, ALIMENTATION: 1, DDR: 1, DIAG_CONS: 1, DIAG_G: 1,
+                            ...(formData?.paramInfoSupp || {}),
+                            [item.key]: e.target.checked ? 1 : 0
+                          };
+                          const newFormData = {
+                            ...formData,
+                            paramInfoSupp: updatedInfoSupp
+                          };
+                          setFormData(newFormData);
+                          if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+                          debounceTimeout.current = setTimeout(() => {
+                            handleSave(newFormData);
+                          }, 1500);
+                        }}
+                        className="w-4 h-4 text-teal-500 bg-slate-900 border-slate-700 rounded cursor-pointer"
+                      />
+                      <label htmlFor={`vital_opt_${item.key}`} className="text-xs font-semibold text-slate-200 cursor-pointer">
+                        {lang === 'fr' ? item.labelFr : item.labelEn}
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Activation des Options Section */}
             <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
               <h3 className="text-sm font-bold text-teal-400 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-800">
