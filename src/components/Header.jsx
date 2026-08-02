@@ -162,14 +162,14 @@ export default function Header({ searchQuery, setSearchQuery, onSelectTab, activ
         {/* Doctor Info & Logout */}
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-600 to-teal-700 flex items-center justify-center font-bold text-sm text-white border border-teal-400/30 shadow-md">
-            {currentUser?.initials || 'SJ'}
+            {currentUser?.initials || (currentUser?.name ? currentUser.name.charAt(0) : '')}
           </div>
           <div className="hidden lg:block text-left">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-slate-200">{currentUser?.name || 'Dr. Sarah Jenkins'}</span>
-              <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+              <span className="text-xs font-semibold text-slate-200">{currentUser?.name || ''}</span>
+              {currentUser?.name && <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />}
             </div>
-            <span className="text-[11px] text-slate-400 block">{currentUser?.role || 'Lead Physician • Cardiology'}</span>
+            <span className="text-[11px] text-slate-400 block">{currentUser?.role || ''}</span>
           </div>
 
           {onLogout && (

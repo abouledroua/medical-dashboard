@@ -136,16 +136,18 @@ export default function DashboardOverview({
               )}
             </div>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              {clinicInfo?.doctorNameFr || 'Dr. A. BENKERMI Ep. TATI'}
+              {clinicInfo?.doctorNameFr || ''}
               {clinicInfo?.doctorNameAr && (
                 <span className="text-sm font-semibold text-teal-400 font-serif mr-2" dir="rtl">
                   ({clinicInfo.doctorNameAr})
                 </span>
               )}
             </h3>
-            <p className="text-xs text-slate-300 font-medium leading-relaxed max-w-3xl">
-              {clinicInfo?.specialtyFr || 'Spécialiste en Maladies et Chirurgie ORL • Thyroïde • Audition • Vertige'}
-            </p>
+            {clinicInfo?.specialtyFr && (
+              <p className="text-xs text-slate-300 font-medium leading-relaxed max-w-3xl">
+                {clinicInfo.specialtyFr}
+              </p>
+            )}
             {clinicInfo?.msgOrd && (
               <div className="mt-2 text-xs italic text-teal-300 bg-teal-950/40 border border-teal-800/50 px-3 py-1.5 rounded-xl inline-block">
                 💬 "{clinicInfo.msgOrd}"

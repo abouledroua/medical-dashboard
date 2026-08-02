@@ -39,7 +39,7 @@ router.get("/", async (req, res) => {
     const { date, patientId, search, limit = 100 } = req.query;
     let query = `
       SELECT 
-        r.ID_RDV, r.ID_MALADE, DATE_FORMAT(r.DATE_RDV, '%Y-%m-%d') as DATE_RDV_STR, r.HEURE_RDV, r.HEURE_ARRIVEE, r.ETAT_RDV, r.MOTIF_RAPPEL, r.NUM_RDV, r.ID_MOTIF_RDV, r.ID_REGION,
+        r.ID_RDV, r.ID_MALADE, DATE_FORMAT(r.DATE_RDV, '%Y-%m-%d') as DATE_RDV_STR, r.HEURE_RDV, r.HEURE_ARRIVEE, r.ETAT_RDV, r.MOTIF_RAPPEL, r.NUM_RDV, r.ID_MOTIF_RDV, r.ID_REGION, r.PERIODE,
         m.NOM, m.PRENOM, m.CODE_BARRE, m.CODE_MALADE, m.TEL
       FROM rdv r
       LEFT JOIN malade m ON r.ID_MALADE = m.CODE_BARRE
@@ -66,7 +66,14 @@ router.get("/", async (req, res) => {
     query += ` ORDER BY r.DATE_RDV DESC, r.NUM_RDV ASC LIMIT ?`;
     params.push(Number(limit));
 
-    const [rows] = await pool.query(query, params);
+    let rows = [];
+    try {
+      [rows] = await pool.query(query, params);
+    } catch (e) {
+      // Fallback query without r.PERIODE if column doesn't exist on legacy DB
+      const fallbackQuery = query.replace("r.PERIODE,", "");
+      [rows] = await pool.query(fallbackQuery, params);
+    }
 
     const nowD = new Date();
     const todayStr = `${nowD.getFullYear()}-${String(nowD.getMonth() + 1).padStart(2, "0")}-${String(nowD.getDate()).padStart(2, "0")}`;
@@ -117,6 +124,7 @@ router.get("/", async (req, res) => {
         num_rdv: r.NUM_RDV || 0,
         motifId: r.ID_MOTIF_RDV || 0,
         regionId: r.ID_REGION || 0,
+        periode: r.PERIODE || "",
       };
     });
 
@@ -132,7 +140,7 @@ router.get("/", async (req, res) => {
 // POST /api/appointments - Schedule new appointment in rdv
 router.post("/", async (req, res) => {
   try {
-    const { patientId, date, time, reason, motifId, regionId } = req.body;
+    const { patientId, date, time, reason, motifId, regionId, periode } = req.body;
     const userId = Number(req.headers["x-user-id"]) || 0;
 
     if (!patientId || !date) {
@@ -159,27 +167,52 @@ router.post("/", async (req, res) => {
     const nextNumRdv = await computeNumRdv(date, heureArrivee);
     const heureRdv = ''; // Always empty
 
-    await pool.query(
-      `INSERT INTO rdv (ID_RDV, ID_MALADE, DATE_RDV, HEURE_RDV, HEURE_ARRIVEE, ETAT_RDV, MOTIF_RAPPEL, NUM_RDV, SMS_ALERT, CALLS, SMS_CONFIRM, ID_MOTIF_RDV, ID_REGION, ID_USER, TYPE_RDV)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        nextId,
-        patientId,
-        date,
-        heureRdv,
-        heureArrivee,
-        0,
-        reason || "Consultation",
-        nextNumRdv,
-        0,
-        0,
-        0,
-        motifId || 0,
-        regionId || 0,
-        userId,
-        1,
-      ]
-    );
+    try {
+      await pool.query(
+        `INSERT INTO rdv (ID_RDV, ID_MALADE, DATE_RDV, HEURE_RDV, HEURE_ARRIVEE, ETAT_RDV, MOTIF_RAPPEL, NUM_RDV, SMS_ALERT, CALLS, SMS_CONFIRM, ID_MOTIF_RDV, ID_REGION, ID_USER, TYPE_RDV, PERIODE)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          nextId,
+          patientId,
+          date,
+          heureRdv,
+          heureArrivee,
+          0,
+          reason || "Consultation",
+          nextNumRdv,
+          0,
+          0,
+          0,
+          motifId || 0,
+          regionId || 0,
+          userId,
+          1,
+          periode || "",
+        ]
+      );
+    } catch (e) {
+      await pool.query(
+        `INSERT INTO rdv (ID_RDV, ID_MALADE, DATE_RDV, HEURE_RDV, HEURE_ARRIVEE, ETAT_RDV, MOTIF_RAPPEL, NUM_RDV, SMS_ALERT, CALLS, SMS_CONFIRM, ID_MOTIF_RDV, ID_REGION, ID_USER, TYPE_RDV)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          nextId,
+          patientId,
+          date,
+          heureRdv,
+          heureArrivee,
+          0,
+          reason || "Consultation",
+          nextNumRdv,
+          0,
+          0,
+          0,
+          motifId || 0,
+          regionId || 0,
+          userId,
+          1,
+        ]
+      );
+    }
 
     const [patRows] = await pool.query(
       "SELECT NOM, PRENOM, CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
@@ -203,6 +236,9 @@ router.post("/", async (req, res) => {
       type: "In-Person",
       status: "Scheduled",
       num_rdv: nextNumRdv,
+      motifId,
+      regionId,
+      periode: periode || "",
     });
   } catch (err) {
     console.error("API POST /api/appointments Error:", err);
@@ -252,7 +288,7 @@ router.patch("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const rawId = req.params.id.replace("apt-", "");
-    const { date, reason, status, motifId, regionId } = req.body;
+    const { date, reason, status, motifId, regionId, periode } = req.body;
 
     const [[aptRow]] = await pool.query(
       "SELECT DATE_FORMAT(DATE_RDV, '%Y-%m-%d') as dateStr, HEURE_ARRIVEE, NUM_RDV FROM rdv WHERE ID_RDV = ?",
@@ -282,12 +318,19 @@ router.put("/:id", async (req, res) => {
     if (status === "Completed") etatVal = 1;
     else if (status === "Canceled" || status === "Cancelled") etatVal = 3;
 
-    await pool.query(
-      "UPDATE rdv SET DATE_RDV = ?, MOTIF_RAPPEL = ?, ETAT_RDV = ?, ID_MOTIF_RDV = ?, ID_REGION = ?, NUM_RDV = ?, HEURE_ARRIVEE = ? WHERE ID_RDV = ?",
-      [date, reason || "Consultation", etatVal, motifId || 0, regionId || 0, finalNumRdv, finalHeureArrivee, rawId]
-    );
+    try {
+      await pool.query(
+        "UPDATE rdv SET DATE_RDV = ?, MOTIF_RAPPEL = ?, ETAT_RDV = ?, ID_MOTIF_RDV = ?, ID_REGION = ?, NUM_RDV = ?, HEURE_ARRIVEE = ?, PERIODE = ? WHERE ID_RDV = ?",
+        [date, reason || "Consultation", etatVal, motifId || 0, regionId || 0, finalNumRdv, finalHeureArrivee, periode || "", rawId]
+      );
+    } catch (e) {
+      await pool.query(
+        "UPDATE rdv SET DATE_RDV = ?, MOTIF_RAPPEL = ?, ETAT_RDV = ?, ID_MOTIF_RDV = ?, ID_REGION = ?, NUM_RDV = ?, HEURE_ARRIVEE = ? WHERE ID_RDV = ?",
+        [date, reason || "Consultation", etatVal, motifId || 0, regionId || 0, finalNumRdv, finalHeureArrivee, rawId]
+      );
+    }
 
-    res.json({ id: req.params.id, date, reason, status, motifId, regionId, num_rdv: finalNumRdv, time: finalHeureArrivee });
+    res.json({ id: req.params.id, date, reason, status, motifId, regionId, num_rdv: finalNumRdv, time: finalHeureArrivee, periode });
   } catch (err) {
     console.error("API PUT /api/appointments/:id Error:", err);
     res.status(500).json({ error: "Failed to update appointment" });

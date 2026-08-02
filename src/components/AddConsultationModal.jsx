@@ -56,7 +56,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
       type: 'Certificat Médical Descriptif',
       startDate: new Date().toISOString().split('T')[0],
       durationDays: 3,
-      content: `Je soussigné, ${clinicInfo?.doctorNameFr || 'Dr. A. BENKERMI Ep. TATI'}, certifie avoir examiné ce jour le patient susnommé et avoir constaté des signes cliniques nécessitant un repos et un traitement médical approprié.`,
+      content: `Je soussigné, ${clinicInfo?.doctorNameFr || 'le médecin traitant'}, certifie avoir examiné ce jour le patient susnommé et avoir constaté des signes cliniques nécessitant un repos et un traitement médical approprié.`,
       fitness: 'apte'
     }
   );
@@ -116,17 +116,17 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
   const [isBookingAppt, setIsBookingAppt] = useState(false);
   const [apptBookingStatus, setApptBookingStatus] = useState('');
 
-  const [doctor, setDoctor] = useState(draft?.doctor || clinicInfo?.doctorNameFr || 'Dr. A. BENKERMI Ep. TATI');
+  const [doctor, setDoctor] = useState(draft?.doctor || clinicInfo?.doctorNameFr || '');
   const [department, setDepartment] = useState(draft?.department || activePatient?.department || 'ORL');
 
   useEffect(() => {
     if (clinicInfo?.doctorNameFr) {
-      if (!draft?.doctor || doctor === 'Dr. A. BENKERMI Ep. TATI') {
+      if (!draft?.doctor || !doctor) {
         setDoctor(clinicInfo.doctorNameFr);
       }
       setCertificat(prev => {
-        if (prev.content && prev.content.includes('Dr. A. BENKERMI Ep. TATI')) {
-          return { ...prev, content: prev.content.replace('Dr. A. BENKERMI Ep. TATI', clinicInfo.doctorNameFr) };
+        if (prev.content && prev.content.includes('le médecin traitant')) {
+          return { ...prev, content: prev.content.replace('le médecin traitant', clinicInfo.doctorNameFr) };
         }
         return prev;
       });

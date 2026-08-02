@@ -17,7 +17,7 @@ router.get("/", async (req, res) => {
       "SELECT COUNT(*) as count FROM malade WHERE DETTE > 0"
     );
     const [[activeCases]] = await pool.query(
-      "SELECT COUNT(*) as count FROM malade WHERE TYPE = 2"
+      "SELECT COUNT(*) as count FROM consultation WHERE DATE(DATE_CONSULTATION) = CURDATE() AND (ETAT IS NULL OR ETAT != 2)"
     );
     const [[newPatientsThisMonth]] = await pool.query(
       "SELECT COUNT(*) as count FROM malade WHERE MONTH(DATE_CREATION) = MONTH(CURDATE()) AND YEAR(DATE_CREATION) = YEAR(CURDATE())"

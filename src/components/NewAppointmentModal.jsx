@@ -20,6 +20,7 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
   const [reason, setReason] = useState('');
   const [motifId, setMotifId] = useState('');
   const [regionId, setRegionId] = useState('');
+  const [periode, setPeriode] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -42,17 +43,20 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
       setReason(appointmentToEdit.reason || '');
       setMotifId(appointmentToEdit.motifId ? String(appointmentToEdit.motifId) : '');
       setRegionId(appointmentToEdit.regionId ? String(appointmentToEdit.regionId) : '');
+      setPeriode(appointmentToEdit.periode || '');
     } else if (defaultPatient) {
       setPatientId(defaultPatient.id || defaultPatient.codeBarre || '');
       setPatientSearch(`${defaultPatient.lastName || ''} ${defaultPatient.firstName || ''}`.trim());
       setMotifId('');
       setRegionId('');
+      setPeriode('');
     } else {
       setPatientId('');
       setPatientSearch('');
       setReason('');
       setMotifId('');
       setRegionId('');
+      setPeriode('');
     }
   }, [appointmentToEdit, defaultPatient, isOpen]);
 
@@ -216,6 +220,7 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
         reason: finalReason,
         motifId,
         regionId,
+        periode,
         status: appointmentToEdit ? (appointmentToEdit.status || 'Scheduled') : 'Scheduled'
       };
 
@@ -379,6 +384,54 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
                 >
                   📅 {lang === 'fr' ? "Aujourd'hui" : "Today"}
                 </button>
+
+                {/* Recommendation Chips / Date Presets */}
+                <div className="w-full mt-3 space-y-1.5">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between px-1">
+                    <span>{lang === 'fr' ? 'Recommandations de délai :' : 'Recommended Delay:'}</span>
+                    {date && (
+                      <span className="text-[11px] font-mono text-teal-300 font-bold bg-teal-500/10 px-2 py-0.5 rounded-md border border-teal-500/20">
+                        {date.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-1.5">
+                    {[
+                      { label: lang === 'fr' ? '7 Jours' : '7 Days', days: 7 },
+                      { label: lang === 'fr' ? '15 Jours' : '15 Days', days: 15 },
+                      { label: lang === 'fr' ? '1 Mois' : '1 Month', months: 1 },
+                      { label: lang === 'fr' ? '2 Mois' : '2 Months', months: 2 },
+                      { label: lang === 'fr' ? '3 Mois' : '3 Months', months: 3 },
+                      { label: lang === 'fr' ? '6 Mois' : '6 Months', months: 6 },
+                    ].map((rec, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          const baseDate = new Date();
+                          baseDate.setHours(0, 0, 0, 0);
+                          if (rec.days) {
+                            baseDate.setDate(baseDate.getDate() + rec.days);
+                          } else if (rec.months) {
+                            baseDate.setMonth(baseDate.getMonth() + rec.months);
+                          }
+                          const availableDate = findNextAvailableDate(baseDate, leaveDays);
+                          setDate(availableDate);
+                          setMonth(availableDate);
+                          setPeriode(rec.label);
+                        }}
+                        className={`px-2.5 py-1 text-xs font-bold transition shadow-sm cursor-pointer flex items-center gap-1 rounded-lg border ${
+                          periode === rec.label
+                            ? 'bg-teal-500 text-slate-950 border-teal-400 font-extrabold shadow-teal-500/20'
+                            : 'bg-slate-900 hover:bg-teal-500/20 text-slate-300 hover:text-teal-300 border-slate-700/80 hover:border-teal-500/50'
+                        }`}
+                      >
+                        <span className={periode === rec.label ? 'text-slate-950 font-black' : 'text-teal-400 font-black'}>+</span>
+                        <span>{rec.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

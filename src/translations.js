@@ -5,7 +5,7 @@ export const translations = {
     // Brand & General
     appName: "EL IYADA",
     hubTitle: "Hub Clinique",
-    subtitle: "Cabinet Dr. A. BENKERMI • El Bouni ANNABA",
+    subtitle: "",
     secureNotice: "Sécurisé v4.2",
     hipaaNotice: "Conforme aux normes HIPAA • Session Chiffrée",
 
@@ -63,7 +63,7 @@ export const translations = {
     metricTotalPatients: "Total Patients",
     metricTodayAppts: "Rendez-vous du jour",
     metricCriticalCases: "Cas Critiques",
-    metricActiveTreatments: "Traitements Actifs",
+    metricActiveTreatments: "Consultations du Jour",
     registeredPatients: "Patients Enregistrés",
     criticalWatchlist: "Patients en Surveillance Critique",
     todaySchedule: "Planning des Consultations",
@@ -299,7 +299,7 @@ export const translations = {
     // Brand & General
     appName: "EL IYADA",
     hubTitle: "Clinical Hub",
-    subtitle: "Cabinet Dr. A. BENKERMI • El Bouni ANNABA",
+    subtitle: "",
     secureNotice: "v4.2 Secure",
     hipaaNotice: "HIPAA Compliant • End-to-End Encrypted Session",
 
@@ -355,7 +355,7 @@ export const translations = {
     metricTotalPatients: "Total Patients",
     metricTodayAppts: "Today's Appointments",
     metricCriticalCases: "Critical Cases",
-    metricActiveTreatments: "Active Treatments",
+    metricActiveTreatments: "Today's Consultations",
     registeredPatients: "Registered Patients",
     criticalWatchlist: "Critical Watchlist Patients",
     todaySchedule: "Today's Schedule",

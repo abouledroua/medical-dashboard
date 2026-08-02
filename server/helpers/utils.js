@@ -124,6 +124,7 @@ export function formatPatientRow(row) {
     bmi: 24.2,
     status,
     allergies: [],
+    generalDiagnosis: row.DIAGNOSTIQUE || "",
     chronicConditions: row.DIAGNOSTIQUE ? [row.DIAGNOSTIQUE] : [],
     emergencyContact: {
       name: "N/A",
@@ -139,7 +140,9 @@ export function formatPatientRow(row) {
           : "N/A",
       heartRate:
         row.lastBatement || row.BATEMENT
-          ? `${row.lastBatement || row.BATEMENT} bpm`
+          ? String(row.lastBatement || row.BATEMENT).includes("bpm")
+            ? `${row.lastBatement || row.BATEMENT}`
+            : `${row.lastBatement || row.BATEMENT} bpm`
           : "N/A",
       oxygenSat: row.lastSpo2 ? `${row.lastSpo2}%` : "N/A",
       temperature: "N/A",

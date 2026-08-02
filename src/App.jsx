@@ -488,7 +488,7 @@ export default function App() {
   };
 
   const openAppointmentForPatient = (patient = null) => {
-    setAppointmentDefaultPatient(patient || selectedPatient || patients[0]);
+    setAppointmentDefaultPatient(patient || null);
     setIsAppointmentModalOpen(true);
   };
 
@@ -530,7 +530,7 @@ export default function App() {
           diagnosis: '',
           clinicalNotes: '',
           vitalsAtVisit: `BP: ${targetPatient.vitals?.bloodPressure || '120/80'} | HR: ${targetPatient.vitals?.heartRate || '72 bpm'}`,
-          doctor: clinicInfo?.doctorNameFr || 'Dr. A. BENKERMI Ep. TATI',
+          doctor: clinicInfo?.doctorNameFr || '',
           department: targetPatient.department || 'ORL',
           prescriptions: [{ name: '', dosage: '', frequency: 'Once daily', duration: '30 days' }],
           ...dbRef
