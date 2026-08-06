@@ -124,8 +124,9 @@ export default function PatientMedicalHistory({
     const hasNotes = Boolean(c.clinicalNotes && String(c.clinicalNotes).trim());
     const hasArret = Boolean(c.hasArretDeTravail && c.arretDeTravail);
     const hasRx = Boolean(c.prescriptions && Array.isArray(c.prescriptions) && c.prescriptions.length > 0);
+    const hasBilan = Boolean(c.bilans && Array.isArray(c.bilans) && c.bilans.length > 0);
 
-    return hasComplaint || hasDiag || hasNotes || hasArret || hasRx;
+    return hasComplaint || hasDiag || hasNotes || hasArret || hasRx || hasBilan;
   });
 
   const seenIds = new Set();
@@ -287,6 +288,12 @@ export default function PatientMedicalHistory({
                                 <Pill className="w-3 h-3 text-cyan-400" /> {c.prescriptions.length} {lang === 'fr' ? 'médicament(s)' : 'med(s)'}
                               </span>
                             )}
+
+                            {!isExpanded && c.bilans && c.bilans.length > 0 && (
+                              <span className="text-[10px] text-purple-300 bg-purple-950/70 border border-purple-800/60 px-2.5 py-0.5 rounded-full font-mono flex items-center gap-1">
+                                <Activity className="w-3 h-3 text-purple-400" /> {c.bilans.length} {lang === 'fr' ? 'bilan(s)' : 'lab(s)'}
+                              </span>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-2 text-slate-400">
@@ -393,6 +400,28 @@ export default function PatientMedicalHistory({
                                 ))}
                               </tbody>
                             </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Bilans & Lab Reports Section if any */}
+                      {c.bilans && c.bilans.length > 0 && (
+                        <div className="space-y-1.5 pt-1">
+                          <span className="text-[11px] font-bold uppercase text-purple-400 tracking-wider flex items-center gap-1.5">
+                            <Activity className="w-3.5 h-3.5 text-purple-400" /> {lang === 'fr' ? 'Demande de Bilans / Examens Biologiques' : 'Prescribed Lab Reports'}
+                          </span>
+                          <div className="p-3.5 bg-purple-950/30 border border-purple-800/50 rounded-xl space-y-2">
+                            <div className="flex flex-wrap gap-2">
+                              {c.bilans.map((bText, bIdx) => (
+                                <span
+                                  key={bIdx}
+                                  className="text-xs font-semibold text-purple-200 bg-purple-900/60 border border-purple-700/60 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-sm"
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block"></span>
+                                  {bText}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       )}

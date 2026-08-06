@@ -89,14 +89,7 @@ export function renderModele3Html({
       Nom et Prénom : <strong style="font-size: 15px; text-transform: uppercase;">${assureName}</strong> &nbsp;&nbsp;agée de <strong>${assureAge} ${assureTypeAge}</strong>
     </div>
 
-    ${isBilanDoc ? `
-      <!-- Sub-header Message -->
-      ${documentSubtitle ? `
-        <div style="font-size: 14.5px; font-weight: bold; color: #000; margin-top: 14px; margin-bottom: 12px; font-family: 'Segoe UI', Arial, sans-serif;">
-          ${documentSubtitle}
-        </div>
-      ` : ''}
-    ` : `
+    ${!isBilanDoc ? `
       <!-- Centered Title for standard prescription -->
       <div style="text-align: center; margin: 6px 0 10px 0;">
         <span style="font-size: 22px; font-weight: bold; text-decoration: underline; letter-spacing: 1px; font-family: 'Segoe UI', Arial, sans-serif; color: #000;">${documentTitle || 'ORDONNANCE'}</span>
@@ -106,7 +99,7 @@ export function renderModele3Html({
           </div>
         ` : ''}
       </div>
-    `}
+    ` : ''}
 
     <!-- Main Prescriptions Body Area -->
     <style>

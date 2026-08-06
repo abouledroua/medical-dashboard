@@ -18,7 +18,10 @@ export function renderModele2Html({
   clinicLogo,
   doctor,
   barcodeSvg,
-  clinicInfo
+  clinicInfo,
+  prescriptionsCountLabel,
+  documentTitle,
+  isBilan
 }) {
   return `
     <!-- Modèle 2 Layout -->

@@ -24,7 +24,10 @@ export function renderModele5Html({
   doctor,
   barcodeSvg,
   clinicInfo,
-  prescriptionsCount
+  prescriptionsCount,
+  prescriptionsCountLabel,
+  documentTitle,
+  isBilan
 }) {
   const doctorTitleFr = clinicInfo?.doctorNameFr || doctorNameFr || doctor || 'Nom DOcteur Fr';
 
@@ -109,7 +112,7 @@ export function renderModele5Html({
       <div style="flex: 1;"></div>
       <div style="text-align: center;">
         <div style="font-size: 18px; font-weight: bold; font-family: 'Amiri', 'Traditional Arabic', sans-serif; color: #000; line-height: 1.2;">
-          وصفة
+          ${(isBilan || documentTitle === 'BILAN') ? 'فحوصات' : 'وصفة'}
         </div>
         <div style="font-size: 21px; font-weight: bold; text-decoration: underline; letter-spacing: 1px; font-family: 'Segoe UI', Arial, sans-serif; color: #000; margin-top: 1px;">
           ${documentTitle || 'ORDONNANCE'}
@@ -135,7 +138,7 @@ export function renderModele5Html({
       ${rxHtml}
       ${prescriptionsCount !== undefined && prescriptionsCount !== null ? `
         <div style="text-align: right; font-size: 13.5px; font-weight: normal; color: #000; margin-top: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
-          ${prescriptionsCount} Médicament(s)
+          ${prescriptionsCount} ${prescriptionsCountLabel || ((isBilan || documentTitle === 'BILAN') ? 'Examen(s)' : 'Médicament(s)')}
         </div>
       ` : ''}
     </div>

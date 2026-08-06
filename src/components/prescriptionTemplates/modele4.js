@@ -27,7 +27,8 @@ export function renderModele4Html({
   prescriptionsCount,
   prescriptionsCountLabel,
   documentTitle,
-  documentSubtitle
+  documentSubtitle,
+  isBilan
 }) {
   const doctorTitleFr = clinicInfo?.doctorNameFr || doctorNameFr || doctor || 'Nom DOcteur Fr';
   const cabinetTitle = clinicInfo?.clinicName || clinicInfo?.NOM_CABINET || `Cabinet Dr ${doctorTitleFr}`;
@@ -134,7 +135,7 @@ export function renderModele4Html({
       ${rxHtml}
       ${prescriptionsCount !== undefined && prescriptionsCount !== null ? `
         <div style="text-align: right; font-size: 13.5px; font-weight: normal; color: #000; margin-top: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
-          ${prescriptionsCount} Médicament(s)
+          ${prescriptionsCount} ${prescriptionsCountLabel || ((isBilan || documentTitle === 'BILAN') ? 'Examen(s)' : 'Médicament(s)')}
         </div>
       ` : ''}
     </div>

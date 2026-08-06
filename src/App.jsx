@@ -436,9 +436,16 @@ export default function App() {
   };
 
   const handleUpdateConsultationDraft = (updatedDraft) => {
-    setOngoingConsultations(prev =>
-      prev.map(c => (String(c.patientId) === String(updatedDraft.patientId) ? { ...c, ...updatedDraft } : c))
-    );
+    if (!updatedDraft || !updatedDraft.patientId) return;
+    setOngoingConsultations(prev => {
+      const pIdStr = String(updatedDraft.patientId);
+      const exists = prev.some(c => String(c.patientId) === pIdStr);
+      if (exists) {
+        return prev.map(c => (String(c.patientId) === pIdStr ? { ...c, ...updatedDraft } : c));
+      } else {
+        return [...prev, updatedDraft];
+      }
+    });
   };
 
   const handleCancelConsultation = (patientIdToCancel, isCompleted = false) => {

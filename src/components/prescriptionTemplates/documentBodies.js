@@ -91,7 +91,7 @@ export function renderBilanBody({ rawList = [], documentSubtitle, prescriptionsC
     listHtml = '<div style="font-size: 14px; color: #666; font-style: italic; padding: 20px 0;">Aucun examen sélectionné.</div>';
   }
 
-  const subMsg = documentSubtitle || 'Faire SVP les bilans suivants :';
+  const subMsg = documentSubtitle || (lang === 'ar' ? 'الرجاء إجراء الفحوصات التالية :' : (lang === 'en' ? 'Please perform the following tests :' : 'Faire SVP les bilans suivants :'));
 
   return `
     <div class="bilan-body-container" style="min-height: 180px; padding: 5px 0;">

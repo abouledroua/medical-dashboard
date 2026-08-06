@@ -312,3 +312,90 @@ export async function getAssureInfoForConsultation(idConsultation, dateStr, pati
   }
 }
 
+export async function getBilansForConsultation(idConsultation, exercice) {
+  try {
+    const exStr = String(exercice || new Date().getFullYear());
+    const [rows] = await pool.query(
+      `SELECT DESIGNATION FROM (
+        SELECT CONCAT_WS(', ',
+          IF(BC.FNS = 1, 'FNS', NULL),
+          IF(BC.GROUPAGE = 1, 'GROUPAGE', NULL),
+          IF(BC.TP = 1, 'TP', NULL),
+          IF(BC.FIBROGENE = 1, 'FIBROGENE', NULL),
+          IF(BC.VS = 1, 'VS', NULL),
+          IF(BC.FER = 1, 'FER', NULL),
+          IF(BC.FERRITINE = 1, 'FERRITINE', NULL),
+          IF(BC.GLYCEMIE = 1, 'GLYCEMIE', NULL),
+          IF(BC.HBA1C = 1, 'HBA1C', NULL),
+          IF(BC.SGOT = 1, 'SGOT', NULL),
+          IF(BC.GAMMA = 1, 'GAMMA', NULL),
+          IF(BC.BILIRUBINEMIE = 1, 'BILIRUBINEMIE', NULL),
+          IF(BC.TOTALE = 1, 'TOTALE', NULL),
+          IF(BC.CONJUGE = 1, 'CONJUGE', NULL),
+          IF(BC.NONCONJUGE = 1, 'NONCONJUGE', NULL),
+          IF(BC.UREE = 1, 'UREE', NULL),
+          IF(BC.ECBU = 1, 'ECBU', NULL),
+          IF(BC.CHOLESTEROL = 1, 'CHOLESTEROL', NULL),
+          IF(BC.HDL = 1, 'HDL', NULL),
+          IF(BC.LDL = 1, 'LDL', NULL),
+          IF(BC.TRIGLYCERIDE = 1, 'TRIGLYCERIDE', NULL),
+          IF(BC.KALIEMIE = 1, 'KALIEMIE', NULL),
+          IF(BC.CALCEMIE = 1, 'CALCEMIE', NULL),
+          IF(BC.RUBEOLE = 1, 'RUBEOLE', NULL),
+          IF(BC.TOXOPLASMOSE = 1, 'TOXOPLASMOSE', NULL),
+          IF(BC.SYPHIS = 1, 'SYPHIS', NULL),
+          IF(BC.HIV = 1, 'HIV', NULL),
+          IF(BC.URIQUE = 1, 'URIQUE', NULL),
+          IF(BC.CRP = 1, 'CRP', NULL),
+          IF(BC.ALBUMINEMIE = 1, 'ALBUMINEMIE', NULL),
+          IF(BC.PROTEIN = 1, 'PROTEIN', NULL),
+          IF(BC.PROTEIN24 = 1, 'PROTEIN24', NULL),
+          IF(BC.FT3 = 1, 'FT3', NULL),
+          IF(BC.FSH = 1, 'FSH', NULL),
+          IF(BC.TSHUS = 1, 'TSHUS', NULL),
+          IF(BC.LH = 1, 'LH', NULL),
+          IF(BC.ASAT = 1, 'ASAT', NULL),
+          IF(BC.PHOSPHATASES = 1, 'PHOSPHATASES', NULL),
+          IF(BC.ASLO = 1, 'ASLO', NULL),
+          IF(BC.PROLACTINE = 1, 'PROLACTINE', NULL),
+          IF(BC.AMH = 1, 'AMH', NULL),
+          IF(BC.PROGESTERONE = 1, 'PROGESTERONE', NULL),
+          IF(BC.DHEA = 1, 'DHEA', NULL),
+          IF(BC.DELTA = 1, 'DELTA', NULL),
+          IF(BC.ETF = 1, 'ETF', NULL),
+          IF(BC.EEG = 1, 'EEG', NULL),
+          IF(BC.VIT_D = 1, 'VIT_D', NULL),
+          IF(BC.ELETRO_HEMOG = 1, 'ELETRO_HEMOG', NULL),
+          IF(BC.DOSAGE_DEPAKINE = 1, 'DOSAGE_DEPAKINE', NULL),
+          IF(BC.RADIO_MAIN = 1, 'RADIO_MAIN', NULL),
+          IF(BC.TELETHORAX = 1, 'TELETHORAX', NULL),
+          IF(BC.COPRO_PARASIT = 1, 'COPRO_PARASIT', NULL),
+          IF(BC.DOSAGE_HORM_CROISS = 1, 'DOSAGE_HORM_CROISS', NULL),
+          IF(BC.SEROLOGIE_MALADIE_COELIAQUE = 1, 'SEROLOGIE_MALADIE_COELIAQUE', NULL),
+          IF(BC.ACS = 1, 'ACS', NULL),
+          IF(BC.ANTI_TRANSGLUT = 1, 'ANTI_TRANSGLUT', NULL),
+          IF(BC.ANTIENDOM = 1, 'ANTIENDOM', NULL),
+          IF(BC.ANTI_GLIADINE = 1, 'ANTI_GLIADINE', NULL),
+          NULLIF(TRIM(BC.AUTRE), '')
+        ) AS DESIGNATION
+        FROM bilan_consult_coche BC
+        WHERE BC.ID_CONSULTATION = ? AND BC.EXERCICE = ?
+
+        UNION ALL
+
+        SELECT COALESCE(NULLIF(TRIM(B.DESIGNATION), ''), NULLIF(TRIM(BSC.RESULTAT), '')) AS DESIGNATION
+        FROM bilans_consult BSC
+        LEFT JOIN bilan B ON B.ID_BILAN = BSC.ID_BILAN
+        WHERE BSC.ID_CONSULTATION = ? AND BSC.EXERCICE = ?
+      ) combined
+      WHERE DESIGNATION IS NOT NULL AND TRIM(DESIGNATION) != ''`,
+      [idConsultation, exStr, idConsultation, exStr]
+    );
+
+    return rows.map(r => r.DESIGNATION).filter(Boolean);
+  } catch (err) {
+    console.error("getBilansForConsultation error:", err.message);
+    return [];
+  }
+}
+

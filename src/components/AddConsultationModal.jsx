@@ -42,6 +42,7 @@ import {
 import { translations } from '../translations';
 import PatientOverviewPanel from './PatientOverviewPanel';
 import { generatePrescriptionHtml } from './prescriptionTemplates';
+import { renderBilanBody } from './prescriptionTemplates/documentBodies';
 import ReplacePrescriptionModal from './consultation/ReplacePrescriptionModal';
 
 export default function AddConsultationModal({ draft, patient, patients = [], onSelectPatient, onConsultationAdded, onCancel, onUpdateDraft, onClose, onEditPatient, onOpenNewConsultation, lang = 'fr', clinicInfo }) {
@@ -81,7 +82,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
 
   // Forme suggestions state
   const formeOptions = [
-    'Comprimé', 'Gélule', 'Sirop', 'Injectable', 'Pommade', 'Collyre', 'Spray', 
+    'Comprimé', 'Gélule', 'Sirop', 'Injectable', 'Pommade', 'Collyre', 'Spray',
     'Sachet', 'Ampoule', 'Solution', 'Gouttes', 'Crème', 'Suppositoire', 'Suspension'
   ];
   const [showFormeDropdown, setShowFormeDropdown] = useState(false);
@@ -145,7 +146,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
   // Helper to extract default assure info from patient
   const getDefaultAssureInfo = (p) => {
     if (!p) return { fullname: '', age: '', typeAge: 'ans', sexe: 'M', infoSupp: '' };
-    
+
     // Extract fullname from all possible property variations (both uppercase DB fields and camelCase JS fields)
     const nom = p.NOM || p.nom || p.lastName || p.nomMalade || p.Nom || '';
     const prenom = p.PRENOM || p.prenom || p.firstName || p.prenomMalade || p.Prenom || '';
@@ -170,7 +171,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
       if (tNum === 2 || rawType === 'mois') typeAge = 'mois';
       else if (tNum === 3 || rawType === 'jours') typeAge = 'jours';
       else if (typeof rawType === 'string' && rawType) typeAge = rawType;
-      
+
       return { fullname, age: String(rawAge), typeAge, sexe, infoSupp };
     }
 
@@ -273,7 +274,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
     if (b.HBA1C) parts.push('HbA1C');
     if (b.SGOT) parts.push('SGOT - SGPT');
     if (b.GAMMA) parts.push('Gamma GT - Phosphates Alcalines');
-    
+
     if (b.BILIRUBINEMIE) {
       const sub = [];
       if (b.TOTALE) sub.push('Total');
@@ -320,7 +321,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
     if (b.TELETHORAX) parts.push('Téléthorax');
     if (b.COPRO_PARASIT) parts.push('Copro-parasitologie des selles');
     if (b.DOSAGE_HORM_CROISS) parts.push("Dosage de l'hormone de croissance");
-    
+
     if (b.SEROLOGIE_MALADIE_COELIAQUE) {
       const sub = [];
       if (b.ACS) sub.push('ACS');
@@ -434,6 +435,54 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
     }
   );
 
+  const [saisieError, setSaisieError] = useState('');
+
+  const fetchBilanCocheHistory = (pId) => {
+    const patId = pId || activePatient?.id || activePatient?.codeBarre || activePatient?.mrn;
+    if (!patId) {
+      setBilanCocheRows([]);
+      return;
+    }
+    setLoadingBilanCoche(true);
+    fetch(`/api/patients/${encodeURIComponent(patId)}/bilan-coche`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setBilanCocheRows(data);
+      })
+      .catch(() => setBilanCocheRows([]))
+      .finally(() => setLoadingBilanCoche(false));
+  };
+
+  const handleAddFreeTextBilan = async () => {
+    const textToAdd = (bilan.freeText || '').trim();
+    if (!textToAdd) {
+      setSaisieError(lang === 'fr' ? 'Le champ bilan ne peut pas être vide.' : 'Bilan request cannot be empty.');
+      return;
+    }
+
+    setSaisieError('');
+
+    // 1. Persist to DB via /api/patients/:id/bilan-saisie (parses items, saves to bilans_consult & bilan)
+    const pId = activePatient?.id || activePatient?.codeBarre || activePatient?.mrn;
+    if (pId) {
+      try {
+        await fetch(`/api/patients/${encodeURIComponent(pId)}/bilan-saisie`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: textToAdd })
+        });
+        fetchBilanCocheHistory(pId);
+      } catch (err) {
+        console.error('Error saving free text bilan to DB:', err);
+      }
+    }
+
+    // 2. Clear text input
+    const newBilan = { ...bilan, freeText: '' };
+    setBilan(newBilan);
+    notifyDraftUpdate({ bilan: newBilan });
+  };
+
   // 4. ORIENTATION (Referral Letter) State
   const [orientation, setOrientation] = useState(
     draft?.orientation || {
@@ -445,15 +494,109 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
   );
 
   // 5. ARRÊT DE TRAVAIL (Sick Leave) State
-  const [arretTravail, setArretTravail] = useState(
-    draft?.arretTravail || {
-      days: 3,
-      startDate: new Date().toISOString().split('T')[0],
-      reason: 'Maladie - Repos médical strict à domicile',
+  const [arretTravail, setArretTravail] = useState(() => {
+    const rawReason = draft?.arretTravail?.reason;
+    const sanitizedReason = (rawReason === 'Maladie - Repos médical strict à domicile') ? '' : (rawReason || '');
+    return {
+      type: draft?.arretTravail?.type || 'arret',
+      days: draft?.arretTravail?.days || 3,
+      startDate: draft?.arretTravail?.startDate || new Date().toISOString().split('T')[0],
+      reason: sanitizedReason,
       allowedOutings: true,
       outingHours: '10h-12h et 15h-17h'
+    };
+  });
+
+  const [arretHistory, setArretHistory] = useState([]);
+  const [loadingArretHistory, setLoadingArretHistory] = useState(false);
+  const [savingArret, setSavingArret] = useState(false);
+  const [arretSaveStatus, setArretSaveStatus] = useState('');
+
+  const fetchArretHistory = (pId) => {
+    const patId = pId || activePatient?.id || activePatient?.codeBarre || activePatient?.mrn;
+    if (!patId) {
+      setArretHistory([]);
+      return;
     }
-  );
+    setLoadingArretHistory(true);
+    fetch(`/api/patients/${encodeURIComponent(patId)}/arret-history`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setArretHistory(data);
+        else setArretHistory([]);
+      })
+      .catch(() => setArretHistory([]))
+      .finally(() => setLoadingArretHistory(false));
+  };
+
+  const numberToWords = (n, currentLang = lang) => {
+    const num = parseInt(n, 10);
+    if (isNaN(num) || num <= 0) return '';
+
+    if (currentLang === 'en') {
+      const units = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+      const tens = ['', 'ten', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+      let res = '';
+      if (num < 20) res = units[num];
+      else if (num < 100) {
+        const t = Math.floor(num / 10);
+        const u = num % 10;
+        res = u === 0 ? tens[t] : `${tens[t]}-${units[u]}`;
+      } else {
+        res = String(num);
+      }
+      const formatted = res.charAt(0).toUpperCase() + res.slice(1);
+      return `${formatted} Day${num > 1 ? 's' : ''}`;
+    }
+
+    if (currentLang === 'ar') {
+      const units = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة', 'عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+      const tens = ['', 'عشرة', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+
+      if (num === 1) return 'يوم واحد';
+      if (num === 2) return 'يومان';
+
+      let numStr = '';
+      if (num <= 10) {
+        numStr = units[num];
+        return `${numStr} أيام`;
+      } else if (num < 20) {
+        numStr = units[num];
+        return `${numStr} يوماً`;
+      } else if (num < 100) {
+        const t = Math.floor(num / 10);
+        const u = num % 10;
+        if (u === 0) numStr = tens[t];
+        else numStr = `${units[u]} و${tens[t]}`;
+        return `${numStr} يوماً`;
+      }
+      return `${num} يوماً`;
+    }
+
+    // French (default)
+    const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+    const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingts', 'quatre-vingt-dix'];
+
+    let res = '';
+    if (num < 20) res = units[num];
+    else if (num < 100) {
+      const t = Math.floor(num / 10);
+      const u = num % 10;
+      if (t === 7) res = `soixante-${units[10 + u]}`;
+      else if (t === 9) res = `quatre-vingt-${units[10 + u]}`;
+      else if (u === 0) res = tens[t];
+      else if (u === 1 && t !== 8) res = `${tens[t]}-et-un`;
+      else res = `${tens[t]}-${units[u]}`;
+    } else if (num === 100) {
+      res = 'cent';
+    } else {
+      res = String(num);
+    }
+
+    const formatted = res.charAt(0).toUpperCase() + res.slice(1);
+    return `${formatted} Jour${num > 1 ? 's' : ''}`;
+  };
 
   // 6. DOCUMENT MÉDICAL (Clinical Report & Observations) State
   const [docMedical, setDocMedical] = useState(
@@ -520,28 +663,18 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
           }));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => { isMounted = false; };
   }, [activePatient?.id, activePatient?.codeBarre, activePatient?.mrn]);
 
-  // Fetch bilan_consult_coche history from DB for active patient
+  // Fetch bilan history from DB for active patient
   useEffect(() => {
-    const pId = activePatient?.id || activePatient?.codeBarre || activePatient?.mrn;
-    if (!pId) {
-      setBilanCocheRows([]);
-      return;
+    fetchBilanCocheHistory();
+    if (activeDocType === 'arret_travail') {
+      fetchArretHistory();
     }
-    setLoadingBilanCoche(true);
-    fetch(`/api/patients/${encodeURIComponent(pId)}/bilan-coche`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) setBilanCocheRows(data);
-        else setBilanCocheRows([]);
-      })
-      .catch(() => setBilanCocheRows([]))
-      .finally(() => setLoadingBilanCoche(false));
-  }, [activePatient?.id, activePatient?.codeBarre, activePatient?.mrn]);
+  }, [activeDocType, activePatient?.id, activePatient?.codeBarre, activePatient?.mrn]);
 
   // Sync state whenever active patient or draft changes
   useEffect(() => {
@@ -555,13 +688,17 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
       if (draft.certificat) setCertificat(draft.certificat);
       if (draft.bilan) setBilan(draft.bilan);
       if (draft.orientation) setOrientation(draft.orientation);
-      if (draft.arretTravail) setArretTravail(draft.arretTravail);
+      if (draft.arretTravail) {
+        const rawReason = draft.arretTravail.reason;
+        const sanitizedReason = (rawReason === 'Maladie - Repos médical strict à domicile') ? '' : (rawReason || '');
+        setArretTravail({ ...draft.arretTravail, reason: sanitizedReason });
+      }
       if (draft.docMedical) setDocMedical(draft.docMedical);
       if (draft.nextAppointment) setNextAppointment(draft.nextAppointment);
       if (draft.doctor) setDoctor(draft.doctor);
       if (draft.department) setDepartment(draft.department);
     }
-  }, [draft?.patientId, draft?.assureInfo, activePatient?.id, activePatient?.codeBarre]);
+  }, [draft?.patientId, draft?.activeDocType, draft?.assureInfo, activePatient?.id, activePatient?.codeBarre]);
 
   // Auto-fetch today's consultation data for editing if patient already has a consultation today
   useEffect(() => {
@@ -594,7 +731,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
             exercice: c.exercice,
             idVersement: c.idVersement,
             etat: c.etat,
-            activeDocType: c.activeDocType || activeDocType,
+            activeDocType: draft?.activeDocType || c.activeDocType || activeDocType,
             prescriptionMode: c.prescriptionMode !== undefined ? c.prescriptionMode : prescriptionMode,
             freeTextPrescription: c.freeTextPrescription !== undefined ? c.freeTextPrescription : freeTextPrescription,
             prescriptions: Array.isArray(c.prescriptions) ? c.prescriptions : prescriptions,
@@ -1005,33 +1142,13 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
 
     const rawList = itemsStr.split(/,|\n/).map(s => s.trim()).filter(Boolean);
 
-    let rxHtml = '';
-    if (rawList.length > 0) {
-      const half = Math.ceil(rawList.length / 2);
-      const col1 = rawList.slice(0, half);
-      const col2 = rawList.slice(half);
+    const documentSubtitle = lang === 'ar' ? 'الرجاء إجراء الفحوصات التالية :' : (lang === 'en' ? 'Please perform the following tests :' : 'Faire SVP les bilans suivants :');
 
-      const maxRows = Math.max(col1.length, col2.length);
-      let rowsHtml = '';
-      for (let i = 0; i < maxRows; i++) {
-        const item1 = col1[i] ? `- ${col1[i]}` : '';
-        const item2 = col2[i] ? `- ${col2[i]}` : '';
-        rowsHtml += `
-          <tr>
-            <td style="width: 50%; vertical-align: top; padding-bottom: 14px; font-size: 14.5px; font-weight: 500; font-family: 'Segoe UI', Arial, sans-serif; color: #000;">${item1}</td>
-            <td style="width: 50%; vertical-align: top; padding-bottom: 14px; font-size: 14.5px; font-weight: 500; font-family: 'Segoe UI', Arial, sans-serif; color: #000;">${item2}</td>
-          </tr>
-        `;
-      }
-
-      rxHtml = `
-        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-left: 5px;">
-          ${rowsHtml}
-        </table>
-      `;
-    } else {
-      rxHtml = '<div style="font-size: 14px; color: #666; font-style: italic; padding: 20px 0;">Aucun examen sélectionné.</div>';
-    }
+    const rxHtml = renderBilanBody({
+      rawList,
+      documentSubtitle,
+      lang
+    });
 
     const patientSex = (assureToPrint?.sexe || activePatient?.SEXE || activePatient?.sexe || activePatient?.gender || 'M').toString().toUpperCase();
     const isFemale = patientSex.startsWith('F');
@@ -1073,6 +1190,213 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
       win.focus();
       win.print();
     }, 350);
+  };
+
+  const handleSaveArret = async () => {
+    const pId = activePatient?.id || activePatient?.codeBarre || activePatient?.mrn;
+    if (!pId) return;
+
+    setSavingArret(true);
+    setArretSaveStatus('');
+    try {
+      const endDate = calculateEndDate(arretTravail.startDate, arretTravail.days);
+      const res = await fetch(`/api/patients/${encodeURIComponent(pId)}/arret`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          days: arretTravail.days,
+          startDate: arretTravail.startDate,
+          endDate,
+          reason: arretTravail.reason,
+          type: arretTravail.type
+        })
+      });
+      if (res.ok) {
+        setArretSaveStatus(lang === 'fr' ? 'Arrêt enregistré avec succès' : 'Sick leave saved');
+        fetchArretHistory(pId);
+        setTimeout(() => setArretSaveStatus(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error saving sick leave:', err);
+    } finally {
+      setSavingArret(false);
+    }
+  };
+
+  const handlePrintArret = (rowItem = null) => {
+    const win = window.open('', '_blank', 'width=900,height=750');
+    if (!win) {
+      window.print();
+      return;
+    }
+
+    const item = rowItem || arretTravail;
+    let typeVal = 1;
+    if (typeof item.type === 'string') {
+      typeVal = item.type === 'prolongation' ? 2 : item.type === 'reprise' ? 3 : 1;
+    } else if (item.TYPE !== undefined) {
+      typeVal = Number(item.TYPE);
+    } else if (item.type !== undefined) {
+      typeVal = Number(item.type);
+    }
+
+    const formatDateToFrench = (dVal) => {
+      if (!dVal) return new Date().toLocaleDateString('fr-FR');
+      if (typeof dVal === 'string' && dVal.includes('/') && dVal.length <= 10) return dVal;
+      try {
+        const d = new Date(dVal);
+        if (isNaN(d.getTime())) return String(dVal);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+      } catch (e) {
+        return String(dVal);
+      }
+    };
+
+    const dateToPrint = formatDateToFrench(item.dateArret || item.startDate || new Date());
+    const assureToPrint = assureInfo;
+
+    const assureName = assureToPrint?.fullname || assureToPrint?.nom || assureToPrint?.ASSURE || [activePatient?.NOM || activePatient?.nom, activePatient?.PRENOM || activePatient?.prenom].filter(Boolean).join(' ') || activePatient?.name || '—';
+    const assureAge = (assureToPrint?.age !== undefined && assureToPrint?.age !== null && assureToPrint?.age !== '') ? assureToPrint.age : (activePatient?.AGE !== undefined ? activePatient.AGE : '—');
+    const assureTypeAge = assureToPrint?.typeAge || (Number(activePatient?.TYPE) === 2 ? 'mois' : Number(activePatient?.TYPE) === 3 ? 'jours' : 'ans');
+
+    const doctorNameAr = clinicInfo?.doctorNameAr || clinicInfo?.NOM_AR || 'الحكيم سلوقي عادل';
+    const specialtyFr = clinicInfo?.specialtyFr || clinicInfo?.SPECIALITE_FR || 'Spécialiste en Maladies et Chirurgie ORL • Thyroïde • Audition • Vertige';
+    const addressFr = clinicInfo?.addressFr || clinicInfo?.ADRESSE_FR || 'El Hadjar ANNABA';
+    const phoneFixe = clinicInfo?.fixe || clinicInfo?.TEL || clinicInfo?.phone || '';
+    const ordre = clinicInfo?.ordre || clinicInfo?.NUM_ORDRE || '3876/23';
+    const msgJaune = clinicInfo?.msgJaune || '';
+    const msgOrd = clinicInfo?.msgOrd || 'Sauver des vies - Donnez de votre sang';
+
+    const clinicHeader = localStorage.getItem('clinicHeader') || clinicInfo?.header || clinicInfo?.IMAGE_ENTETE || clinicInfo?.entete || clinicInfo?.raw?.IMAGE_ENTETE;
+    const clinicLogo = localStorage.getItem('clinicLogo') || clinicInfo?.logo || clinicInfo?.IMAGE_LOGO || clinicInfo?.logoImage || clinicInfo?.raw?.IMAGE_LOGO;
+
+    const patientBarcodeVal = activePatient?.codeBarre || activePatient?.mrn || activePatient?.id || '0000000';
+    const rawBarcodeSetting = clinicInfo?.Affiche_CodeBarre ?? clinicInfo?.raw?.Affiche_CodeBarre ?? clinicInfo?.raw?.AFFICHE_CODEBARRE ?? clinicInfo?.AFFICHE_CODEBARRE;
+    const showBarcode = rawBarcodeSetting === undefined || rawBarcodeSetting === null ? true : Number(rawBarcodeSetting) === 1;
+
+    const generateBarcodeSVG = (text) => {
+      const str = String(text || '000000').trim();
+      if (!str) return '';
+      const CODE128_PATTERNS = [
+        "212222", "222122", "222221", "121223", "121322", "131222", "122213", "122312", "132212", "221213",
+        "221312", "231212", "112232", "122132", "122231", "113222", "123122", "123221", "223211", "221132",
+        "221231", "213212", "223112", "312131", "311222", "321122", "321221", "312212", "322112", "322211",
+        "212123", "212321", "232121", "111323", "131123", "131321", "112313", "132113", "132311", "211313",
+        "231113", "231311", "112133", "112331", "132131", "113123", "113321", "133121", "313121", "211331",
+        "231131", "213113", "213311", "213131", "311123", "311321", "331121", "312113", "312311", "332111",
+        "314111", "221411", "431111", "111224", "111422", "121124", "121421", "141122", "141221", "112214",
+        "112412", "122114", "122411", "142112", "142211", "241211", "221114", "413111", "241112", "134111",
+        "111242", "121142", "121241", "114212", "124112", "124211", "411212", "421112", "421211", "212141",
+        "214121", "412121", "111143", "111341", "113141", "114113", "114311", "411113", "411311", "113114",
+        "114131", "311141", "411131", "211412", "211214", "211232", "2331112"
+      ];
+      const codeValues = [104];
+      let checksum = 104;
+      for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i);
+        const val = (code >= 32 && code <= 126) ? (code - 32) : 0;
+        codeValues.push(val);
+        checksum += val * (i + 1);
+      }
+      codeValues.push(checksum % 103);
+      codeValues.push(106);
+      const quietZone = 10;
+      const moduleWidth = 1.8;
+      const barHeight = 48;
+      let currentX = quietZone;
+      let rects = '';
+      codeValues.forEach((val) => {
+        const pattern = CODE128_PATTERNS[val] || CODE128_PATTERNS[0];
+        for (let i = 0; i < pattern.length; i++) {
+          const width = parseInt(pattern[i], 10) * moduleWidth;
+          if (i % 2 === 0) {
+            rects += `<rect x="${currentX.toFixed(2)}" y="0" width="${width.toFixed(2)}" height="${barHeight}" fill="#000" />`;
+          }
+          currentX += width;
+        }
+      });
+      const totalWidth = Math.ceil(currentX + quietZone);
+      return `<svg width="${totalWidth}" height="${barHeight}" viewBox="0 0 ${totalWidth} ${barHeight}" xmlns="http://www.w3.org/2000/svg" style="background:#fff;"><rect width="100%" height="100%" fill="#fff" />${rects}</svg>`;
+    };
+
+    const barcodeSvg = showBarcode ? generateBarcodeSVG(patientBarcodeVal) : '';
+
+    const typeTitle = typeVal === 2
+      ? (lang === 'fr' ? 'PROLONGATION D\'ARRÊT DE TRAVAIL' : 'SICK LEAVE EXTENSION')
+      : typeVal === 3
+      ? (lang === 'fr' ? 'CERTIFICAT DE REPRISE DE TRAVAIL' : 'RETURN TO WORK CERTIFICATE')
+      : (lang === 'fr' ? 'CERTIFICAT D\'ARRÊT DE TRAVAIL' : 'SICK LEAVE CERTIFICATE');
+
+    const daysCount = item.nbJour || item.days || 1;
+    const startDate = formatDateToFrench(item.dateDebut || item.startDate);
+    const endDate = formatDateToFrench(item.dateFin || calculateEndDate(item.startDate, daysCount));
+    const returnDate = formatDateToFrench(calculateReturnDate(item.startDate || item.dateDebut, daysCount));
+    const reasonText = item.obs || item.reason || '';
+
+    const daysInLetters = numberToWords(daysCount, lang);
+
+    let bodyHtml = '';
+    if (typeVal === 3) {
+      bodyHtml = `
+        <div style="min-height: 200px; padding: 15px 5px; font-size: 15px; line-height: 1.8; font-family: 'Segoe UI', Arial, sans-serif; color: #000;">
+          Je soussigné, Docteur en médecine, certifie que l'état de santé du patient susnommé lui permet la reprise du travail à compter du :<br/><br/>
+          <div style="font-size: 16.5px; font-weight: bold; text-align: center; margin: 15px 0; color: #000;">
+            ${startDate}
+          </div>
+          ${reasonText ? `<br/><strong>Motif & Remarques :</strong> ${reasonText}` : ''}
+        </div>
+      `;
+    } else {
+      const termTitle = typeVal === 2 ? 'une prolongation d\'arrêt de travail' : 'un arrêt de travail';
+      bodyHtml = `
+        <div style="min-height: 200px; padding: 15px 5px; font-size: 15px; line-height: 1.8; font-family: 'Segoe UI', Arial, sans-serif; color: #000;">
+          Je soussigné, Docteur en médecine, certifie que l'état de santé du patient susnommé nécessite ${termTitle} de :<br/><br/>
+          <div style="font-size: 16px; font-weight: bold; text-align: center; margin: 15px 0; color: #000;">
+            ${daysCount} Jour(s) (${daysInLetters})
+          </div>
+          Du <strong>${startDate}</strong> au <strong>${endDate}</strong> (inclus).<br/>
+          Reprise du travail prévue le : <strong>${returnDate}</strong>.
+          ${reasonText ? `<br/><br/><strong>Motif & Remarques :</strong> ${reasonText}` : ''}
+        </div>
+      `;
+    }
+
+    const patientSex = (assureToPrint?.sexe || activePatient?.SEXE || activePatient?.sexe || activePatient?.gender || 'M').toString().toUpperCase();
+    const isFemale = patientSex.startsWith('F');
+    const agePrefix = isFemale ? 'âgée de' : 'âgé de';
+
+    const htmlContent = generatePrescriptionHtml({
+      clinicInfo,
+      doctorNameAr,
+      specialtyFr,
+      specialtyAr: clinicInfo?.specialtyAr,
+      doctorNameFr: clinicInfo?.doctorNameFr,
+      addressFr,
+      phoneFixe,
+      ordre,
+      dateToPrint,
+      assureName,
+      assureAge,
+      assureTypeAge,
+      isFemale,
+      agePrefix,
+      rxHtml: bodyHtml,
+      documentTitle: typeTitle,
+      docType: 'arret_travail',
+      clinicHeader,
+      clinicLogo,
+      doctor,
+      barcodeSvg,
+      msgJaune,
+      msgOrd
+    });
+
+    win.document.open();
+    win.document.write(htmlContent);
+    win.document.close();
   };
 
   const handleBookNextApptNow = async () => {
@@ -1138,7 +1462,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
           setQuickMedications(uniqueData.slice(0, 6));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const fetchDosageSuggestionsForMed = (medId, medName, formeIdOverride, formeNameOverride) => {
@@ -1260,7 +1584,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
           setDbFormeSuggestions(cleaned);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   const resolveMedAndFormeIds = async (medName = '', formeName = '') => {
@@ -1283,7 +1607,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
           resolvedForme = data.formeId;
           setSelectedFormeId(data.formeId);
         }
-      } catch (err) {}
+      } catch (err) { }
     }
 
     return { medId: resolvedMed, formeId: resolvedForme };
@@ -1837,7 +2161,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
 
       {/* Main Grid: Left Column (2 Panels) & Right Column (Dynamic Workspace) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        
+
         {/* LEFT COLUMN: Patient Overview */}
         <div className="lg:col-span-4 space-y-4">
           <PatientOverviewPanel patient={fullPatientDetails || activePatient} onEditPatient={onEditPatient} onOpenNewConsultation={onOpenNewConsultation} lang={lang} clinicInfo={clinicInfo} />
@@ -1845,7 +2169,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
 
         {/* RIGHT COLUMN: BIG DYNAMIC WORKSPACE PANEL BASED ON SELECTION */}
         <div className="lg:col-span-8 space-y-4">
-          
+
           {/* Document Type Selector Tabs */}
           <div className="glass-panel p-2 rounded-2xl border border-slate-800 flex flex-wrap items-center gap-1.5 bg-slate-950/80">
             {docTabs.map((tab) => {
@@ -1859,11 +2183,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                     setActiveDocType(tab.id);
                     notifyDraftUpdate({ activeDocType: tab.id });
                   }}
-                  className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${
-                    isSelected
+                  className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${isSelected
                       ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20 scale-[1.02]'
                       : 'bg-slate-900/70 text-slate-300 border-slate-800 hover:bg-slate-800 hover:text-white'
-                  }`}
+                    }`}
                 >
                   <TabIcon className={`w-4 h-4 ${isSelected ? 'text-slate-950' : 'text-teal-400'}`} />
                   <span className="truncate">{tab.label}</span>
@@ -1923,11 +2246,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                   <button
                     type="button"
                     onClick={() => setShowInfoSupp(!showInfoSupp)}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 ${
-                      showInfoSupp || (assureInfo.infoSupp && assureInfo.infoSupp.trim())
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 ${showInfoSupp || (assureInfo.infoSupp && assureInfo.infoSupp.trim())
                         ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
                         : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                    }`}
+                      }`}
                     title={lang === 'fr' ? 'Afficher/Masquer l\'Information Supplémentaire' : 'Toggle Additional Information'}
                   >
                     <FileText className="w-3.5 h-3.5 text-amber-400" />
@@ -2074,11 +2396,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                           setPrescriptionMode('medicaments');
                           notifyDraftUpdate({ prescriptionMode: 'medicaments' });
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                          prescriptionMode === 'medicaments'
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${prescriptionMode === 'medicaments'
                             ? 'bg-teal-500 text-slate-950 shadow-md shadow-teal-500/20 scale-[1.02]'
                             : 'text-slate-400 hover:text-white hover:bg-slate-900'
-                        }`}
+                          }`}
                       >
                         <Pill className="w-3.5 h-3.5" />
                         <span>Médicaments</span>
@@ -2089,11 +2410,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                           setPrescriptionMode('prescription');
                           notifyDraftUpdate({ prescriptionMode: 'prescription' });
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                          prescriptionMode === 'prescription'
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${prescriptionMode === 'prescription'
                             ? 'bg-teal-500 text-slate-950 shadow-md shadow-teal-500/20 scale-[1.02]'
                             : 'text-slate-400 hover:text-white hover:bg-slate-900'
-                        }`}
+                          }`}
                       >
                         <FileText className="w-3.5 h-3.5" />
                         <span>Préscription</span>
@@ -2120,11 +2440,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                               key={idx}
                               type="button"
                               onClick={() => handleAddMedicationFromForm(preset)}
-                              className={`px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 transition shadow-sm group ${
-                                isAlreadyInRx
+                              className={`px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 transition shadow-sm group ${isAlreadyInRx
                                   ? 'bg-emerald-950/40 text-emerald-200 border border-emerald-500/60 font-semibold shadow-emerald-500/10'
                                   : 'bg-slate-950 hover:bg-slate-800 text-teal-300 border border-slate-800 hover:border-teal-500/50'
-                              }`}
+                                }`}
                               title={
                                 isAlreadyInRx
                                   ? `${preset.name} est déjà présent dans la liste. Cliquer pour mettre à jour.`
@@ -2138,19 +2457,17 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                               )}
                               <span className="font-bold text-slate-100">{preset.name}</span>
                               {preset.forme && (
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold ${
-                                  isAlreadyInRx
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold ${isAlreadyInRx
                                     ? 'text-emerald-300 bg-emerald-950 border-emerald-800/80'
                                     : 'text-cyan-300 bg-cyan-950/80 border-cyan-800/60'
-                                }`}>
+                                  }`}>
                                   {preset.forme}
                                 </span>
                               )}
-                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border font-semibold ${
-                                isAlreadyInRx
+                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border font-semibold ${isAlreadyInRx
                                   ? 'text-emerald-300 bg-emerald-950 border-emerald-800/80'
                                   : 'text-teal-300 bg-teal-950/80 border-teal-800/60'
-                              }`}>
+                                }`}>
                                 {preset.frequency || '2x/j'} • {preset.duration || '7j'}
                               </span>
                             </button>
@@ -2250,11 +2567,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                                     e.preventDefault();
                                     handleSelectMedSuggestion(item);
                                   }}
-                                  className={`px-3 py-2 text-xs cursor-pointer flex items-center justify-between transition ${
-                                    focusedSuggestionIdx === idx
+                                  className={`px-3 py-2 text-xs cursor-pointer flex items-center justify-between transition ${focusedSuggestionIdx === idx
                                       ? 'bg-teal-500 text-slate-950 font-bold'
                                       : 'text-slate-200 hover:bg-slate-800 hover:text-teal-300'
-                                  }`}
+                                    }`}
                                 >
                                   <span className="font-semibold">{item.designation}</span>
                                   {(item.forme || item.dosage || item.frequency) && (
@@ -2362,11 +2678,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                                         e.preventDefault();
                                         handleSelectFormeSuggestion(f);
                                       }}
-                                      className={`px-3 py-1.5 text-xs cursor-pointer flex items-center justify-between transition ${
-                                        focusedFormeIdx === idx
+                                      className={`px-3 py-1.5 text-xs cursor-pointer flex items-center justify-between transition ${focusedFormeIdx === idx
                                           ? 'bg-teal-500 text-slate-950 font-bold'
                                           : 'text-slate-200 hover:bg-slate-800 hover:text-teal-300'
-                                      }`}
+                                        }`}
                                     >
                                       <span className="font-medium">{fName}</span>
                                     </div>
@@ -2444,11 +2759,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                                     e.preventDefault();
                                     handleSelectDosageSuggestion(dos);
                                   }}
-                                  className={`px-3 py-1.5 text-xs cursor-pointer flex items-center justify-between transition ${
-                                    focusedDosageIdx === idx
+                                  className={`px-3 py-1.5 text-xs cursor-pointer flex items-center justify-between transition ${focusedDosageIdx === idx
                                       ? 'bg-teal-500 text-slate-950 font-bold'
                                       : 'text-slate-200 hover:bg-slate-800 hover:text-teal-300'
-                                  }`}
+                                    }`}
                                 >
                                   <span className="font-medium">{dos}</span>
                                 </div>
@@ -2509,11 +2823,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                                     e.preventDefault();
                                     handleSelectFrequencySuggestion(freq);
                                   }}
-                                  className={`px-3 py-1.5 text-xs cursor-pointer flex items-center justify-between transition ${
-                                    focusedFreqIdx === idx
+                                  className={`px-3 py-1.5 text-xs cursor-pointer flex items-center justify-between transition ${focusedFreqIdx === idx
                                       ? 'bg-teal-500 text-slate-950 font-bold'
                                       : 'text-slate-200 hover:bg-slate-800 hover:text-teal-300'
-                                  }`}
+                                    }`}
                                 >
                                   <span className="font-medium">{freq}</span>
                                 </div>
@@ -2576,11 +2889,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                                     setNewRxDuration(dur);
                                     setShowDurationDropdown(false);
                                   }}
-                                  className={`px-3 py-1.5 text-xs cursor-pointer flex items-center justify-between transition ${
-                                    focusedDurationIdx === idx
+                                  className={`px-3 py-1.5 text-xs cursor-pointer flex items-center justify-between transition ${focusedDurationIdx === idx
                                       ? 'bg-teal-500 text-slate-950 font-bold'
                                       : 'text-slate-200 hover:bg-slate-800 hover:text-teal-300'
-                                  }`}
+                                    }`}
                                 >
                                   <span className="font-medium">{dur}</span>
                                 </div>
@@ -2595,11 +2907,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                             type="button"
                             onClick={() => handleAddMedicationFromForm()}
                             disabled={!newRxName.trim()}
-                            className={`w-full py-2 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 border shadow-sm ${
-                              newRxName.trim()
+                            className={`w-full py-2 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 border shadow-sm ${newRxName.trim()
                                 ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 border-teal-400 hover:from-teal-400 hover:to-cyan-400 shadow-teal-500/20'
                                 : 'bg-slate-900 text-slate-500 border-slate-800 cursor-not-allowed'
-                            }`}
+                              }`}
                             title={lang === 'fr' ? 'Ajouter ce médicament' : 'Add Drug'}
                           >
                             <Plus className="w-4 h-4 shrink-0" />
@@ -2675,11 +2986,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                                   setFreeTextPrescription(pText);
                                   setShowFreeTextDropdown(false);
                                 }}
-                                className={`px-3 py-2 text-xs cursor-pointer flex items-center justify-between transition ${
-                                  focusedFreeTextIdx === idx
+                                className={`px-3 py-2 text-xs cursor-pointer flex items-center justify-between transition ${focusedFreeTextIdx === idx
                                     ? 'bg-teal-500 text-slate-950 font-bold'
                                     : 'text-slate-200 hover:bg-slate-800 hover:text-teal-300'
-                                }`}
+                                  }`}
                               >
                                 <span className="font-medium">{pText}</span>
                               </div>
@@ -2694,11 +3004,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                           type="button"
                           onClick={() => handleAddPrescriptionFromForm()}
                           disabled={!freeTextPrescription.trim()}
-                          className={`w-full py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 border shadow-sm ${
-                            freeTextPrescription.trim()
+                          className={`w-full py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 border shadow-sm ${freeTextPrescription.trim()
                               ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 border-teal-400 hover:from-teal-400 hover:to-cyan-400 shadow-teal-500/20'
                               : 'bg-slate-900 text-slate-500 border-slate-800 cursor-not-allowed'
-                          }`}
+                            }`}
                         >
                           <Plus className="w-4 h-4 shrink-0" />
                           <span className="truncate">{lang === 'fr' ? 'Ajouter Prescription' : 'Add Prescription'}</span>
@@ -2924,11 +3233,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                           setBilanMode('selection');
                           notifyDraftUpdate({ bilanMode: 'selection' });
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                          bilanMode === 'selection'
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${bilanMode === 'selection'
                             ? 'bg-teal-500 text-slate-950 shadow-md shadow-teal-500/20 scale-[1.02]'
                             : 'text-slate-400 hover:text-white hover:bg-slate-900'
-                        }`}
+                          }`}
                       >
                         <ListChecks className="w-3.5 h-3.5" />
                         <span>Sélection</span>
@@ -2939,11 +3247,10 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                           setBilanMode('saisie');
                           notifyDraftUpdate({ bilanMode: 'saisie' });
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                          bilanMode === 'saisie'
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${bilanMode === 'saisie'
                             ? 'bg-teal-500 text-slate-950 shadow-md shadow-teal-500/20 scale-[1.02]'
                             : 'text-slate-400 hover:text-white hover:bg-slate-900'
-                        }`}
+                          }`}
                       >
                         <FileText className="w-3.5 h-3.5" />
                         <span>Saisie</span>
@@ -2952,100 +3259,22 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                   </div>
                 </div>
 
+                {/* Top Controls according to Mode (Sélection / Saisie) */}
                 {bilanMode === 'selection' ? (
-                  /* Mode Sélection (Table from DB) */
-                  <div className="space-y-4">
-                    {/* Button 'Ajouter' */}
-                    <div className="flex justify-start">
-                      <button
-                        type="button"
-                        onClick={handleOpenBilanAddOrEdit}
-                        className="px-5 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 text-xs font-bold rounded-xl border border-teal-400 hover:from-teal-400 hover:to-cyan-400 shadow-md shadow-teal-500/20 transition flex items-center gap-2 cursor-pointer active:scale-95"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>{lang === 'fr' ? 'Ajouter / Modifier le Bilan' : 'Add / Edit Bilan'}</span>
-                      </button>
-                    </div>
-
-                    {/* Table loading data from DB table (bilan_consult_coche) */}
-                    <div className="space-y-2 pt-2 border-t border-slate-800">
-                      <div className="flex items-center justify-between text-xs font-bold text-slate-300 uppercase tracking-wider">
-                        <span>{lang === 'fr' ? 'Historique des Bilans (bilan_consult_coche)' : 'Bilan History (bilan_consult_coche)'}</span>
-                        {loadingBilanCoche && <span className="text-teal-400 font-normal animate-pulse text-[11px]">{lang === 'fr' ? 'Chargement...' : 'Loading...'}</span>}
-                      </div>
-
-                      <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/80 shadow-inner max-h-56">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400 uppercase font-bold text-[10px]">
-                              <th className="py-2.5 px-3 w-28">{lang === 'fr' ? 'Date Bilan' : 'Bilan Date'}</th>
-                              <th className="py-2.5 px-3">{lang === 'fr' ? 'Désignation (Examens Cochés)' : 'Designation (Checked Tests)'}</th>
-                              <th className="py-2.5 px-3 text-right w-16">{lang === 'fr' ? 'Actions' : 'Actions'}</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-800/60 text-slate-200">
-                            {bilanCocheRows.length > 0 ? (
-                              bilanCocheRows.map((row, idx) => (
-                                <tr key={idx} className="hover:bg-slate-900/50 transition">
-                                  <td className="py-2.5 px-3 font-mono text-teal-400 whitespace-nowrap align-top">
-                                    {row.DATE_BILAN ? new Date(row.DATE_BILAN).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US') : '—'}
-                                  </td>
-                                  <td className="py-2.5 px-3 font-mono text-slate-200 whitespace-pre-wrap leading-relaxed">
-                                    {row.DESIGNATION ? row.DESIGNATION.trim() : '—'}
-                                  </td>
-                                  <td className="py-2.5 px-3 text-right align-top flex items-center justify-end gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => handlePrintBilan(row)}
-                                      className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-slate-900 rounded-lg transition cursor-pointer"
-                                      title={lang === 'fr' ? 'Imprimer ce bilan (Modèle 3)' : 'Print this bilan'}
-                                    >
-                                      <Printer className="w-3.5 h-3.5" />
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setEditingBilanIndex(idx);
-                                        setSelectedBilans(parseDesignationToSelected(row.DESIGNATION));
-                                        setShowBilanModal(true);
-                                      }}
-                                      className="p-1.5 text-teal-400 hover:text-teal-300 hover:bg-slate-900 rounded-lg transition cursor-pointer"
-                                      title={lang === 'fr' ? 'Modifier ce bilan' : 'Edit this bilan'}
-                                    >
-                                      <Edit3 className="w-3.5 h-3.5" />
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setBilanCocheRows((prev) => prev.filter((_, i) => i !== idx));
-                                      }}
-                                      className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-slate-900 rounded-lg transition cursor-pointer"
-                                      title={lang === 'fr' ? 'Supprimer de la liste' : 'Delete'}
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))
-                            ) : (
-                              <tr>
-                                <td colSpan={3} className="py-4 px-3 text-center text-slate-500 italic">
-                                  {loadingBilanCoche
-                                    ? (lang === 'fr' ? 'Chargement des données du bilan...' : 'Loading bilan data...')
-                                    : (lang === 'fr' ? 'Aucun bilan enregistré dans bilan_consult_coche pour ce patient.' : 'No recorded bilans in bilan_consult_coche for this patient.')}
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
+                  /* Mode Sélection: Button 'Ajouter' */
+                  <div className="flex justify-start">
+                    <button
+                      type="button"
+                      onClick={handleOpenBilanAddOrEdit}
+                      className="px-5 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 text-xs font-bold rounded-xl border border-teal-400 hover:from-teal-400 hover:to-cyan-400 shadow-md shadow-teal-500/20 transition flex items-center gap-2 cursor-pointer active:scale-95"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>{lang === 'fr' ? 'Ajouter / Modifier le Bilan' : 'Add / Edit Bilan'}</span>
+                    </button>
                   </div>
                 ) : (
-                  /* Mode Saisie Libre (Free Text Area) */
-                  <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 space-y-2 shadow-inner">
+                  /* Mode Saisie Libre (Free Text Area with ADD button) */
+                  <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 space-y-3 shadow-inner">
                     <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                       <span>{lang === 'fr' ? 'Saisir la Demande de Bilan :' : 'Enter Bilan Request:'}</span>
                       <span className="text-[10px] text-teal-400 font-medium bg-slate-950 px-2.5 py-0.5 rounded-full border border-slate-800">
@@ -3054,18 +3283,118 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                     </div>
 
                     <textarea
-                      rows={5}
+                      rows={3}
                       value={bilan.freeText || ''}
                       onChange={(e) => {
                         const newBilan = { ...bilan, freeText: e.target.value };
                         setBilan(newBilan);
                         notifyDraftUpdate({ bilan: newBilan });
+                        if (saisieError) setSaisieError('');
                       }}
                       placeholder={lang === 'fr' ? 'Saisir le détail du bilan biologique ou imagerie demandé...' : 'Enter lab or imaging request details...'}
-                      className="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-teal-500 font-mono leading-relaxed"
+                      className={`w-full p-3 bg-slate-900 border rounded-xl text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none font-mono leading-relaxed transition ${saisieError ? 'border-rose-500 focus:border-rose-500' : 'border-slate-800 focus:border-teal-500'
+                        }`}
                     />
+
+                    {saisieError && (
+                      <p className="text-xs text-rose-400 font-semibold flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        <span>{saisieError}</span>
+                      </p>
+                    )}
+
+                    <div className="flex justify-end pt-1">
+                      <button
+                        type="button"
+                        onClick={handleAddFreeTextBilan}
+                        disabled={!bilan.freeText || !bilan.freeText.trim()}
+                        className={`px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-md cursor-pointer active:scale-95 ${(!bilan.freeText || !bilan.freeText.trim())
+                            ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'
+                            : 'bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 border border-teal-400 hover:from-teal-400 hover:to-cyan-400 shadow-teal-500/20'
+                          }`}
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>{lang === 'fr' ? 'Ajouter au Bilan' : 'Add to Bilan'}</span>
+                      </button>
+                    </div>
                   </div>
                 )}
+
+                {/* Common Bilan History Table (loads from bilan_consult_coche & bilans_consult left join bilan) */}
+                <div className="space-y-2 pt-2 border-t border-slate-800">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    <span>{lang === 'fr' ? 'Historique des Bilans (bilan_consult_coche & bilans_consult)' : 'Bilan History (bilan_consult_coche & bilans_consult)'}</span>
+                    {loadingBilanCoche && <span className="text-teal-400 font-normal animate-pulse text-[11px]">{lang === 'fr' ? 'Chargement...' : 'Loading...'}</span>}
+                  </div>
+
+                  <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/80 shadow-inner max-h-56">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400 uppercase font-bold text-[10px]">
+                          <th className="py-2.5 px-3 w-28">{lang === 'fr' ? 'Date Bilan' : 'Bilan Date'}</th>
+                          <th className="py-2.5 px-3">{lang === 'fr' ? 'Désignation (Examens Cochés / Saisis)' : 'Designation (Checked / Custom Tests)'}</th>
+                          <th className="py-2.5 px-3 text-right w-16">{lang === 'fr' ? 'Actions' : 'Actions'}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 text-slate-200">
+                        {bilanCocheRows.length > 0 ? (
+                          bilanCocheRows.map((row, idx) => (
+                            <tr key={idx} className="hover:bg-slate-900/50 transition">
+                              <td className="py-2.5 px-3 font-mono text-teal-400 whitespace-nowrap align-top">
+                                {row.DATE_BILAN ? new Date(row.DATE_BILAN).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US') : '—'}
+                              </td>
+                              <td className="py-2.5 px-3 font-mono text-slate-200 whitespace-pre-wrap leading-relaxed">
+                                {row.DESIGNATION ? row.DESIGNATION.trim() : '—'}
+                              </td>
+                              <td className="py-2.5 px-3 text-right align-top flex items-center justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handlePrintBilan(row)}
+                                  className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-slate-900 rounded-lg transition cursor-pointer"
+                                  title={lang === 'fr' ? 'Imprimer ce bilan' : 'Print this bilan'}
+                                >
+                                  <Printer className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingBilanIndex(idx);
+                                    setSelectedBilans(parseDesignationToSelected(row.DESIGNATION));
+                                    setShowBilanModal(true);
+                                  }}
+                                  className="p-1.5 text-teal-400 hover:text-teal-300 hover:bg-slate-900 rounded-lg transition cursor-pointer"
+                                  title={lang === 'fr' ? 'Modifier ce bilan' : 'Edit this bilan'}
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setBilanCocheRows((prev) => prev.filter((_, i) => i !== idx));
+                                  }}
+                                  className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-slate-900 rounded-lg transition cursor-pointer"
+                                  title={lang === 'fr' ? 'Supprimer de la liste' : 'Delete'}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={3} className="py-4 px-3 text-center text-slate-500 italic">
+                              {loadingBilanCoche
+                                ? (lang === 'fr' ? 'Chargement des données du bilan...' : 'Loading bilan data...')
+                                : (lang === 'fr' ? 'Aucun bilan enregistré pour ce patient.' : 'No recorded bilans for this patient.')}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -3146,40 +3475,116 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
 
             {/* 5. DYNAMIC PANEL: ARRÊT DE TRAVAIL (Sick Leave) */}
             {activeDocType === 'arret_travail' && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="space-y-5">
+                {/* Top Header & Type Selector */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-3 pb-3 border-b border-slate-800">
                   <div>
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
                       <CalendarOff className="w-4 h-4 text-rose-400" />
                       {lang === 'fr' ? 'Certificat d\'Arrêt de Travail' : 'Work Disability / Sick Leave'}
                     </h3>
                     <p className="text-xs text-slate-400">
-                      {lang === 'fr' ? 'Prescription de repos médical et arrêt de travail' : 'Prescribe sick leave days and return date'}
+                      {lang === 'fr' ? 'Prescription de repos médical, prolongation ou reprise' : 'Prescribe sick leave days and return date'}
                     </p>
+                  </div>
+
+                  {/* Mode Selector for Arrêt de Travail */}
+                  <div className="shrink-0">
+                    <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newAT = { ...arretTravail, type: 'arret' };
+                          setArretTravail(newAT);
+                          notifyDraftUpdate({ arretTravail: newAT });
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                          (arretTravail.type || 'arret') === 'arret'
+                            ? 'bg-rose-500 text-slate-950 shadow-md shadow-rose-500/20 scale-[1.02]'
+                            : 'text-rose-400/80 hover:text-rose-300 hover:bg-rose-950/40'
+                        }`}
+                      >
+                        <CalendarOff className="w-3.5 h-3.5" />
+                        <span>{lang === 'fr' ? 'Arrêt de Travail' : 'Sick Leave'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newAT = { ...arretTravail, type: 'prolongation' };
+                          setArretTravail(newAT);
+                          notifyDraftUpdate({ arretTravail: newAT });
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                          arretTravail.type === 'prolongation'
+                            ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
+                            : 'text-amber-400/80 hover:text-amber-300 hover:bg-amber-950/40'
+                        }`}
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{lang === 'fr' ? 'Prolongation' : 'Extension'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newAT = { ...arretTravail, type: 'reprise' };
+                          setArretTravail(newAT);
+                          notifyDraftUpdate({ arretTravail: newAT });
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                          arretTravail.type === 'reprise'
+                            ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 scale-[1.02]'
+                            : 'text-emerald-400/80 hover:text-emerald-300 hover:bg-emerald-950/40'
+                        }`}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{lang === 'fr' ? 'Reprise de Travail' : 'Return to Work'}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                      {lang === 'fr' ? 'Nombre de Jours' : 'Number of Days'}
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="90"
-                      value={arretTravail.days}
-                      onChange={(e) => {
-                        const newAT = { ...arretTravail, days: e.target.value };
-                        setArretTravail(newAT);
-                        notifyDraftUpdate({ arretTravail: newAT });
-                      }}
-                      className="w-full px-3.5 py-2.5 text-sm bg-slate-950 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500 outline-none font-bold text-teal-300"
-                    />
+                {/* Line 1: Days input + Days in letters input (Hidden when type is reprise) */}
+                {arretTravail.type !== 'reprise' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        {lang === 'fr' ? 'Nombre de Jours' : 'Number of Days'}
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="90"
+                        value={arretTravail.days}
+                        onChange={(e) => {
+                          const newAT = { ...arretTravail, days: e.target.value };
+                          setArretTravail(newAT);
+                          notifyDraftUpdate({ arretTravail: newAT });
+                        }}
+                        className="w-full px-3.5 py-2.5 text-sm bg-slate-950 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500 outline-none font-bold text-teal-300"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        {lang === 'fr' ? 'Nombre de Jours (en Lettres)' : 'Days (in Words)'}
+                      </label>
+                      <input
+                        type="text"
+                        readOnly
+                        value={numberToWords(arretTravail.days, lang)}
+                        className="w-full px-3.5 py-2.5 text-sm bg-slate-900/80 text-rose-300 font-extrabold border border-slate-800 rounded-xl cursor-not-allowed uppercase tracking-wide"
+                      />
+                    </div>
                   </div>
+                )}
+
+                {/* Line 2: Start/Return Date */}
+                {arretTravail.type === 'reprise' ? (
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                      {lang === 'fr' ? 'Date de Début (Du)' : 'Start Date'}
+                      {lang === 'fr' ? 'Date Reprise' : lang === 'ar' ? 'تاريخ الاستئناف' : 'Return Date'}
                     </label>
                     <input
                       type="date"
@@ -3189,37 +3594,58 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                         setArretTravail(newAT);
                         notifyDraftUpdate({ arretTravail: newAT });
                       }}
-                      className="w-full px-3.5 py-2.5 text-sm bg-slate-950 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500 outline-none"
+                      className="w-full px-3.5 py-2.5 text-sm bg-slate-950 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500 outline-none font-bold text-emerald-400"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                      {lang === 'fr' ? 'Date de Fin (Au inclus)' : 'End Date'}
-                    </label>
-                    <input
-                      type="text"
-                      disabled
-                      value={calculateEndDate(arretTravail.startDate, arretTravail.days)}
-                      className="w-full px-3.5 py-2.5 text-sm bg-slate-900/60 text-teal-300 font-bold border border-slate-800 rounded-xl cursor-not-allowed"
-                    />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        {lang === 'fr' ? 'Date de Début (Du)' : 'Start Date'}
+                      </label>
+                      <input
+                        type="date"
+                        value={arretTravail.startDate}
+                        onChange={(e) => {
+                          const newAT = { ...arretTravail, startDate: e.target.value };
+                          setArretTravail(newAT);
+                          notifyDraftUpdate({ arretTravail: newAT });
+                        }}
+                        className="w-full px-3.5 py-2.5 text-sm bg-slate-950 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500 outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        {lang === 'fr' ? 'Date de Fin (Au inclus)' : 'End Date'}
+                      </label>
+                      <input
+                        type="text"
+                        disabled
+                        value={calculateEndDate(arretTravail.startDate, arretTravail.days)}
+                        className="w-full px-3.5 py-2.5 text-sm bg-slate-900/60 text-teal-300 font-bold border border-slate-800 rounded-xl cursor-not-allowed"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        {lang === 'fr' ? 'Reprise Prévue le' : 'Expected Return'}
+                      </label>
+                      <div className="px-3.5 py-2 text-sm font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 rounded-xl flex items-center justify-between h-[42px]">
+                        <span>{calculateReturnDate(arretTravail.startDate, arretTravail.days)}</span>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs">
-                  <span className="text-slate-300 font-medium">
-                    {lang === 'fr' ? 'Reprise du Travail prévue le :' : 'Expected Return to Work:'}
-                  </span>
-                  <span className="text-sm font-bold text-emerald-400 bg-emerald-950/80 px-3 py-1 rounded-lg border border-emerald-800">
-                    {calculateReturnDate(arretTravail.startDate, arretTravail.days)}
-                  </span>
-                </div>
-
+                {/* Line 3: Medical Reason */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                     {lang === 'fr' ? 'Motif Médical / Remarques' : 'Medical Justification'}
                   </label>
-                  <input
-                    type="text"
+                  <textarea
+                    rows="3"
                     value={arretTravail.reason}
                     onChange={(e) => {
                       const newAT = { ...arretTravail, reason: e.target.value };
@@ -3227,8 +3653,118 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                       notifyDraftUpdate({ arretTravail: newAT });
                     }}
                     placeholder={t.exSickLeaveJustification || (lang === 'fr' ? "Motif médical / remarques sur l'arrêt..." : "Medical justification for sick leave...")}
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-950 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500 outline-none"
-                  />
+                    className="w-full px-3.5 py-2.5 text-sm bg-slate-950 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500 outline-none resize-y"
+                  ></textarea>
+                </div>
+
+                {/* Add / Save Button for Arrêt de Travail */}
+                <div className="flex items-center justify-between pt-1">
+                  {arretSaveStatus ? (
+                    <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 px-3 py-1.5 rounded-lg border border-emerald-800 flex items-center gap-1.5 animate-in fade-in">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      {arretSaveStatus}
+                    </span>
+                  ) : (
+                    <div />
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleSaveArret}
+                    disabled={savingArret}
+                    className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-lg shadow-rose-500/20 transition cursor-pointer active:scale-95 disabled:opacity-50"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{savingArret ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Ajouter / Enregistrer l\'Arrêt' : 'Add / Save Sick Leave')}</span>
+                  </button>
+                </div>
+
+                {/* Bottom Section: Previous Sick Leaves Table */}
+                <div className="pt-3 border-t border-slate-800/80 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                      <History className="w-3.5 h-3.5 text-rose-400" />
+                      {lang === 'fr' ? 'Historique des Arrêts de Travail du Patient' : 'Patient Sick Leave History'}
+                    </h4>
+                    {loadingArretHistory && (
+                      <span className="text-xs text-rose-400 animate-pulse">{lang === 'fr' ? 'Chargement...' : 'Loading...'}</span>
+                    )}
+                  </div>
+
+                  {arretHistory.length > 0 ? (
+                    <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/80">
+                      <table className="w-full text-left text-xs text-slate-300">
+                        <thead className="bg-slate-900 text-slate-400 uppercase text-[10px]">
+                          <tr>
+                            <th className="py-2.5 px-3">{lang === 'fr' ? 'Type' : 'Type'}</th>
+                            <th className="py-2.5 px-3">{lang === 'fr' ? 'Du' : 'From'}</th>
+                            <th className="py-2.5 px-3">{lang === 'fr' ? 'Au' : 'To'}</th>
+                            <th className="py-2.5 px-3">{lang === 'fr' ? 'Durée' : 'Days'}</th>
+                            <th className="py-2.5 px-3">{lang === 'fr' ? 'En Lettres' : 'In Words'}</th>
+                            <th className="py-2.5 px-3">{lang === 'fr' ? 'Motif / Remarques' : 'Reason'}</th>
+                            <th className="py-2.5 px-3 text-right">{lang === 'fr' ? 'Actions' : 'Actions'}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60 font-medium">
+                          {arretHistory.map((row, idx) => {
+                            const typeLabel = Number(row.type) === 2 ? (lang === 'fr' ? 'Prolongation' : 'Extension') : Number(row.type) === 3 ? (lang === 'fr' ? 'Reprise' : 'Return') : (lang === 'fr' ? 'Arrêt de Travail' : 'Sick Leave');
+                            const typeBadgeClass = Number(row.type) === 2 ? 'bg-amber-950 text-amber-300 border-amber-800' : Number(row.type) === 3 ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-rose-950 text-rose-300 border-rose-800';
+
+                            return (
+                              <tr key={idx} className="hover:bg-slate-900/60 transition">
+                                <td className="py-2 px-3">
+                                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${typeBadgeClass}`}>
+                                    {typeLabel}
+                                  </span>
+                                </td>
+                                <td className="py-2 px-3 font-mono text-teal-300">{row.dateDebut || '-'}</td>
+                                <td className="py-2 px-3 font-mono text-teal-300">{row.dateFin || '-'}</td>
+                                <td className="py-2 px-3 font-bold text-slate-100 font-mono">{row.nbJour} {lang === 'fr' ? 'j' : 'd'}</td>
+                                <td className="py-2 px-3 text-rose-300 font-semibold">{numberToWords(row.nbJour, lang) || '-'}</td>
+                                <td className="py-2 px-3 text-slate-400 italic">{row.obs || '-'}</td>
+                                <td className="py-2 px-3 text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const typeStr = Number(row.type) === 2 ? 'prolongation' : Number(row.type) === 3 ? 'reprise' : 'arret';
+                                        const updated = {
+                                          ...arretTravail,
+                                          type: typeStr,
+                                          days: row.nbJour || 1,
+                                          startDate: row.dateDebut || new Date().toISOString().split('T')[0],
+                                          reason: row.obs || ''
+                                        };
+                                        setArretTravail(updated);
+                                        notifyDraftUpdate({ arretTravail: updated });
+                                      }}
+                                      className="p-1 text-teal-400 hover:text-teal-300 hover:bg-slate-900 rounded-lg transition cursor-pointer"
+                                      title={lang === 'fr' ? 'Éditer' : 'Edit'}
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handlePrintArret(row)}
+                                      className="p-1 text-purple-400 hover:text-purple-300 hover:bg-slate-900 rounded-lg transition cursor-pointer"
+                                      title={lang === 'fr' ? 'Imprimer' : 'Print'}
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-slate-950/40 border border-slate-800 rounded-xl text-center text-slate-500 text-xs italic">
+                      {lang === 'fr' ? 'Aucun arrêt de travail antérieur trouvé pour ce patient.' : 'No previous sick leave records found for this patient.'}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -3456,509 +3992,484 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
         </div>
 
         {/* PREVIOUS PRESCRIPTIONS LIST MODAL */}
-      {showPastPrescriptionsModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+        {showPastPrescriptionsModal && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fadeIn">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+              {/* Modal Header */}
+              <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+                    <History className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">
+                      {lang === 'fr' ? 'Historique des Ordonnances du Patient' : 'Patient Prescription History'}
+                    </h3>
+                    <p className="text-xs text-slate-300 font-semibold mt-0.5">
+                      {[activePatient?.NOM || activePatient?.nom || activePatient?.lastName || activePatient?.nomMalade, activePatient?.PRENOM || activePatient?.prenom || activePatient?.firstName || activePatient?.prenomMalade].filter(Boolean).join(' ') || activePatient?.name || activePatient?.FULLNAME || activePatient?.fullname || 'Patient'}
+                      {(activePatient?.AGE !== undefined || activePatient?.age !== undefined) && (
+                        <span className="text-teal-300 ml-2 font-mono font-bold">
+                          • {activePatient?.AGE !== undefined ? activePatient?.AGE : activePatient?.age} {Number(activePatient?.TYPE || activePatient?.type) === 2 ? 'mois' : Number(activePatient?.TYPE || activePatient?.type) === 3 ? 'jours' : 'ans'}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowPastPrescriptionsModal(false)}
+                  className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition font-bold text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-4 overflow-y-auto space-y-3 flex-1">
+                {loadingPastPrescriptions ? (
+                  <div className="py-12 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                    <span>{lang === 'fr' ? 'Chargement des ordonnances...' : 'Loading prescriptions...'}</span>
+                  </div>
+                ) : pastConsultationsList.length === 0 ? (
+                  <div className="py-12 text-center text-slate-400 text-xs">
+                    {lang === 'fr' ? 'Aucune ordonnance précédente enregistrée pour ce patient.' : 'No previous prescriptions found for this patient.'}
+                  </div>
+                ) : (
+                  pastConsultationsList.map((consult, idx) => (
+                    <div key={idx} className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-cyan-400 flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                          {lang === 'fr' ? `Ordonnance du ${consult.date || ''}` : `Prescription (${consult.date || ''})`}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handlePrintPrescription(consult.prescriptions, consult.date, consult.assureInfo)}
+                            className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm"
+                            title={lang === 'fr' ? 'Imprimer cette ordonnance' : 'Print this prescription'}
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>{lang === 'fr' ? 'Imprimer' : 'Print'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleLoadPastPrescription(consult.prescriptions)}
+                            className="px-3 py-1 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-teal-500/20 active:scale-95 cursor-pointer"
+                            title={lang === 'fr' ? 'Charger cette ordonnance' : 'Load this prescription'}
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>{lang === 'fr' ? 'Charger' : 'Load'}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Prescription Items */}
+                      <div className="space-y-1.5 pt-1">
+                        {consult.prescriptions.map((rx, rxIdx) => (
+                          <div key={rxIdx} className="text-xs bg-slate-900/90 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between text-slate-200">
+                            <span className="font-semibold text-white">{rx.name}</span>
+                            <span className="text-[11px] text-slate-400 font-mono">
+                              {[rx.dosage, rx.frequency, rx.duration].filter(Boolean).join(' • ')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* REPLACE PRESCRIPTION CONFIRMATION MODAL */}
+        <ReplacePrescriptionModal
+          isOpen={showReplaceConfirmModal}
+          lang={lang}
+          onCancel={() => {
+            setShowReplaceConfirmModal(false);
+            setPendingRxToLoad(null);
+          }}
+          onMerge={() => handleMergePrescriptionLoad(pendingRxToLoad)}
+          onReplace={() => applyPrescriptionLoad(pendingRxToLoad)}
+        />
+      </div>
+
+      {/* MODAL DE SÉLECTION DES BILANS À FAIRE */}
+      {showBilanModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             {/* Modal Header */}
-            <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
-                  <History className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl bg-teal-500/20 border border-teal-500/30 flex items-center justify-center text-teal-400 font-bold">
+                  <TestTube className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">
-                    {lang === 'fr' ? 'Historique des Ordonnances du Patient' : 'Patient Prescription History'}
+                  <h3 className="text-base font-bold text-white">
+                    {editingBilanIndex !== null
+                      ? (lang === 'fr' ? 'Modification du Bilan à Faire' : 'Edit Bilan')
+                      : (lang === 'fr' ? 'Sélection des Bilans à Faire' : 'Select Tests & Examinations')}
                   </h3>
-                  <p className="text-xs text-slate-300 font-semibold mt-0.5">
-                    {[activePatient?.NOM || activePatient?.nom || activePatient?.lastName || activePatient?.nomMalade, activePatient?.PRENOM || activePatient?.prenom || activePatient?.firstName || activePatient?.prenomMalade].filter(Boolean).join(' ') || activePatient?.name || activePatient?.FULLNAME || activePatient?.fullname || 'Patient'}
-                    {(activePatient?.AGE !== undefined || activePatient?.age !== undefined) && (
-                      <span className="text-teal-300 ml-2 font-mono font-bold">
-                        • {activePatient?.AGE !== undefined ? activePatient?.AGE : activePatient?.age} {Number(activePatient?.TYPE || activePatient?.type) === 2 ? 'mois' : Number(activePatient?.TYPE || activePatient?.type) === 3 ? 'jours' : 'ans'}
-                      </span>
-                    )}
+                  <p className="text-xs text-slate-400">
+                    {editingBilanIndex !== null
+                      ? (lang === 'fr' ? 'Modifier les examens biologiques & imagerie pour cette consultation' : 'Modify biological & imaging tests for this consultation')
+                      : (lang === 'fr' ? 'Cocher les bilans biologiques & examens à prescrire' : 'Check biological & imaging tests to order')}
                   </p>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowPastPrescriptionsModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition font-bold text-xs"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-3">
+                <div className="relative w-48 sm:w-64">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={bilanSearch}
+                    onChange={(e) => setBilanSearch(e.target.value)}
+                    placeholder={lang === 'fr' ? 'Rechercher un bilan...' : 'Search test...'}
+                    className="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowBilanModal(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-4 overflow-y-auto space-y-3 flex-1">
-              {loadingPastPrescriptions ? (
-                <div className="py-12 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-                  <span>{lang === 'fr' ? 'Chargement des ordonnances...' : 'Loading prescriptions...'}</span>
+            {/* Modal Content - Categorized Grids */}
+            <div className="p-5 overflow-y-auto flex-1 space-y-5 custom-scrollbar">
+              {/* Category 1: Hématologie & Coagulation */}
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+                <span className="text-xs font-bold text-teal-400 uppercase tracking-wider block flex items-center gap-2 border-b border-slate-800 pb-2">
+                  🩸 {lang === 'fr' ? 'Hématologie & Coagulation' : 'Hematology & Coagulation'}
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                  {[
+                    { key: 'FNS', label: 'FNS' },
+                    { key: 'GROUPAGE', label: 'Groupage Sanguin' },
+                    { key: 'TP', label: 'TP-TCK' },
+                    { key: 'FIBROGENE', label: 'Taux de Fibrogène' },
+                    { key: 'VS', label: 'VS' },
+                    { key: 'ELETRO_HEMOG', label: "Electrophorèse d'hémoglobine" }
+                  ].filter(item => !bilanSearch || item.label.toLowerCase().includes(bilanSearch.toLowerCase())).map((item) => (
+                    <label key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 hover:text-white hover:border-teal-500/40 cursor-pointer transition select-none">
+                      <input
+                        type="checkbox"
+                        checked={!!selectedBilans[item.key]}
+                        onChange={(e) => setSelectedBilans({ ...selectedBilans, [item.key]: e.target.checked })}
+                        className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-0"
+                      />
+                      <span className={selectedBilans[item.key] ? 'text-teal-300 font-semibold' : ''}>{item.label}</span>
+                    </label>
+                  ))}
                 </div>
-              ) : pastConsultationsList.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 text-xs">
-                  {lang === 'fr' ? 'Aucune ordonnance précédente enregistrée pour ce patient.' : 'No previous prescriptions found for this patient.'}
+              </div>
+
+              {/* Category 2: Biochimie & Organes */}
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+                <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block flex items-center gap-2 border-b border-slate-800 pb-2">
+                  🧪 {lang === 'fr' ? 'Biochimie, Foie & Reins' : 'Biochemistry & Organ Function'}
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                  {[
+                    { key: 'GLYCEMIE', label: 'Glycémie à jeun' },
+                    { key: 'HBA1C', label: 'HbA1C' },
+                    { key: 'UREE', label: 'Urée - Créatinémie' },
+                    { key: 'URIQUE', label: "Acide Urique" },
+                    { key: 'SGOT', label: 'SGOT - SGPT' },
+                    { key: 'ASAT', label: 'ASAT - ALAT' },
+                    { key: 'GAMMA', label: 'Gamma GT - Palc' },
+                    { key: 'PHOSPHATASES', label: 'Phosphatases Alcalines' },
+                    { key: 'FER', label: 'Fer Sérique' },
+                    { key: 'FERRITINE', label: 'Ferritine' },
+                    { key: 'VIT_D', label: 'Dosage Vitamine D' },
+                    { key: 'DOSAGE_DEPAKINE', label: 'Dosage Dépakine' }
+                  ].filter(item => !bilanSearch || item.label.toLowerCase().includes(bilanSearch.toLowerCase())).map((item) => (
+                    <label key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 hover:text-white hover:border-teal-500/40 cursor-pointer transition select-none">
+                      <input
+                        type="checkbox"
+                        checked={!!selectedBilans[item.key]}
+                        onChange={(e) => setSelectedBilans({ ...selectedBilans, [item.key]: e.target.checked })}
+                        className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-0"
+                      />
+                      <span className={selectedBilans[item.key] ? 'text-cyan-300 font-semibold' : ''}>{item.label}</span>
+                    </label>
+                  ))}
                 </div>
-              ) : (
-                pastConsultationsList.map((consult, idx) => (
-                  <div key={idx} className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-cyan-400 flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        {lang === 'fr' ? `Ordonnance du ${consult.date || ''}` : `Prescription (${consult.date || ''})`}
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handlePrintPrescription(consult.prescriptions, consult.date, consult.assureInfo)}
-                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm"
-                          title={lang === 'fr' ? 'Imprimer cette ordonnance' : 'Print this prescription'}
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                          <span>{lang === 'fr' ? 'Imprimer' : 'Print'}</span>
-                        </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleLoadPastPrescription(consult.prescriptions)}
-                          className="px-3 py-1 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-teal-500/20 active:scale-95 cursor-pointer"
-                          title={lang === 'fr' ? 'Charger cette ordonnance' : 'Load this prescription'}
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>{lang === 'fr' ? 'Charger' : 'Load'}</span>
-                        </button>
-                      </div>
-                    </div>
+                {/* Bilirubinémie Sub-options */}
+                <div className="pt-2 border-t border-slate-800/60 space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-amber-300 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={!!selectedBilans.BILIRUBINEMIE}
+                      onChange={(e) => setSelectedBilans({ ...selectedBilans, BILIRUBINEMIE: e.target.checked })}
+                      className="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0"
+                    />
+                    <span>Bilirubinémie</span>
+                  </label>
 
-                    {/* Prescription Items */}
-                    <div className="space-y-1.5 pt-1">
-                      {consult.prescriptions.map((rx, rxIdx) => (
-                        <div key={rxIdx} className="text-xs bg-slate-900/90 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between text-slate-200">
-                          <span className="font-semibold text-white">{rx.name}</span>
-                          <span className="text-[11px] text-slate-400 font-mono">
-                            {[rx.dosage, rx.frequency, rx.duration].filter(Boolean).join(' • ')}
-                          </span>
-                        </div>
+                  {selectedBilans.BILIRUBINEMIE && (
+                    <div className="pl-6 grid grid-cols-3 gap-2">
+                      {[
+                        { key: 'TOTALE', label: 'Totale' },
+                        { key: 'CONJUGE', label: 'Conjuguée' },
+                        { key: 'NONCONJUGE', label: 'Non Conjugée' }
+                      ].map((sub) => (
+                        <label key={sub.key} className="flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={!!selectedBilans[sub.key]}
+                            onChange={(e) => setSelectedBilans({ ...selectedBilans, [sub.key]: e.target.checked })}
+                            className="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0"
+                          />
+                          <span className={selectedBilans[sub.key] ? 'text-amber-300 font-semibold' : ''}>{sub.label}</span>
+                        </label>
                       ))}
                     </div>
-                  </div>
-                ))
-              )}
+                  )}
+                </div>
+              </div>
+
+              {/* Category 3: Lipides & Ionogramme */}
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block flex items-center gap-2 border-b border-slate-800 pb-2">
+                  💧 {lang === 'fr' ? 'Lipides & Ionogramme / Minéraux' : 'Lipids & Ionogram'}
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                  {[
+                    { key: 'CHOLESTEROL', label: 'Cholestérol Total' },
+                    { key: 'HDL', label: 'HDL Cholestérol' },
+                    { key: 'LDL', label: 'LDL Cholestérol' },
+                    { key: 'TRIGLYCERIDE', label: 'Triglycéride' },
+                    { key: 'KALIEMIE', label: 'Kaliémie - Natrémie' },
+                    { key: 'CALCEMIE', label: 'Calcémie - Phosphorémie' }
+                  ].filter(item => !bilanSearch || item.label.toLowerCase().includes(bilanSearch.toLowerCase())).map((item) => (
+                    <label key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 hover:text-white hover:border-teal-500/40 cursor-pointer transition select-none">
+                      <input
+                        type="checkbox"
+                        checked={!!selectedBilans[item.key]}
+                        onChange={(e) => setSelectedBilans({ ...selectedBilans, [item.key]: e.target.checked })}
+                        className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-0"
+                      />
+                      <span className={selectedBilans[item.key] ? 'text-blue-300 font-semibold' : ''}>{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Category 4: Immunologie & Sérologie / Urines */}
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block flex items-center gap-2 border-b border-slate-800 pb-2">
+                  🛡️ {lang === 'fr' ? 'Inflammation, Sérologie & Urines' : 'Serology & Urines'}
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                  {[
+                    { key: 'CRP', label: 'CRP' },
+                    { key: 'ASLO', label: 'ASLO' },
+                    { key: 'ECBU', label: 'ECBU' },
+                    { key: 'ALBUMINEMIE', label: 'Albuminémie' },
+                    { key: 'PROTEIN', label: 'Protéinurie' },
+                    { key: 'PROTEIN24', label: 'Protéinurie 24h' },
+                    { key: 'RUBEOLE', label: 'Sérologie Rubéole' },
+                    { key: 'TOXOPLASMOSE', label: 'Sérologie Toxoplasmose' },
+                    { key: 'SYPHIS', label: 'Sérologie Syphilis' },
+                    { key: 'HIV', label: 'Sérologie HIV' },
+                    { key: 'COPRO_PARASIT', label: 'Copro-parasitologie' }
+                  ].filter(item => !bilanSearch || item.label.toLowerCase().includes(bilanSearch.toLowerCase())).map((item) => (
+                    <label key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 hover:text-white hover:border-teal-500/40 cursor-pointer transition select-none">
+                      <input
+                        type="checkbox"
+                        checked={!!selectedBilans[item.key]}
+                        onChange={(e) => setSelectedBilans({ ...selectedBilans, [item.key]: e.target.checked })}
+                        className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-0"
+                      />
+                      <span className={selectedBilans[item.key] ? 'text-emerald-300 font-semibold' : ''}>{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Category 5: Hormonologie */}
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+                <span className="text-xs font-bold text-purple-400 uppercase tracking-wider block flex items-center gap-2 border-b border-slate-800 pb-2">
+                  🧬 {lang === 'fr' ? 'Hormonologie & Endocrinologie' : 'Hormonology & Endocrinology'}
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                  {[
+                    { key: 'FT3', label: 'FT 3 - FT 4' },
+                    { key: 'TSHUS', label: 'TSHus' },
+                    { key: 'FSH', label: 'FSH' },
+                    { key: 'LH', label: 'LH' },
+                    { key: 'PROLACTINE', label: 'Prolactine' },
+                    { key: 'AMH', label: 'AMH' },
+                    { key: 'PROGESTERONE', label: 'Progestérone' },
+                    { key: 'DHEA', label: 'S - DHEA' },
+                    { key: 'DELTA', label: 'Delta 4 androstènedione' },
+                    { key: 'DOSAGE_HORM_CROISS', label: 'Hormone de croissance' }
+                  ].filter(item => !bilanSearch || item.label.toLowerCase().includes(bilanSearch.toLowerCase())).map((item) => (
+                    <label key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 hover:text-white hover:border-teal-500/40 cursor-pointer transition select-none">
+                      <input
+                        type="checkbox"
+                        checked={!!selectedBilans[item.key]}
+                        onChange={(e) => setSelectedBilans({ ...selectedBilans, [item.key]: e.target.checked })}
+                        className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-0"
+                      />
+                      <span className={selectedBilans[item.key] ? 'text-purple-300 font-semibold' : ''}>{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {/* Sérologie maladie cœliaque Sub-options */}
+                <div className="pt-2 border-t border-slate-800/60 space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-purple-300 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={!!selectedBilans.SEROLOGIE_MALADIE_COELIAQUE}
+                      onChange={(e) => setSelectedBilans({ ...selectedBilans, SEROLOGIE_MALADIE_COELIAQUE: e.target.checked })}
+                      className="rounded border-slate-700 bg-slate-950 text-purple-500 focus:ring-0"
+                    />
+                    <span>Sérologie maladie cœliaque</span>
+                  </label>
+
+                  {selectedBilans.SEROLOGIE_MALADIE_COELIAQUE && (
+                    <div className="pl-6 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {[
+                        { key: 'ACS', label: 'ACS' },
+                        { key: 'ANTI_TRANSGLUT', label: 'Anti-transglutaminase' },
+                        { key: 'ANTIENDOM', label: 'Antiendomisum' },
+                        { key: 'ANTI_GLIADINE', label: 'Anti gliadine' }
+                      ].map((sub) => (
+                        <label key={sub.key} className="flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={!!selectedBilans[sub.key]}
+                            onChange={(e) => setSelectedBilans({ ...selectedBilans, [sub.key]: e.target.checked })}
+                            className="rounded border-slate-700 bg-slate-950 text-purple-500 focus:ring-0"
+                          />
+                          <span className={selectedBilans[sub.key] ? 'text-purple-300 font-semibold' : ''}>{sub.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Category 6: Imagerie & Examens Spéciaux */}
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+                <span className="text-xs font-bold text-rose-400 uppercase tracking-wider block flex items-center gap-2 border-b border-slate-800 pb-2">
+                  📷 {lang === 'fr' ? 'Imagerie & Examens Fonctionnels' : 'Imaging & Functional Tests'}
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {[
+                    { key: 'RADIO_MAIN', label: 'Radio de la main' },
+                    { key: 'TELETHORAX', label: 'Téléthorax' },
+                    { key: 'ETF', label: 'ETF' },
+                    { key: 'EEG', label: 'EEG' }
+                  ].filter(item => !bilanSearch || item.label.toLowerCase().includes(bilanSearch.toLowerCase())).map((item) => (
+                    <label key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 hover:text-white hover:border-teal-500/40 cursor-pointer transition select-none">
+                      <input
+                        type="checkbox"
+                        checked={!!selectedBilans[item.key]}
+                        onChange={(e) => setSelectedBilans({ ...selectedBilans, [item.key]: e.target.checked })}
+                        className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-0"
+                      />
+                      <span className={selectedBilans[item.key] ? 'text-rose-300 font-semibold' : ''}>{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer with ALWAYS VISIBLE 'AUTRE' Input & Action Buttons */}
+            <div className="p-4 border-t border-slate-800 bg-slate-950/90 space-y-3 shrink-0 shadow-lg">
+              {/* Always Visible 'AUTRE' Input */}
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-bold text-amber-400 uppercase tracking-wider shrink-0 flex items-center gap-1.5">
+                  ✍️ {lang === 'fr' ? 'Autre / Précisions :' : 'Other / Notes:'}
+                </label>
+                <input
+                  type="text"
+                  value={selectedBilans.AUTRE || ''}
+                  onChange={(e) => setSelectedBilans({ ...selectedBilans, AUTRE: e.target.value })}
+                  placeholder={lang === 'fr' ? 'Saisir un autre bilan ou précisions non listées...' : 'Enter custom exam or details...'}
+                  className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-amber-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500 font-medium"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const keys = Object.keys(selectedBilans);
+                    const cleared = {};
+                    keys.forEach(k => { cleared[k] = k === 'AUTRE' ? '' : false; });
+                    setSelectedBilans(cleared);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition"
+                >
+                  {lang === 'fr' ? 'Réinitialiser' : 'Reset'}
+                </button>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowBilanModal(false)}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition"
+                  >
+                    {lang === 'fr' ? 'Annuler' : 'Cancel'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const designationStr = buildBilanDesignation(selectedBilans);
+                      if (!designationStr) return;
+
+                      const pId = activePatient?.id || activePatient?.codeBarre || activePatient?.mrn;
+                      if (pId) {
+                        try {
+                          await fetch(`/api/patients/${encodeURIComponent(pId)}/bilan-coche`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ selectedBilans })
+                          });
+                          fetchBilanCocheHistory(pId);
+                        } catch (err) {
+                          console.error('Error saving selected bilans to DB:', err);
+                        }
+                      }
+
+                      const updatedBilan = {
+                        ...bilan,
+                        clinicalIndication: designationStr
+                      };
+                      setBilan(updatedBilan);
+                      notifyDraftUpdate({ bilan: updatedBilan });
+
+                      setShowBilanModal(false);
+                      setEditingBilanIndex(null);
+                    }}
+                    className="px-5 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 text-xs font-bold rounded-xl border border-teal-400 hover:from-teal-400 hover:to-cyan-400 shadow-md shadow-teal-500/20 transition flex items-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>{editingBilanIndex !== null ? (lang === 'fr' ? 'Valider la modification' : 'Save Changes') : (lang === 'fr' ? 'Valider et Ajouter' : 'Validate and Add')}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* REPLACE PRESCRIPTION CONFIRMATION MODAL */}
-      <ReplacePrescriptionModal
-        isOpen={showReplaceConfirmModal}
-        lang={lang}
-        onCancel={() => {
-          setShowReplaceConfirmModal(false);
-          setPendingRxToLoad(null);
-        }}
-        onMerge={() => handleMergePrescriptionLoad(pendingRxToLoad)}
-        onReplace={() => applyPrescriptionLoad(pendingRxToLoad)}
-      />
     </div>
-
-    {/* MODAL DE SÉLECTION DES BILANS À FAIRE */}
-    {showBilanModal && (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-        <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-          {/* Modal Header */}
-          <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-teal-500/20 border border-teal-500/30 flex items-center justify-center text-teal-400 font-bold">
-                <TestTube className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white">
-                  {editingBilanIndex !== null
-                    ? (lang === 'fr' ? 'Modification du Bilan à Faire' : 'Edit Bilan')
-                    : (lang === 'fr' ? 'Sélection des Bilans à Faire' : 'Select Tests & Examinations')}
-                </h3>
-                <p className="text-xs text-slate-400">
-                  {editingBilanIndex !== null
-                    ? (lang === 'fr' ? 'Modifier les examens biologiques & imagerie pour cette consultation' : 'Modify biological & imaging tests for this consultation')
-                    : (lang === 'fr' ? 'Cocher les bilans biologiques & examens à prescrire' : 'Check biological & imaging tests to order')}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="relative w-48 sm:w-64">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={bilanSearch}
-                  onChange={(e) => setBilanSearch(e.target.value)}
-                  placeholder={lang === 'fr' ? 'Rechercher un bilan...' : 'Search test...'}
-                  className="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowBilanModal(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Modal Content - Categorized Grids */}
-          <div className="p-5 overflow-y-auto flex-1 space-y-5 custom-scrollbar">
-            {/* Category 1: Hématologie & Coagulation */}
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-teal-400 uppercase tracking-wider block flex items-center gap-2 border-b border-slate-800 pb-2">
-                🩸 {lang === 'fr' ? 'Hématologie & Coagulation' : 'Hematology & Coagulation'}
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                {[
-                  { key: 'FNS', label: 'FNS' },
-                  { key: 'GROUPAGE', label: 'Groupage Sanguin' },
-                  { key: 'TP', label: 'TP-TCK' },
-                  { key: 'FIBROGENE', label: 'Taux de Fibrogène' },
-                  { key: 'VS', label: 'VS' },
-                  { key: 'ELETRO_HEMOG', label: "Electrophorèse d'hémoglobine" }
-                ].filter(item => !bilanSearch || item.label.toLowerCase().includes(bilanSearch.toLowerCase())).map((item) => (
-                  <label key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 hover:text-white hover:border-teal-500/40 cursor-pointer transition select-none">
-                    <input
-                      type="checkbox"
-                      checked={!!selectedBilans[item.key]}
-                      onChange={(e) => setSelectedBilans({ ...selectedBilans, [item.key]: e.target.checked })}
-                      className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-0"
-                    />
-                    <span className={selectedBilans[item.key] ? 'text-teal-300 font-semibold' : ''}>{item.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Category 2: Biochimie & Organes */}
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block flex items-center gap-2 border-b border-slate-800 pb-2">
-                🧪 {lang === 'fr' ? 'Biochimie, Foie & Reins' : 'Biochemistry & Organ Function'}
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                {[
-                  { key: 'GLYCEMIE', label: 'Glycémie à jeun' },
-                  { key: 'HBA1C', label: 'HbA1C' },
-                  { key: 'UREE', label: 'Urée - Créatinémie' },
-                  { key: 'URIQUE', label: "Acide Urique" },
-                  { key: 'SGOT', label: 'SGOT - SGPT' },
-                  { key: 'ASAT', label: 'ASAT - ALAT' },
-                  { key: 'GAMMA', label: 'Gamma GT - Palc' },
-                  { key: 'PHOSPHATASES', label: 'Phosphatases Alcalines' },
-                  { key: 'FER', label: 'Fer Sérique' },
-                  { key: 'FERRITINE', label: 'Ferritine' },
-                  { key: 'VIT_D', label: 'Dosage Vitamine D' },
-                  { key: 'DOSAGE_DEPAKINE', label: 'Dosage Dépakine' }
-                ].filter(item => !bilanSearch || item.label.toLowerCase().includes(bilanSearch.toLowerCase())).map((item) => (
-                  <label key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 hover:text-white hover:border-teal-500/40 cursor-pointer transition select-none">
-                    <input
-                      type="checkbox"
-                      checked={!!selectedBilans[item.key]}
-                      onChange={(e) => setSelectedBilans({ ...selectedBilans, [item.key]: e.target.checked })}
-                      className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-0"
-                    />
-                    <span className={selectedBilans[item.key] ? 'text-cyan-300 font-semibold' : ''}>{item.label}</span>
-                  </label>
-                ))}
-              </div>
-
-              {/* Bilirubinémie Sub-options */}
-              <div className="pt-2 border-t border-slate-800/60 space-y-2">
-                <label className="flex items-center gap-2 text-xs font-bold text-amber-300 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={!!selectedBilans.BILIRUBINEMIE}
-                    onChange={(e) => setSelectedBilans({ ...selectedBilans, BILIRUBINEMIE: e.target.checked })}
-                    className="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0"
-                  />
-                  <span>Bilirubinémie</span>
-                </label>
-
-                {selectedBilans.BILIRUBINEMIE && (
-                  <div className="pl-6 grid grid-cols-3 gap-2">
-                    {[
-                      { key: 'TOTALE', label: 'Totale' },
-                      { key: 'CONJUGE', label: 'Conjuguée' },
-                      { key: 'NONCONJUGE', label: 'Non Conjugée' }
-                    ].map((sub) => (
-                      <label key={sub.key} className="flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={!!selectedBilans[sub.key]}
-                          onChange={(e) => setSelectedBilans({ ...selectedBilans, [sub.key]: e.target.checked })}
-                          className="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0"
-                        />
-                        <span className={selectedBilans[sub.key] ? 'text-amber-300 font-semibold' : ''}>{sub.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Category 3: Lipides & Ionogramme */}
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block flex items-center gap-2 border-b border-slate-800 pb-2">
-                💧 {lang === 'fr' ? 'Lipides & Ionogramme / Minéraux' : 'Lipids & Ionogram'}
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                {[
-                  { key: 'CHOLESTEROL', label: 'Cholestérol Total' },
-                  { key: 'HDL', label: 'HDL Cholestérol' },
-                  { key: 'LDL', label: 'LDL Cholestérol' },
-                  { key: 'TRIGLYCERIDE', label: 'Triglycéride' },
-                  { key: 'KALIEMIE', label: 'Kaliémie - Natrémie' },
-                  { key: 'CALCEMIE', label: 'Calcémie - Phosphorémie' }
-                ].filter(item => !bilanSearch || item.label.toLowerCase().includes(bilanSearch.toLowerCase())).map((item) => (
-                  <label key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 hover:text-white hover:border-teal-500/40 cursor-pointer transition select-none">
-                    <input
-                      type="checkbox"
-                      checked={!!selectedBilans[item.key]}
-                      onChange={(e) => setSelectedBilans({ ...selectedBilans, [item.key]: e.target.checked })}
-                      className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-0"
-                    />
-                    <span className={selectedBilans[item.key] ? 'text-blue-300 font-semibold' : ''}>{item.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Category 4: Immunologie & Sérologie / Urines */}
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block flex items-center gap-2 border-b border-slate-800 pb-2">
-                🛡️ {lang === 'fr' ? 'Inflammation, Sérologie & Urines' : 'Serology & Urines'}
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                {[
-                  { key: 'CRP', label: 'CRP' },
-                  { key: 'ASLO', label: 'ASLO' },
-                  { key: 'ECBU', label: 'ECBU' },
-                  { key: 'ALBUMINEMIE', label: 'Albuminémie' },
-                  { key: 'PROTEIN', label: 'Protéinurie' },
-                  { key: 'PROTEIN24', label: 'Protéinurie 24h' },
-                  { key: 'RUBEOLE', label: 'Sérologie Rubéole' },
-                  { key: 'TOXOPLASMOSE', label: 'Sérologie Toxoplasmose' },
-                  { key: 'SYPHIS', label: 'Sérologie Syphilis' },
-                  { key: 'HIV', label: 'Sérologie HIV' },
-                  { key: 'COPRO_PARASIT', label: 'Copro-parasitologie' }
-                ].filter(item => !bilanSearch || item.label.toLowerCase().includes(bilanSearch.toLowerCase())).map((item) => (
-                  <label key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 hover:text-white hover:border-teal-500/40 cursor-pointer transition select-none">
-                    <input
-                      type="checkbox"
-                      checked={!!selectedBilans[item.key]}
-                      onChange={(e) => setSelectedBilans({ ...selectedBilans, [item.key]: e.target.checked })}
-                      className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-0"
-                    />
-                    <span className={selectedBilans[item.key] ? 'text-emerald-300 font-semibold' : ''}>{item.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Category 5: Hormonologie */}
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-purple-400 uppercase tracking-wider block flex items-center gap-2 border-b border-slate-800 pb-2">
-                🧬 {lang === 'fr' ? 'Hormonologie & Endocrinologie' : 'Hormonology & Endocrinology'}
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                {[
-                  { key: 'FT3', label: 'FT 3 - FT 4' },
-                  { key: 'TSHUS', label: 'TSHus' },
-                  { key: 'FSH', label: 'FSH' },
-                  { key: 'LH', label: 'LH' },
-                  { key: 'PROLACTINE', label: 'Prolactine' },
-                  { key: 'AMH', label: 'AMH' },
-                  { key: 'PROGESTERONE', label: 'Progestérone' },
-                  { key: 'DHEA', label: 'S - DHEA' },
-                  { key: 'DELTA', label: 'Delta 4 androstènedione' },
-                  { key: 'DOSAGE_HORM_CROISS', label: 'Hormone de croissance' }
-                ].filter(item => !bilanSearch || item.label.toLowerCase().includes(bilanSearch.toLowerCase())).map((item) => (
-                  <label key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 hover:text-white hover:border-teal-500/40 cursor-pointer transition select-none">
-                    <input
-                      type="checkbox"
-                      checked={!!selectedBilans[item.key]}
-                      onChange={(e) => setSelectedBilans({ ...selectedBilans, [item.key]: e.target.checked })}
-                      className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-0"
-                    />
-                    <span className={selectedBilans[item.key] ? 'text-purple-300 font-semibold' : ''}>{item.label}</span>
-                  </label>
-                ))}
-              </div>
-
-              {/* Sérologie maladie cœliaque Sub-options */}
-              <div className="pt-2 border-t border-slate-800/60 space-y-2">
-                <label className="flex items-center gap-2 text-xs font-bold text-purple-300 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={!!selectedBilans.SEROLOGIE_MALADIE_COELIAQUE}
-                    onChange={(e) => setSelectedBilans({ ...selectedBilans, SEROLOGIE_MALADIE_COELIAQUE: e.target.checked })}
-                    className="rounded border-slate-700 bg-slate-950 text-purple-500 focus:ring-0"
-                  />
-                  <span>Sérologie maladie cœliaque</span>
-                </label>
-
-                {selectedBilans.SEROLOGIE_MALADIE_COELIAQUE && (
-                  <div className="pl-6 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[
-                      { key: 'ACS', label: 'ACS' },
-                      { key: 'ANTI_TRANSGLUT', label: 'Anti-transglutaminase' },
-                      { key: 'ANTIENDOM', label: 'Antiendomisum' },
-                      { key: 'ANTI_GLIADINE', label: 'Anti gliadine' }
-                    ].map((sub) => (
-                      <label key={sub.key} className="flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={!!selectedBilans[sub.key]}
-                          onChange={(e) => setSelectedBilans({ ...selectedBilans, [sub.key]: e.target.checked })}
-                          className="rounded border-slate-700 bg-slate-950 text-purple-500 focus:ring-0"
-                        />
-                        <span className={selectedBilans[sub.key] ? 'text-purple-300 font-semibold' : ''}>{sub.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Category 6: Imagerie & Examens Spéciaux */}
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-rose-400 uppercase tracking-wider block flex items-center gap-2 border-b border-slate-800 pb-2">
-                📷 {lang === 'fr' ? 'Imagerie & Examens Fonctionnels' : 'Imaging & Functional Tests'}
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {[
-                  { key: 'RADIO_MAIN', label: 'Radio de la main' },
-                  { key: 'TELETHORAX', label: 'Téléthorax' },
-                  { key: 'ETF', label: 'ETF' },
-                  { key: 'EEG', label: 'EEG' }
-                ].filter(item => !bilanSearch || item.label.toLowerCase().includes(bilanSearch.toLowerCase())).map((item) => (
-                  <label key={item.key} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 hover:text-white hover:border-teal-500/40 cursor-pointer transition select-none">
-                    <input
-                      type="checkbox"
-                      checked={!!selectedBilans[item.key]}
-                      onChange={(e) => setSelectedBilans({ ...selectedBilans, [item.key]: e.target.checked })}
-                      className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-0"
-                    />
-                    <span className={selectedBilans[item.key] ? 'text-rose-300 font-semibold' : ''}>{item.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Modal Footer with ALWAYS VISIBLE 'AUTRE' Input & Action Buttons */}
-          <div className="p-4 border-t border-slate-800 bg-slate-950/90 space-y-3 shrink-0 shadow-lg">
-            {/* Always Visible 'AUTRE' Input */}
-            <div className="flex items-center gap-3">
-              <label className="text-xs font-bold text-amber-400 uppercase tracking-wider shrink-0 flex items-center gap-1.5">
-                ✍️ {lang === 'fr' ? 'Autre / Précisions :' : 'Other / Notes:'}
-              </label>
-              <input
-                type="text"
-                value={selectedBilans.AUTRE || ''}
-                onChange={(e) => setSelectedBilans({ ...selectedBilans, AUTRE: e.target.value })}
-                placeholder={lang === 'fr' ? 'Saisir un autre bilan ou précisions non listées...' : 'Enter custom exam or details...'}
-                className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-amber-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500 font-medium"
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-800/80">
-              <button
-                type="button"
-                onClick={() => {
-                  const keys = Object.keys(selectedBilans);
-                  const cleared = {};
-                  keys.forEach(k => { cleared[k] = k === 'AUTRE' ? '' : false; });
-                  setSelectedBilans(cleared);
-                }}
-                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition"
-              >
-                {lang === 'fr' ? 'Réinitialiser' : 'Reset'}
-              </button>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowBilanModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition"
-                >
-                  {lang === 'fr' ? 'Annuler' : 'Cancel'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const designationStr = buildBilanDesignation(selectedBilans);
-                    if (!designationStr) return;
-
-                    const todayStr = new Date().toISOString().split('T')[0];
-
-                    setBilanCocheRows(prev => {
-                      if (editingBilanIndex !== null && prev[editingBilanIndex]) {
-                        // Update existing row
-                        const updated = [...prev];
-                        updated[editingBilanIndex] = {
-                          ...updated[editingBilanIndex],
-                          DESIGNATION: designationStr
-                        };
-                        return updated;
-                      }
-
-                      // Check if row exists for today/consultation
-                      const existingIdx = prev.findIndex(r => {
-                        if (draft?.idConsultation && r.ID_CONSULTATION === draft.idConsultation) return true;
-                        if (r.DATE_BILAN && r.DATE_BILAN.startsWith(todayStr)) return true;
-                        return false;
-                      });
-
-                      if (existingIdx !== -1) {
-                        const updated = [...prev];
-                        updated[existingIdx] = {
-                          ...updated[existingIdx],
-                          DESIGNATION: designationStr
-                        };
-                        return updated;
-                      }
-
-                      // Insert new row
-                      const newRow = {
-                        ID_CONSULTATION: draft?.idConsultation || Date.now(),
-                        EXERCICE: new Date().getFullYear(),
-                        DATE_BILAN: todayStr,
-                        DESIGNATION: designationStr
-                      };
-                      return [newRow, ...prev];
-                    });
-
-                    const updatedBilan = {
-                      ...bilan,
-                      clinicalIndication: designationStr
-                    };
-                    setBilan(updatedBilan);
-                    notifyDraftUpdate({ bilan: updatedBilan });
-
-                    setShowBilanModal(false);
-                    setEditingBilanIndex(null);
-                  }}
-                  className="px-5 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 text-xs font-bold rounded-xl border border-teal-400 hover:from-teal-400 hover:to-cyan-400 shadow-md shadow-teal-500/20 transition flex items-center gap-2 cursor-pointer active:scale-95"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{editingBilanIndex !== null ? (lang === 'fr' ? 'Valider la modification' : 'Save Changes') : (lang === 'fr' ? 'Valider et Ajouter' : 'Validate and Add')}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
-  </div>
-);
+  );
 }

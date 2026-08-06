@@ -25,7 +25,9 @@ export function renderModele11Html({
   barcodeSvg,
   clinicInfo,
   documentTitle,
-  prescriptionsCount
+  prescriptionsCount,
+  prescriptionsCountLabel,
+  isBilan
 }) {
   const doctorTitleFr = clinicInfo?.doctorNameFr || doctorNameFr || doctor || 'Nom DOcteur Fr';
   const cabinetBanner = clinicInfo?.clinicName || clinicInfo?.NOM_CABINET || clinicInfo?.nomCabinet || clinicInfo?.bannerTitle || clinicInfo?.typeCabinet || 'CABINET MEDICO – CHIRURGICAL';
@@ -131,7 +133,7 @@ export function renderModele11Html({
       ${rxHtml}
       ${prescriptionsCount !== undefined && prescriptionsCount !== null ? `
         <div style="text-align: right; font-size: 13.5px; font-weight: normal; color: #000; margin-top: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
-          ${prescriptionsCount} Médicament(s)
+          ${prescriptionsCount} ${prescriptionsCountLabel || ((isBilan || documentTitle === 'BILAN') ? 'Examen(s)' : 'Médicament(s)')}
         </div>
       ` : ''}
     </div>

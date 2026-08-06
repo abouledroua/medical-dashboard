@@ -6,6 +6,7 @@ import {
   generer_Code_Malade,
   getPrescriptionsForConsultation,
   getAssureInfoForConsultation,
+  getBilansForConsultation,
 } from "../../helpers/utils.js";
 
 const router = express.Router();
@@ -455,7 +456,6 @@ router.get("/:id", async (req, res) => {
               c.TOTAL,
               o.OBS as clinicalNotes,
               a.NB_JOUR as arretNbJour,
-              a.NB_JOURS_L as arretNbJoursL,
               DATE_FORMAT(a.DATE_DEBUT, '%Y-%m-%d') as arretDateDebut,
               DATE_FORMAT(a.DATE_FIN, '%Y-%m-%d') as arretDateFin,
               a.OBS as arretObs
@@ -491,11 +491,12 @@ router.get("/:id", async (req, res) => {
           const hasArret = Boolean(c.arretNbJour || c.arretDateDebut);
           const arretDeTravail = hasArret ? {
             nbJour: c.arretNbJour || 0,
-            nbJoursL: (c.arretNbJoursL || "").trim(),
             dateDebut: c.arretDateDebut || "",
             dateFin: c.arretDateFin || "",
             obs: c.arretObs || ""
           } : null;
+
+          const bilans = await getBilansForConsultation(c.id, c.EXERCICE);
 
           return {
             id: `c-${c.id}`,
@@ -508,6 +509,7 @@ router.get("/:id", async (req, res) => {
             arretDeTravail,
             prescriptions,
             assureInfo,
+            bilans,
           };
         }),
       );
@@ -517,7 +519,6 @@ router.get("/:id", async (req, res) => {
                 DATE_FORMAT(o.DATE_OBS, '%Y-%m-%d') as dateStr,
                 o.OBS as clinicalNotes,
                 a.NB_JOUR as arretNbJour,
-                a.NB_JOURS_L as arretNbJoursL,
                 DATE_FORMAT(a.DATE_DEBUT, '%Y-%m-%d') as arretDateDebut,
                 DATE_FORMAT(a.DATE_FIN, '%Y-%m-%d') as arretDateFin,
                 a.OBS as arretObs
@@ -542,11 +543,12 @@ router.get("/:id", async (req, res) => {
           const hasArret = Boolean(o.arretNbJour || o.arretDateDebut);
           const arretDeTravail = hasArret ? {
             nbJour: o.arretNbJour || 0,
-            nbJoursL: (o.arretNbJoursL || "").trim(),
             dateDebut: o.arretDateDebut || "",
             dateFin: o.arretDateFin || "",
             obs: o.arretObs || ""
           } : null;
+
+          const bilans = await getBilansForConsultation(o.id, new Date().getFullYear());
 
           return {
             id: `c-${o.id}`,
@@ -558,6 +560,7 @@ router.get("/:id", async (req, res) => {
             arretDeTravail,
             prescriptions,
             assureInfo,
+            bilans,
           };
         }),
       );

@@ -24,7 +24,10 @@ export function renderModele7Html({
   doctor,
   barcodeSvg,
   clinicInfo,
-  prescriptionsCount
+  prescriptionsCount,
+  prescriptionsCountLabel,
+  documentTitle,
+  isBilan
 }) {
   const doctorTitleFr = clinicInfo?.doctorNameFr || doctorNameFr || doctor || 'Nom DOcteur Fr';
   const detailsSpecialite = (clinicInfo?.detailsSpecialite || clinicInfo?.raw?.DETAILS_SPECIALITE || clinicInfo?.raw?.DISCRIPTION_SPECIALITE || '').trim();
@@ -99,7 +102,7 @@ export function renderModele7Html({
       ${rxHtml}
       ${prescriptionsCount !== undefined && prescriptionsCount !== null ? `
         <div style="text-align: right; font-size: 13.5px; font-weight: normal; color: #000; margin-top: 8px; font-family: 'Segoe UI', Arial, sans-serif;">
-          ${prescriptionsCount} Médicament(s)
+          ${prescriptionsCount} ${prescriptionsCountLabel || ((isBilan || documentTitle === 'BILAN') ? 'Examen(s)' : 'Médicament(s)')}
         </div>
       ` : ''}
     </div>

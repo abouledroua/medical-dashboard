@@ -319,80 +319,97 @@ router.get("/:id/bilan-coche", async (req, res) => {
     if (ids.length === 0) ids.push(patId);
 
     const query = `
-      SELECT BC.ID_CONSULTATION, BC.EXERCICE, BC.DATE_BILAN,
-        CONCAT(
-          CASE BC.FNS WHEN 1 THEN 'FNS, ' ELSE '' END,
-          CASE BC.GROUPAGE WHEN 1 THEN 'Groupage Sanguin, ' ELSE '' END,
-          CASE BC.TP WHEN 1 THEN 'TP-TCK, ' ELSE '' END,
-          CASE BC.FIBROGENE WHEN 1 THEN 'Taux de Fibrogène, ' ELSE '' END,
-          CASE BC.VS WHEN 1 THEN 'VS, ' ELSE '' END,
-          CASE BC.FER WHEN 1 THEN 'Fer Sérique, ' ELSE '' END,
-          CASE BC.FERRITINE WHEN 1 THEN 'Ferritine, ' ELSE '' END,
-          CASE BC.GLYCEMIE WHEN 1 THEN 'Glycemie à jeun, ' ELSE '' END,
-          CASE BC.HBA1C WHEN 1 THEN 'HbA1C, ' ELSE '' END,
-          CASE BC.SGOT WHEN 1 THEN 'SGOT - SGPT, ' ELSE '' END,
-          CASE BC.GAMMA WHEN 1 THEN 'Gamma GT - Phosphates Alcalines, ' ELSE '' END,
-          CASE BC.BILIRUBINEMIE WHEN 1 THEN CONCAT('Bilirubinémie',
-            CASE BC.TOTALE WHEN 1 THEN CONCAT('\n','  ','Total') ELSE '' END,
-            CASE BC.CONJUGE WHEN 1 THEN CONCAT('\n','  ','Conjugée') ELSE '' END,
-            CASE BC.NONCONJUGE WHEN 1 THEN CONCAT('\n','  ','Non Conjugée') ELSE '' END, ', '
-          ) ELSE '' END,
-          CASE BC.UREE WHEN 1 THEN 'Urée - Créatinémie, ' ELSE '' END,
-          CASE BC.ECBU WHEN 1 THEN 'ECBU, ' ELSE '' END,
-          CASE BC.CHOLESTEROL WHEN 1 THEN 'Cholestérole Total, ' ELSE '' END,
-          CASE BC.HDL WHEN 1 THEN 'HDL Cholestérol, ' ELSE '' END,
-          CASE BC.LDL WHEN 1 THEN 'LDL Cholestérol, ' ELSE '' END,
-          CASE BC.TRIGLYCERIDE WHEN 1 THEN 'Triglycéride, ' ELSE '' END,
-          CASE BC.KALIEMIE WHEN 1 THEN 'Kaliémie - Natrémie, ' ELSE '' END,
-          CASE BC.CALCEMIE WHEN 1 THEN 'Calcémie - Phosphosémie, ' ELSE '' END,
-          CASE BC.RUBEOLE WHEN 1 THEN 'Sériologie de la Rubéole, ' ELSE '' END,
-          CASE BC.TOXOPLASMOSE WHEN 1 THEN 'Sériologie de la Toxoplasmose, ' ELSE '' END,
-          CASE BC.SYPHIS WHEN 1 THEN 'Sériologie de la Syphilis, ' ELSE '' END,
-          CASE BC.HIV WHEN 1 THEN 'Sériologie HIV, ' ELSE '' END,
-          CASE BC.URIQUE WHEN 1 THEN 'Taux d''acide Urique, ' ELSE '' END,
-          CASE BC.CRP WHEN 1 THEN 'CRP, ' ELSE '' END,
-          CASE BC.ALBUMINEMIE WHEN 1 THEN 'Albuminémie, ' ELSE '' END,
-          CASE BC.PROTEIN WHEN 1 THEN 'Proteinurie, ' ELSE '' END,
-          CASE BC.PROTEIN24 WHEN 1 THEN 'Proteinurie de 24h, ' ELSE '' END,
-          CASE BC.FT3 WHEN 1 THEN 'FT 3 - FT 4, ' ELSE '' END,
-          CASE BC.FSH WHEN 1 THEN 'FHS, ' ELSE '' END,
-          CASE BC.TSHUS WHEN 1 THEN 'TSHus, ' ELSE '' END,
-          CASE BC.LH WHEN 1 THEN 'LH, ' ELSE '' END,
-          CASE BC.ASAT WHEN 1 THEN 'ASAT - ALAT, ' ELSE '' END,
-          CASE BC.PHOSPHATASES WHEN 1 THEN 'Phosphatases Alcalines, ' ELSE '' END,
-          CASE BC.ASLO WHEN 1 THEN 'ASLO, ' ELSE '' END,
-          CASE BC.PROLACTINE WHEN 1 THEN 'Prolactine, ' ELSE '' END,
-          CASE BC.AMH WHEN 1 THEN 'AMH, ' ELSE '' END,
-          CASE BC.PROGESTERONE WHEN 1 THEN 'Progestérone, ' ELSE '' END,
-          CASE BC.DHEA WHEN 1 THEN 'S - DHEA, ' ELSE '' END,
-          CASE BC.DELTA WHEN 1 THEN 'Delta 4 androstenedione, ' ELSE '' END,
-          CASE BC.ETF WHEN 1 THEN 'ETF, ' ELSE '' END,
-          CASE BC.EEG WHEN 1 THEN 'EEG, ' ELSE '' END,
-          CASE BC.VIT_D WHEN 1 THEN 'Dosage Vitamine D, ' ELSE '' END,
-          CASE BC.ELETRO_HEMOG WHEN 1 THEN 'Electrophorese de l’hemoglobine, ' ELSE '' END,
-          CASE BC.DOSAGE_DEPAKINE WHEN 1 THEN 'Dosage depakine, ' ELSE '' END,
-          CASE BC.RADIO_MAIN WHEN 1 THEN 'Radio de la main, ' ELSE '' END,
-          CASE BC.TELETHORAX WHEN 1 THEN 'Telethorax, ' ELSE '' END,
-          CASE BC.COPRO_PARASIT WHEN 1 THEN 'Copro-parasitologie des sels, ' ELSE '' END,
-          CASE BC.DOSAGE_HORM_CROISS WHEN 1 THEN 'Dosage de l’hormone de croissance, ' ELSE '' END,
-          CASE BC.SEROLOGIE_MALADIE_COELIAQUE WHEN 1 THEN CONCAT('Sérologie de la maladie coeliaque',
-            CASE BC.ACS WHEN 1 THEN CONCAT('\n','  ','ACS') ELSE '' END,
-            CASE BC.ANTI_TRANSGLUT WHEN 1 THEN CONCAT('\n','  ','Anti-transglutaminase') ELSE '' END,
-            CASE BC.ANTIENDOM WHEN 1 THEN CONCAT('\n','  ','Antiendomisum') ELSE '' END,
-            CASE BC.ANTI_GLIADINE WHEN 1 THEN CONCAT('\n','  ','Anti gliadine') ELSE '' END, ', '
-          ) ELSE '' END,
-          REPLACE(IFNULL(BC.AUTRE, ''), ';', ', ')
-        ) AS DESIGNATION
-      FROM bilan_consult_coche BC
-      INNER JOIN consultation c ON c.ID_CONSULTATION = BC.ID_CONSULTATION 
-                               AND c.EXERCICE = BC.EXERCICE 
-                               AND c.ETAT IN (1, 3)
-      WHERE c.ID_MALADE IN (?)
-      ORDER BY c.DATE_CONSULTATION DESC, BC.ID_CONSULTATION DESC
+      SELECT ID_CONSULTATION, EXERCICE, DATE_BILAN, DESIGNATION FROM (
+        SELECT BC.ID_CONSULTATION, BC.EXERCICE, BC.DATE_BILAN AS DATE_BILAN,
+          c.DATE_CONSULTATION,
+          CONCAT(
+            CASE BC.FNS WHEN 1 THEN 'FNS, ' ELSE '' END,
+            CASE BC.GROUPAGE WHEN 1 THEN 'Groupage Sanguin, ' ELSE '' END,
+            CASE BC.TP WHEN 1 THEN 'TP-TCK, ' ELSE '' END,
+            CASE BC.FIBROGENE WHEN 1 THEN 'Taux de Fibrogène, ' ELSE '' END,
+            CASE BC.VS WHEN 1 THEN 'VS, ' ELSE '' END,
+            CASE BC.FER WHEN 1 THEN 'Fer Sérique, ' ELSE '' END,
+            CASE BC.FERRITINE WHEN 1 THEN 'Ferritine, ' ELSE '' END,
+            CASE BC.GLYCEMIE WHEN 1 THEN 'Glycemie à jeun, ' ELSE '' END,
+            CASE BC.HBA1C WHEN 1 THEN 'HbA1C, ' ELSE '' END,
+            CASE BC.SGOT WHEN 1 THEN 'SGOT - SGPT, ' ELSE '' END,
+            CASE BC.GAMMA WHEN 1 THEN 'Gamma GT - Phosphates Alcalines, ' ELSE '' END,
+            CASE BC.BILIRUBINEMIE WHEN 1 THEN CONCAT('Bilirubinémie',
+              CASE BC.TOTALE WHEN 1 THEN CONCAT('\n','  ','Total') ELSE '' END,
+              CASE BC.CONJUGE WHEN 1 THEN CONCAT('\n','  ','Conjugée') ELSE '' END,
+              CASE BC.NONCONJUGE WHEN 1 THEN CONCAT('\n','  ','Non Conjugée') ELSE '' END, ', '
+            ) ELSE '' END,
+            CASE BC.UREE WHEN 1 THEN 'Urée - Créatinémie, ' ELSE '' END,
+            CASE BC.ECBU WHEN 1 THEN 'ECBU, ' ELSE '' END,
+            CASE BC.CHOLESTEROL WHEN 1 THEN 'Cholestérole Total, ' ELSE '' END,
+            CASE BC.HDL WHEN 1 THEN 'HDL Cholestérol, ' ELSE '' END,
+            CASE BC.LDL WHEN 1 THEN 'LDL Cholestérol, ' ELSE '' END,
+            CASE BC.TRIGLYCERIDE WHEN 1 THEN 'Triglycéride, ' ELSE '' END,
+            CASE BC.KALIEMIE WHEN 1 THEN 'Kaliémie - Natrémie, ' ELSE '' END,
+            CASE BC.CALCEMIE WHEN 1 THEN 'Calcémie - Phosphosémie, ' ELSE '' END,
+            CASE BC.RUBEOLE WHEN 1 THEN 'Sériologie de la Rubéole, ' ELSE '' END,
+            CASE BC.TOXOPLASMOSE WHEN 1 THEN 'Sériologie de la Toxoplasmose, ' ELSE '' END,
+            CASE BC.SYPHIS WHEN 1 THEN 'Sériologie de la Syphilis, ' ELSE '' END,
+            CASE BC.HIV WHEN 1 THEN 'Sériologie HIV, ' ELSE '' END,
+            CASE BC.URIQUE WHEN 1 THEN 'Taux d''acide Urique, ' ELSE '' END,
+            CASE BC.CRP WHEN 1 THEN 'CRP, ' ELSE '' END,
+            CASE BC.ALBUMINEMIE WHEN 1 THEN 'Albuminémie, ' ELSE '' END,
+            CASE BC.PROTEIN WHEN 1 THEN 'Proteinurie, ' ELSE '' END,
+            CASE BC.PROTEIN24 WHEN 1 THEN 'Proteinurie de 24h, ' ELSE '' END,
+            CASE BC.FT3 WHEN 1 THEN 'FT 3 - FT 4, ' ELSE '' END,
+            CASE BC.FSH WHEN 1 THEN 'FHS, ' ELSE '' END,
+            CASE BC.TSHUS WHEN 1 THEN 'TSHus, ' ELSE '' END,
+            CASE BC.LH WHEN 1 THEN 'LH, ' ELSE '' END,
+            CASE BC.ASAT WHEN 1 THEN 'ASAT - ALAT, ' ELSE '' END,
+            CASE BC.PHOSPHATASES WHEN 1 THEN 'Phosphatases Alcalines, ' ELSE '' END,
+            CASE BC.ASLO WHEN 1 THEN 'ASLO, ' ELSE '' END,
+            CASE BC.PROLACTINE WHEN 1 THEN 'Prolactine, ' ELSE '' END,
+            CASE BC.AMH WHEN 1 THEN 'AMH, ' ELSE '' END,
+            CASE BC.PROGESTERONE WHEN 1 THEN 'Progestérone, ' ELSE '' END,
+            CASE BC.DHEA WHEN 1 THEN 'S - DHEA, ' ELSE '' END,
+            CASE BC.DELTA WHEN 1 THEN 'Delta 4 androstenedione, ' ELSE '' END,
+            CASE BC.ETF WHEN 1 THEN 'ETF, ' ELSE '' END,
+            CASE BC.EEG WHEN 1 THEN 'EEG, ' ELSE '' END,
+            CASE BC.VIT_D WHEN 1 THEN 'Dosage Vitamine D, ' ELSE '' END,
+            CASE BC.ELETRO_HEMOG WHEN 1 THEN 'Electrophorese de l’hemoglobine, ' ELSE '' END,
+            CASE BC.DOSAGE_DEPAKINE WHEN 1 THEN 'Dosage depakine, ' ELSE '' END,
+            CASE BC.RADIO_MAIN WHEN 1 THEN 'Radio de la main, ' ELSE '' END,
+            CASE BC.TELETHORAX WHEN 1 THEN 'Telethorax, ' ELSE '' END,
+            CASE BC.COPRO_PARASIT WHEN 1 THEN 'Copro-parasitologie des sels, ' ELSE '' END,
+            CASE BC.DOSAGE_HORM_CROISS WHEN 1 THEN 'Dosage de l’hormone de croissance, ' ELSE '' END,
+            CASE BC.SEROLOGIE_MALADIE_COELIAQUE WHEN 1 THEN CONCAT('Sérologie de la maladie coeliaque',
+              CASE BC.ACS WHEN 1 THEN CONCAT('\n','  ','ACS') ELSE '' END,
+              CASE BC.ANTI_TRANSGLUT WHEN 1 THEN CONCAT('\n','  ','Anti-transglutaminase') ELSE '' END,
+              CASE BC.ANTIENDOM WHEN 1 THEN CONCAT('\n','  ','Antiendomisum') ELSE '' END,
+              CASE BC.ANTI_GLIADINE WHEN 1 THEN CONCAT('\n','  ','Anti gliadine') ELSE '' END, ', '
+            ) ELSE '' END,
+            REPLACE(IFNULL(BC.AUTRE, ''), ';', ', ')
+          ) AS DESIGNATION
+        FROM bilan_consult_coche BC
+        INNER JOIN consultation c ON c.ID_CONSULTATION = BC.ID_CONSULTATION 
+                                 AND c.EXERCICE = BC.EXERCICE 
+                                 AND c.ETAT IN (1, 3)
+        WHERE c.ID_MALADE IN (?)
+
+        UNION ALL
+
+        SELECT BSC.ID_CONSULTATION, BSC.EXERCICE, c.DATE_CONSULTATION AS DATE_BILAN,
+          c.DATE_CONSULTATION,
+          GROUP_CONCAT(COALESCE(b.DESIGNATION, BSC.RESULTAT) SEPARATOR ', ') AS DESIGNATION
+        FROM bilans_consult BSC
+        INNER JOIN consultation c ON c.ID_CONSULTATION = BSC.ID_CONSULTATION 
+                                 AND c.EXERCICE = BSC.EXERCICE 
+                                 AND c.ETAT IN (1, 3)
+        LEFT JOIN bilan b ON b.ID_BILAN = BSC.ID_BILAN
+        WHERE c.ID_MALADE IN (?)
+        GROUP BY BSC.ID_CONSULTATION, BSC.EXERCICE, c.DATE_CONSULTATION
+      ) combined
+      WHERE TRIM(IFNULL(DESIGNATION, '')) != ''
+      ORDER BY DATE_CONSULTATION DESC, ID_CONSULTATION DESC
     `;
 
-    const [rows] = await pool.query(query, [ids]).catch((err) => {
-      console.warn("bilan_consult_coche query notice:", err.message);
+    const [rows] = await pool.query(query, [ids, ids]).catch((err) => {
+      console.warn("bilan query notice:", err.message);
       return [[]];
     });
 
@@ -400,6 +417,310 @@ router.get("/:id/bilan-coche", async (req, res) => {
   } catch (err) {
     console.error("API /api/patients/:id/bilan-coche error:", err);
     res.json([]);
+  }
+});
+
+// POST /api/patients/:id/bilan-coche - Save checked bilans (Selection mode) to bilan_consult_coche table
+router.post("/:id/bilan-coche", async (req, res) => {
+  try {
+    const patId = req.params.id;
+    const { selectedBilans } = req.body;
+
+    if (!selectedBilans) {
+      return res.status(400).json({ error: "No bilans selected" });
+    }
+
+    const [patRows] = await pool.query(
+      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+      [patId, patId]
+    ).catch(() => [[]]);
+
+    const ids = [];
+    if (patRows.length > 0) {
+      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
+      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
+    }
+    if (ids.length === 0) ids.push(patId);
+    const patientIdForInsert = ids[0];
+
+    const obsDate = new Date().toISOString().split("T")[0];
+    const year = String(new Date().getFullYear());
+
+    let [cRows] = await pool.query(
+      "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
+      [ids]
+    ).catch(() => [[]]);
+
+    let idConsult, exYear;
+    if (cRows.length > 0) {
+      idConsult = cRows[0].ID_CONSULTATION;
+      exYear = cRows[0].EXERCICE || year;
+    } else {
+      const [cMax] = await pool.query(
+        "SELECT COALESCE(MAX(ID_CONSULTATION), 0) + 1 AS nextId FROM consultation WHERE EXERCICE = ?",
+        [year]
+      ).catch(() => [[{ nextId: 1 }]]);
+      idConsult = cMax[0].nextId;
+      exYear = year;
+
+      await pool.query(
+        "INSERT INTO consultation (ID_CONSULTATION, ID_MALADE, DATE_CONSULTATION, EXERCICE, TOTAL, ETAT, ID_USER, ID_VERSEMENT, ID_POSTE, FOCUS, INT_CONSULTATION, INT_LASER, INT_SCLERO) VALUES (?, ?, CURRENT_DATE(), ?, 0, 1, 1, 0, '', 0, 1, 0, 0)",
+        [idConsult, String(patientIdForInsert), year]
+      ).catch(err => console.error("Error creating consultation for bilan:", err));
+    }
+
+    const [cols] = await pool.query("SHOW COLUMNS FROM bilan_consult_coche").catch(() => [[]]);
+    if (cols && cols.length > 0) {
+      const [existB] = await pool.query(
+        "SELECT * FROM bilan_consult_coche WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
+        [idConsult, String(exYear)]
+      ).catch(() => [[]]);
+
+      const bData = existB.length > 0 ? { ...existB[0] } : {};
+      bData.ID_CONSULTATION = idConsult;
+      bData.EXERCICE = String(exYear);
+      bData.DATE_BILAN = obsDate;
+
+      if (selectedBilans) {
+        for (const k in selectedBilans) {
+          if (k === 'AUTRE') {
+            bData.AUTRE = selectedBilans.AUTRE || '';
+          } else if (selectedBilans[k]) {
+            bData[k] = 1;
+          } else {
+            bData[k] = 0;
+          }
+        }
+      }
+
+      if (existB.length > 0) {
+        await pool.query("DELETE FROM bilan_consult_coche WHERE ID_CONSULTATION = ? AND EXERCICE = ?", [idConsult, String(exYear)]).catch(() => {});
+      }
+
+      const fields = [];
+      const values = [];
+
+      for (const c of cols) {
+        const colName = c.Field;
+        if (bData[colName] !== undefined) {
+          fields.push(`\`${colName}\``);
+          values.push(bData[colName]);
+        } else if (c.Null === "NO" && c.Default === null) {
+          fields.push(`\`${colName}\``);
+          if (colName.toUpperCase().startsWith("ID_") || c.Type.includes("int") || c.Type.includes("decimal") || c.Type.includes("float")) {
+            values.push(0);
+          } else {
+            values.push("");
+          }
+        }
+      }
+
+      const fieldSql = fields.join(", ");
+      const placeholderSql = fields.map(() => "?").join(", ");
+      await pool.query(`INSERT INTO bilan_consult_coche (${fieldSql}) VALUES (${placeholderSql})`, values);
+    }
+
+    res.status(200).json({ success: true, idConsultation: idConsult });
+  } catch (err) {
+    console.error("POST /api/patients/:id/bilan-coche error:", err);
+    res.status(500).json({ error: "Failed to save bilan_consult_coche" });
+  }
+});
+
+// POST /api/patients/:id/bilan-saisie - Save Saisie mode free-text items to bilans_consult & bilan tables
+router.post("/:id/bilan-saisie", async (req, res) => {
+  try {
+    const patId = req.params.id;
+    const { text } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: "Bilan text cannot be empty" });
+    }
+
+    const [patRows] = await pool.query(
+      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+      [patId, patId]
+    ).catch(() => [[]]);
+
+    const ids = [];
+    if (patRows.length > 0) {
+      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
+      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
+    }
+    if (ids.length === 0) ids.push(patId);
+    const patientIdForInsert = ids[0];
+
+    const year = String(new Date().getFullYear());
+
+    let [cRows] = await pool.query(
+      "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
+      [ids]
+    ).catch(() => [[]]);
+
+    let idConsult, exYear;
+    if (cRows.length > 0) {
+      idConsult = cRows[0].ID_CONSULTATION;
+      exYear = cRows[0].EXERCICE || year;
+    } else {
+      const [cMax] = await pool.query(
+        "SELECT COALESCE(MAX(ID_CONSULTATION), 0) + 1 AS nextId FROM consultation WHERE EXERCICE = ?",
+        [year]
+      ).catch(() => [[{ nextId: 1 }]]);
+      idConsult = cMax[0].nextId;
+      exYear = year;
+
+      await pool.query(
+        "INSERT INTO consultation (ID_CONSULTATION, ID_MALADE, DATE_CONSULTATION, EXERCICE, TOTAL, ETAT, ID_USER, ID_VERSEMENT, ID_POSTE, FOCUS, INT_CONSULTATION, INT_LASER, INT_SCLERO) VALUES (?, ?, CURRENT_DATE(), ?, 0, 1, 1, 0, '', 0, 1, 0, 0)",
+        [idConsult, String(patientIdForInsert), year]
+      ).catch(err => console.error("Error creating consultation for bilan saisie:", err));
+    }
+
+    // Split text by : , ; or newline
+    const rawItems = text.trim().split(/[:,;\n]/).map(s => s.trim()).filter(Boolean);
+    const savedBilanIds = [];
+
+    for (const itemStr of rawItems) {
+      // Find in bilan table
+      const [bCheck] = await pool.query(
+        "SELECT ID_BILAN FROM bilan WHERE LOWER(TRIM(DESIGNATION)) = LOWER(TRIM(?)) LIMIT 1",
+        [itemStr]
+      ).catch(() => [[]]);
+
+      let idBilan;
+      if (bCheck.length > 0) {
+        idBilan = bCheck[0].ID_BILAN;
+      } else {
+        const [bMax] = await pool.query("SELECT COALESCE(MAX(ID_BILAN), 0) + 1 AS nextId FROM bilan").catch(() => [[{ nextId: 1 }]]);
+        idBilan = bMax[0].nextId;
+        await pool.query(
+          "INSERT INTO bilan (ID_BILAN, DESIGNATION, ETAT) VALUES (?, ?, 1)",
+          [idBilan, itemStr]
+        ).catch(err => console.error("Error inserting new bilan item:", err));
+      }
+
+      // Insert into bilans_consult
+      const [bcCheck] = await pool.query(
+        "SELECT ID_BILAN FROM bilans_consult WHERE ID_CONSULTATION = ? AND ID_BILAN = ? AND EXERCICE = ?",
+        [idConsult, idBilan, String(exYear)]
+      ).catch(() => [[]]);
+
+      if (bcCheck.length === 0) {
+        await pool.query(
+          "INSERT INTO bilans_consult (ID_CONSULTATION, ID_BILAN, EXERCICE, RESULTAT) VALUES (?, ?, ?, '')",
+          [idConsult, idBilan, String(exYear)]
+        ).catch(err => console.error("Error inserting into bilans_consult:", err));
+      }
+
+      savedBilanIds.push(idBilan);
+    }
+
+    res.json({ success: true, count: savedBilanIds.length, bilanIds: savedBilanIds });
+  } catch (err) {
+    console.error("POST /api/patients/:id/bilan-saisie error:", err);
+    res.status(500).json({ error: "Failed to save free-text lab reports" });
+  }
+});
+
+// POST /api/patients/:id/arret - Save or update sick leave record in arret_consult
+router.post("/:id/arret", async (req, res) => {
+  try {
+    const patId = req.params.id;
+    const { days, startDate, endDate, reason, type } = req.body;
+
+    const [patRows] = await pool.query(
+      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+      [patId, patId]
+    ).catch(() => [[]]);
+
+    const ids = [];
+    if (patRows.length > 0) {
+      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
+      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
+    }
+    if (ids.length === 0) ids.push(patId);
+    const patientIdForInsert = ids[0];
+
+    const year = String(new Date().getFullYear());
+
+    let [cRows] = await pool.query(
+      "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
+      [ids]
+    ).catch(() => [[]]);
+
+    let idConsult, exYear;
+    if (cRows.length > 0) {
+      idConsult = cRows[0].ID_CONSULTATION;
+      exYear = cRows[0].EXERCICE || year;
+    } else {
+      const [cMax] = await pool.query(
+        "SELECT COALESCE(MAX(ID_CONSULTATION), 0) + 1 AS nextId FROM consultation WHERE EXERCICE = ?",
+        [year]
+      ).catch(() => [[{ nextId: 1 }]]);
+      idConsult = cMax[0].nextId;
+      exYear = year;
+
+      await pool.query(
+        "INSERT INTO consultation (ID_CONSULTATION, ID_MALADE, DATE_CONSULTATION, EXERCICE, TOTAL, ETAT, ID_USER, ID_VERSEMENT, ID_POSTE, FOCUS, INT_CONSULTATION, INT_LASER, INT_SCLERO) VALUES (?, ?, CURRENT_DATE(), ?, 0, 1, 1, 0, '', 0, 1, 0, 0)",
+        [idConsult, String(patientIdForInsert), year]
+      ).catch(err => console.error("Error creating consultation for arret:", err));
+    }
+
+    const nbDays = parseInt(days, 10) || 1;
+    const typeVal = type === 'prolongation' ? 2 : type === 'reprise' ? 3 : 1;
+
+    await pool.query(
+      "DELETE FROM arret_consult WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
+      [idConsult, String(exYear)]
+    ).catch(() => {});
+
+    await pool.query(
+      "INSERT INTO arret_consult (ID_CONSULTATION, EXERCICE, DATE_ARRET, DATE_DEBUT, DATE_FIN, NB_JOUR, TYPE, OBS) VALUES (?, ?, CURRENT_DATE(), ?, ?, ?, ?, ?)",
+      [idConsult, String(exYear), startDate || new Date(), endDate || startDate, nbDays, typeVal, reason || '']
+    );
+
+    res.json({ success: true, idConsultation: idConsult });
+  } catch (err) {
+    console.error("POST /api/patients/:id/arret error:", err);
+    res.status(500).json({ error: "Failed to save sick leave" });
+  }
+});
+
+// GET /api/patients/:id/arret-history - List previous sick leave records from arret_consult
+router.get("/:id/arret-history", async (req, res) => {
+  try {
+    const patId = req.params.id;
+    const [patRows] = await pool.query(
+      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+      [patId, patId]
+    ).catch(() => [[]]);
+
+    const ids = [];
+    if (patRows.length > 0) {
+      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
+      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
+    }
+    if (ids.length === 0) ids.push(patId);
+
+    const [rows] = await pool.query(`
+      SELECT 
+        AC.ID_CONSULTATION,
+        AC.EXERCICE,
+        DATE_FORMAT(AC.DATE_ARRET, '%Y-%m-%d') AS dateArret,
+        DATE_FORMAT(AC.DATE_DEBUT, '%Y-%m-%d') AS dateDebut,
+        DATE_FORMAT(AC.DATE_FIN, '%Y-%m-%d') AS dateFin,
+        AC.NB_JOUR AS nbJour,
+        AC.TYPE AS type,
+        AC.OBS AS obs
+      FROM arret_consult AC
+      INNER JOIN consultation C ON C.ID_CONSULTATION = AC.ID_CONSULTATION AND C.EXERCICE = AC.EXERCICE
+      WHERE C.ID_MALADE IN (?) AND C.ETAT != 2
+      ORDER BY AC.DATE_DEBUT DESC, AC.ID_CONSULTATION DESC
+    `, [ids]);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("GET /api/patients/:id/arret-history error:", err);
+    res.status(500).json({ error: "Failed to fetch sick leave history" });
   }
 });
 
