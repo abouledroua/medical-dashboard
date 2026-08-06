@@ -8,13 +8,21 @@ router.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     if (username === "citrus" && password === "citrus21012013") {
+      let doctorName = "Médecin";
+      try {
+        const [paramRows] = await pool.query("SELECT NOM_FR FROM parametre LIMIT 1");
+        if (paramRows.length > 0 && paramRows[0].NOM_FR) {
+          doctorName = paramRows[0].NOM_FR;
+        }
+      } catch (e) {}
+
       return res.json({
         user: {
           id: 1,
-          name: "Dr. A. BENKERMI Ep. TATI",
+          name: doctorName,
           username: "citrus",
           role: "Doctor",
-          department: "ORL",
+          department: "General Practice",
         },
         token: "token-citrus-master",
       });

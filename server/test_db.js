@@ -1,17 +1,13 @@
 import mysql from 'mysql2/promise';
+import { dbConfig, myDB } from './db.js';
 
 async function testConnection() {
   try {
-    const connection = await mysql.createConnection({
-      host: '127.0.0.1',
-      user: 'citrus',
-      password: 'citrus21012013',
-      database: 'docteur4'
-    });
-    console.log('Connected to MySQL database "docteur4" successfully!');
+    const connection = await mysql.createConnection(dbConfig);
+    console.log(`Connected to MySQL database "${myDB}" successfully!`);
 
     const [tables] = await connection.query('SHOW TABLES');
-    console.log('Tables in docteur4:', JSON.stringify(tables, null, 2));
+    console.log(`Tables in ${myDB}:`, JSON.stringify(tables, null, 2));
 
     for (const tableObj of tables) {
       const tableName = Object.values(tableObj)[0];

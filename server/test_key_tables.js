@@ -1,13 +1,9 @@
 import mysql from 'mysql2/promise';
+import { dbConfig, myDB } from './db.js';
 
 async function inspectKeyTables() {
   try {
-    const connection = await mysql.createConnection({
-      host: '127.0.0.1',
-      user: 'citrus',
-      password: 'citrus21012013',
-      database: 'docteur4'
-    });
+    const connection = await mysql.createConnection(dbConfig);
 
     const targetTables = ['malade', 'rdv', 'users', 'parametre', 'antecedent', 'malade_antecedent'];
     const [allTables] = await connection.query('SHOW TABLES');

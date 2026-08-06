@@ -11,7 +11,8 @@ export default function PatientMedicalHistory({
   onOpenNewAppointment,
   onEditPatient,
   onSelectTab,
-  lang = 'fr'
+  lang = 'fr',
+  clinicInfo
 }) {
   const t = translations[lang] || translations.fr;
   const [patientData, setPatientData] = useState(null);
@@ -178,14 +179,6 @@ export default function PatientMedicalHistory({
         </div>
 
         <div className="flex items-center gap-3">
-          {onEditPatient && (
-            <button
-              onClick={() => onEditPatient(p)}
-              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-teal-300 text-xs font-semibold rounded-xl border border-teal-800/60 flex items-center gap-1.5 transition"
-            >
-              <Edit3 className="w-3.5 h-3.5 text-teal-400" /> {lang === 'fr' ? 'Modifier' : 'Edit'}
-            </button>
-          )}
           <button
             onClick={() => onOpenNewAppointment(p)}
             className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-1.5 transition"
@@ -204,7 +197,7 @@ export default function PatientMedicalHistory({
       {/* Patient Summary & Vitals Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Col (1 col): Reusable Patient Overview & Vitals Panel */}
-        <PatientOverviewPanel patient={p} onEditPatient={onEditPatient} onOpenNewConsultation={onOpenNewConsultation} lang={lang} />
+        <PatientOverviewPanel patient={p} onEditPatient={onEditPatient} onOpenNewConsultation={onOpenNewConsultation} lang={lang} clinicInfo={clinicInfo} />
 
         {/* Right Col (2 cols): Consultation History Timeline */}
         <div className="lg:col-span-2 space-y-6">

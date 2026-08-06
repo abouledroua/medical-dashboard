@@ -284,6 +284,11 @@ export default function App() {
   // Fetch initial data from Node REST API
   const fetchAllData = async () => {
     try {
+      fetch('/api/clinic')
+        .then(res => res.ok && res.json())
+        .then(data => data && setClinicInfo(prev => prev || data))
+        .catch(() => {});
+
       const [patientsRes, statsRes, aptsRes, clinicRes] = await Promise.all([
         fetch('/api/patients?limit=60'),
         fetch('/api/stats'),
@@ -436,26 +441,13 @@ export default function App() {
     );
   };
 
-  const handleCancelConsultation = async (patientIdToCancel, isCompleted = false) => {
+  const handleCancelConsultation = (patientIdToCancel, isCompleted = false) => {
     const pId = patientIdToCancel || activeConsultationPatientId;
     const targetDraft = ongoingConsultations.find(c => String(c.patientId) === String(pId));
 
-    if (!isCompleted && targetDraft && !targetDraft.isExisting && (targetDraft.idConsultation || targetDraft.idVersement)) {
-      try {
-        await fetch('/api/consultations/cancel', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            idConsultation: targetDraft.idConsultation,
-            exercice: targetDraft.exercice,
-            idVersement: targetDraft.idVersement
-          })
-        });
-      } catch (e) {
-        console.error('Failed to cancel ongoing consultation on server:', e);
-      }
-    }
+    const isValide = Number(targetDraft?.etat) === 1 || Number(targetDraft?.ETAT) === 1;
 
+    // Immediately update local UI state so modal closes and tab changes instantly
     setOngoingConsultations(prev => {
       const remaining = prev.filter(c => String(c.patientId) !== String(pId));
       if (remaining.length > 0) {
@@ -468,6 +460,22 @@ export default function App() {
       }
       return remaining;
     });
+
+    // Fire server cleanup asynchronously in the background
+    if (!isCompleted && !isValide && (targetDraft || pId)) {
+      fetch('/api/consultations/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idConsultation: targetDraft?.idConsultation,
+          exercice: targetDraft?.exercice || String(new Date().getFullYear()),
+          idVersement: targetDraft?.idVersement,
+          patientId: pId
+        })
+      }).catch(e => {
+        console.error('Failed to cancel ongoing consultation on server:', e);
+      });
+    }
   };
 
   const handleSelectConsultationDraft = (pId, pObj) => {
@@ -674,7 +682,9 @@ export default function App() {
                     <div className="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin"></div>
                     {lang === 'fr' ? 'Chargement des données en cours...' : 'Loading database records...'}
                   </div>
-                  <span className="text-xs font-mono text-slate-400">MySQL docteur4</span>
+                  <span className="text-xs font-mono text-slate-400">
+                    {clinicInfo?.dbName || stats?.dbName ? `MySQL ${clinicInfo?.dbName || stats?.dbName}` : 'MySQL'}
+                  </span>
                 </div>
                 <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
                   <div className="bg-gradient-to-r from-teal-500 to-cyan-400 h-full w-2/3 animate-pulse"></div>
@@ -758,6 +768,7 @@ export default function App() {
                     onConsultationAdded={handleConsultationAdded}
                     onCancel={handleCancelConsultation}
                     onEditPatient={handleEditPatient}
+                    onOpenNewConsultation={() => openConsultationForPatient()}
                     lang={lang}
                   />
                 );
@@ -772,6 +783,7 @@ export default function App() {
                   onOpenNewAppointment={() => openAppointmentForPatient()}
                   onEditPatient={handleEditPatient}
                   lang={lang}
+                  clinicInfo={clinicInfo}
                   onSelectTab={setActiveTab}
                 />
               )}

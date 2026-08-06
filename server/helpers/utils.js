@@ -178,6 +178,7 @@ export async function getPrescriptionsForConsultation(idConsultation, dateStr) {
 
     const [rows] = await pool.query(
       `SELECT d.TYPE as type,
+              f.DESIGNATION as forme,
               d.DOSAGE as dosage,
               d.FREQUENCE as frequency,
               d.QTE as duration,
@@ -186,6 +187,7 @@ export async function getPrescriptionsForConsultation(idConsultation, dateStr) {
        FROM ${tableName} d
        LEFT JOIN medicament m ON (d.TYPE = 1 OR d.TYPE IS NULL OR d.TYPE = 0) AND d.ID_MEDICAMENT = m.ID_MEDICAMENT
        LEFT JOIN medicament_p mp ON d.TYPE = 2 AND d.ID_MEDICAMENT = mp.ID_MEDICAMENT
+       LEFT JOIN forme f ON d.ID_FORME = f.ID_FORME
        WHERE d.ID_CONSULTATION = ?`,
       [idConsultation],
     );
@@ -195,6 +197,7 @@ export async function getPrescriptionsForConsultation(idConsultation, dateStr) {
       return {
         type: isType2 ? 2 : 1,
         name: isType2 ? (r.customPrescription || "Prescription") : (r.standardName || "Médicament"),
+        forme: isType2 ? "" : (r.forme || ""),
         dosage: isType2 ? "" : (r.dosage || ""),
         frequency: isType2 ? "" : (r.frequency || ""),
         duration: isType2 ? "" : (r.duration || ""),
@@ -205,3 +208,107 @@ export async function getPrescriptionsForConsultation(idConsultation, dateStr) {
     return [];
   }
 }
+
+// Helper: Fetch Assuré info for a consultation from ordonnance_consult_YYYY table, fallback to obs JSON or patient row in malade table
+export async function getAssureInfoForConsultation(idConsultation, dateStr, patientId, obsText = "") {
+  try {
+    let year = "";
+    if (dateStr && String(dateStr).includes("-")) {
+      year = String(dateStr).split("-")[0];
+    }
+    if (!year || isNaN(year)) {
+      year = new Date().getFullYear();
+    }
+
+    // 1. Try parsing from obs JSON if available
+    if (obsText && typeof obsText === "string" && obsText.includes("{")) {
+      try {
+        const jsonStr = obsText.substring(obsText.indexOf("{"));
+        const parsed = JSON.parse(jsonStr);
+        if (parsed && parsed.assureInfo && (parsed.assureInfo.fullname || parsed.assureInfo.infoSupp)) {
+          return {
+            fullname: String(parsed.assureInfo.fullname || ""),
+            age: String(parsed.assureInfo.age || ""),
+            typeAge: String(parsed.assureInfo.typeAge || "ans"),
+            sexe: String(parsed.assureInfo.sexe || "M"),
+            infoSupp: String(parsed.assureInfo.infoSupp || "")
+          };
+        }
+      } catch (e) {}
+    }
+
+    // 2. Try fetching from ordonnance_consult_YYYY (or ordonnance_consult)
+    const ordTable = `ordonnance_consult_${year}`;
+    let targetTable = null;
+
+    const [tCheck] = await pool.query("SHOW TABLES LIKE ?", [ordTable]);
+    if (tCheck.length > 0) {
+      targetTable = ordTable;
+    } else {
+      const [singleCheck] = await pool.query("SHOW TABLES LIKE 'ordonnance_consult'");
+      if (singleCheck.length > 0) {
+        targetTable = "ordonnance_consult";
+      }
+    }
+
+    if (targetTable) {
+      const [ordRows] = await pool.query(
+        `SELECT * FROM \`${targetTable}\` WHERE ID_CONSULTATION = ? LIMIT 1`,
+        [idConsultation]
+      );
+      if (ordRows.length > 0) {
+        const ordRow = ordRows[0];
+        const fullname = ordRow.FULLNAME || ordRow.NOM_PRENOM || ordRow.ASSURE || ordRow.NOM_ASSURE || ordRow.NOM_PRENOM_ASSURE || ordRow.FULLNAME_ASSURE || "";
+        let age = ordRow.AGE_ASSURE !== undefined ? ordRow.AGE_ASSURE : (ordRow.AGE !== undefined ? ordRow.AGE : "");
+        let typeAge = ordRow.TYPE_AGE || ordRow.TYPE_AGE_ASSURE || ordRow.TYPE_AGE_UNITE || ordRow.UNITE_AGE || "";
+        if (!typeAge && ordRow.TYPE !== undefined) {
+          const typeNum = Number(ordRow.TYPE);
+          if (typeNum === 1) typeAge = "ans";
+          else if (typeNum === 2) typeAge = "mois";
+          else if (typeNum === 3) typeAge = "jours";
+        }
+        let sexe = ordRow.SEXE_ASSURE || ordRow.SEXE || ordRow.GENDER || "";
+        if (typeof sexe === "number" || (!isNaN(sexe) && sexe !== "")) {
+          const sNum = Number(sexe);
+          sexe = sNum === 2 ? "F" : "M";
+        }
+        const infoSupp = ordRow.INFO_SUP || ordRow.INFO_SUPP || ordRow.INFORMATION_SUPPLEMENTAIRE || "";
+
+        if (fullname || age || sexe || infoSupp) {
+          return {
+            fullname: String(fullname || ""),
+            age: String(age || ""),
+            typeAge: String(typeAge || "ans"),
+            sexe: String(sexe || "M"),
+            infoSupp: String(infoSupp || "")
+          };
+        }
+      }
+    }
+
+    // 3. Fallback: Fetch default patient info from malade table
+    if (patientId) {
+      const [pRows] = await pool.query(
+        "SELECT NOM, PRENOM, AGE, SEXE, TYPE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ? LIMIT 1",
+        [patientId, patientId]
+      );
+      if (pRows.length > 0) {
+        const p = pRows[0];
+        const fullname = [p.NOM || p.nom, p.PRENOM || p.prenom].filter(Boolean).join(" ");
+        const age = p.AGE !== undefined ? String(p.AGE) : "";
+        let typeAge = "ans";
+        const tNum = Number(p.TYPE);
+        if (tNum === 2) typeAge = "mois";
+        else if (tNum === 3) typeAge = "jours";
+        const sexe = (p.SEXE || "M").toString().toUpperCase().startsWith("F") ? "F" : "M";
+        return { fullname, age, typeAge, sexe, infoSupp: "" };
+      }
+    }
+
+    return null;
+  } catch (err) {
+    console.error("getAssureInfoForConsultation error:", err.message);
+    return null;
+  }
+}
+

@@ -8,6 +8,9 @@ import patientsRouter from "./routes/patients.js";
 import appointmentsRouter from "./routes/appointments.js";
 import consultationsRouter from "./routes/consultations.js";
 import posteRouter from "./routes/poste.js";
+import medicationsRouter from "./routes/medications.js";
+
+import { myDB } from "./db.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -23,9 +26,10 @@ app.use("/api/patients", patientsRouter);
 app.use("/api/appointments", appointmentsRouter);
 app.use("/api/consultations", consultationsRouter);
 app.use("/api/poste", posteRouter);
+app.use("/api/medications", medicationsRouter);
 
 app.listen(PORT, () => {
   console.log(
-    `MediPulse Backend connected to MySQL (docteur4) running on http://localhost:${PORT}`
+    `MediPulse Backend connected to MySQL (${myDB}) running on http://localhost:${PORT}`
   );
 });

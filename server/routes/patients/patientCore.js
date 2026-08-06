@@ -5,6 +5,7 @@ import {
   parseGS,
   generer_Code_Malade,
   getPrescriptionsForConsultation,
+  getAssureInfoForConsultation,
 } from "../../helpers/utils.js";
 
 const router = express.Router();
@@ -463,7 +464,7 @@ router.get("/:id", async (req, res) => {
        LEFT JOIN arret_consult a ON (c.ID_CONSULTATION = a.ID_CONSULTATION AND c.EXERCICE = a.EXERCICE)
        WHERE (c.ID_MALADE = ? OR c.ID_MALADE = ?) AND (c.ETAT != 2)
        GROUP BY c.ID_CONSULTATION, c.EXERCICE
-       ORDER BY c.ID_CONSULTATION DESC LIMIT 50`,
+       ORDER BY c.DATE_CONSULTATION DESC, c.ID_CONSULTATION DESC LIMIT 50`,
       [rows[0].CODE_BARRE, rows[0].CODE_MALADE],
     );
 
@@ -478,6 +479,13 @@ router.get("/:id", async (req, res) => {
           const prescriptions = await getPrescriptionsForConsultation(
             c.id,
             c.dateStr,
+          );
+
+          const assureInfo = await getAssureInfoForConsultation(
+            c.id,
+            c.dateStr,
+            rows[0].CODE_BARRE || rows[0].CODE_MALADE,
+            c.clinicalNotes
           );
 
           const hasArret = Boolean(c.arretNbJour || c.arretDateDebut);
@@ -499,6 +507,7 @@ router.get("/:id", async (req, res) => {
             hasArretDeTravail: hasArret,
             arretDeTravail,
             prescriptions,
+            assureInfo,
           };
         }),
       );
@@ -515,7 +524,7 @@ router.get("/:id", async (req, res) => {
          FROM obs_malade o
          LEFT JOIN arret_consult a ON (o.ID = a.ID_CONSULTATION)
          WHERE o.ID_MALADE = ? OR o.ID_MALADE = ?
-         ORDER BY o.ID DESC LIMIT 50`,
+         ORDER BY o.DATE_OBS DESC, o.ID DESC LIMIT 50`,
         [rows[0].CODE_BARRE, rows[0].CODE_MALADE],
       );
       consultations = await Promise.all(
@@ -523,6 +532,12 @@ router.get("/:id", async (req, res) => {
           const prescriptions = await getPrescriptionsForConsultation(
             o.id,
             o.dateStr,
+          );
+          const assureInfo = await getAssureInfoForConsultation(
+            o.id,
+            o.dateStr,
+            rows[0].CODE_BARRE || rows[0].CODE_MALADE,
+            o.clinicalNotes
           );
           const hasArret = Boolean(o.arretNbJour || o.arretDateDebut);
           const arretDeTravail = hasArret ? {
@@ -542,6 +557,7 @@ router.get("/:id", async (req, res) => {
             hasArretDeTravail: hasArret,
             arretDeTravail,
             prescriptions,
+            assureInfo,
           };
         }),
       );
@@ -580,7 +596,7 @@ router.get("/:id", async (req, res) => {
         mrn: patient.mrn,
         date: dateStr,
         time: r.HEURE_ARRIVEE || r.HEURE_RDV || "09:00 AM",
-        doctor: "Dr. A. BENKERMI Ep. TATI",
+        doctor: r.NOM_USER || "Médecin",
         department: "ORL",
         reason: r.MOTIF_RAPPEL || "Medical Appointment",
         type: "In-Person",
@@ -603,12 +619,8 @@ router.get("/:id", async (req, res) => {
       [rows[0].CODE_BARRE, rows[0].CODE_MALADE],
     );
 
-    const [heightRows] = await pool.query(
-      "SELECT TAILLE FROM malade_info_taille WHERE ID_MALADE = ? OR ID_MALADE = ? ORDER BY ID DESC LIMIT 1",
-      [rows[0].CODE_BARRE, rows[0].CODE_MALADE],
-    );
-    const [weightRows] = await pool.query(
-      "SELECT POIDS FROM malade_info_poids WHERE ID_MALADE = ? OR ID_MALADE = ? ORDER BY ID DESC LIMIT 1",
+    const [measurementRows] = await pool.query(
+      "SELECT TAILLE, POIDS FROM malade_measurement WHERE ID_MALADE = ? OR ID_MALADE = ? ORDER BY DATE_PRISE DESC, ID DESC LIMIT 1",
       [rows[0].CODE_BARRE, rows[0].CODE_MALADE],
     );
 
@@ -616,8 +628,8 @@ router.get("/:id", async (req, res) => {
     const familyAnts = famAntRows.map((a) => a.DESIGNATION);
     const diagnosticsList = diagRows.map((d) => d.DESIGNATION);
 
-    const heightCm = heightRows[0]?.TAILLE || null;
-    const weightKg = weightRows[0]?.POIDS || null;
+    const heightCm = measurementRows[0]?.TAILLE || null;
+    const weightKg = measurementRows[0]?.POIDS || null;
     const bmiCalc = (heightCm && weightKg) ? Number((weightKg / Math.pow(heightCm / 100, 2)).toFixed(1)) : null;
 
     const combinedConditions = Array.from(

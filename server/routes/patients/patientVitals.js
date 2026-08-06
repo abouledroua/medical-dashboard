@@ -286,451 +286,84 @@ router.delete("/observations/:obsId", async (req, res) => {
   }
 });
 
-// GET /api/patients/:id/height - List height history for a patient
-router.get("/:id/height", async (req, res) => {
-  try {
-    const patId = req.params.id;
-    const [patRows] = await pool.query(
-      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
-    );
-
-    const ids = [];
-    if (patRows.length > 0) {
-      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
-      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
-    }
-    if (ids.length === 0) ids.push(patId);
-
-    let rows = [];
+// GET /api/patients/:id/measurements - List all measurements for a patient
+router.get("/:id/measurements", async (req, res) => {
     try {
-      [rows] = await pool.query(
-        `SELECT ID as id, ID_MALADE as patientId, DATE_FORMAT(DATE_TAILLE, '%Y-%m-%d') as date, TAILLE as height
-         FROM malade_info_taille
-         WHERE ID_MALADE IN (?)
-         ORDER BY DATE_TAILLE DESC, ID DESC`,
-        [ids]
-      );
-    } catch (e1) {
-      try {
-        [rows] = await pool.query(
-          `SELECT ID as id, ID_MALADE as patientId, DATE_FORMAT(DATE_PRISE, '%Y-%m-%d') as date, TAILLE as height
-           FROM malade_info_taille
-           WHERE ID_MALADE IN (?)
-           ORDER BY DATE_PRISE DESC, ID DESC`,
-          [ids]
+        const patId = req.params.id;
+        const [patRows] = await pool.query(
+            "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+            [patId, patId]
         );
-      } catch (e2) {
-        [rows] = await pool.query(
-          `SELECT ID as id, ID_MALADE as patientId, '' as date, TAILLE as height
-           FROM malade_info_taille
-           WHERE ID_MALADE IN (?)
-           ORDER BY ID DESC`,
-          [ids]
-        );
-      }
-    }
 
-    res.json(rows);
-  } catch (err) {
-    console.error("API GET /api/patients/:id/height Error:", err);
-    res.status(500).json({ error: "Failed to fetch patient height records" });
-  }
+        const ids = patRows.length > 0 ? [patRows[0].CODE_BARRE, patRows[0].CODE_MALADE].filter(Boolean) : [patId];
+        if (ids.length === 0) {
+            return res.json([]);
+        }
+
+        const [rows] = await pool.query(
+            `SELECT ID as id, ID_MALADE as patientId, DATE_FORMAT(DATE_PRISE, '%Y-%m-%d') as date, TAILLE as height, POIDS as weight, PC as headCirc
+       FROM malade_measurement
+       WHERE ID_MALADE IN (?)
+       ORDER BY DATE_PRISE DESC, ID DESC`,
+            [ids]
+        );
+
+        res.json(rows);
+    } catch (err) {
+        console.error("API GET /api/patients/:id/measurements Error:", err);
+        res.status(500).json({ error: "Failed to fetch patient measurements" });
+    }
 });
 
-// POST /api/patients/:id/height - Add/Update height record for today
-router.post("/:id/height", async (req, res) => {
-  try {
-    const patId = req.params.id;
-    const { height, date } = req.body;
-    if (!height) {
-      return res.status(400).json({ error: "Height value is required" });
-    }
-
-    const recordDate = date || new Date().toISOString().split("T")[0];
-
-    const [patRows] = await pool.query(
-      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
-    );
-
-    const ids = [];
-    if (patRows.length > 0) {
-      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
-      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
-    }
-    if (ids.length === 0) ids.push(patId);
-    const patientIdForInsert = ids[0];
-
-    let cols = [];
+// POST /api/patients/:id/measurements - Add/Update measurements for a specific date
+router.post("/:id/measurements", async (req, res) => {
     try {
-      const [c] = await pool.query("SHOW COLUMNS FROM malade_info_taille");
-      cols = c;
-    } catch (e) {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS malade_info_taille (
-          ID INT AUTO_INCREMENT PRIMARY KEY,
-          ID_MALADE VARCHAR(50),
-          DATE_TAILLE DATE,
-          TAILLE VARCHAR(50)
-        )
-      `);
-      const [c] = await pool.query("SHOW COLUMNS FROM malade_info_taille");
-      cols = c;
-    }
+        const patId = req.params.id;
+        const { date, height, weight, headCirc } = req.body;
+        const recordDate = date || new Date().toISOString().split("T")[0];
 
-    const hasDateTaille = cols.some(c => c.Field === 'DATE_TAILLE');
-    const hasDatePrise = cols.some(c => c.Field === 'DATE_PRISE');
-    const idCol = cols.find(c => c.Field === 'ID');
-    const isAuto = idCol && idCol.Extra.includes('auto_increment');
-
-    const dateField = hasDateTaille ? 'DATE_TAILLE' : (hasDatePrise ? 'DATE_PRISE' : null);
-
-    if (dateField) {
-      await pool.query(`DELETE FROM malade_info_taille WHERE ID_MALADE IN (?) AND ${dateField} = ?`, [ids, recordDate]);
-    }
-
-    let sql, params;
-    if (dateField) {
-      if (isAuto) {
-        sql = `INSERT INTO malade_info_taille (ID_MALADE, ${dateField}, TAILLE) VALUES (?, ?, ?)`;
-        params = [patientIdForInsert, recordDate, height];
-      } else {
-        sql = `INSERT INTO malade_info_taille (ID, ID_MALADE, ${dateField}, TAILLE) VALUES ((SELECT COALESCE(MAX(t.ID), 0) + 1 FROM malade_info_taille t), ?, ?, ?)`;
-        params = [patientIdForInsert, recordDate, height];
-      }
-    } else {
-      if (isAuto) {
-        sql = "INSERT INTO malade_info_taille (ID_MALADE, TAILLE) VALUES (?, ?)";
-        params = [patientIdForInsert, height];
-      } else {
-        sql = "INSERT INTO malade_info_taille (ID, ID_MALADE, TAILLE) VALUES ((SELECT COALESCE(MAX(t.ID), 0) + 1 FROM malade_info_taille t), ?, ?)";
-        params = [patientIdForInsert, height];
-      }
-    }
-
-    const [result] = await pool.query(sql, params);
-    res.status(201).json({
-      success: true,
-      id: isAuto ? result.insertId : null,
-      patientId: patientIdForInsert,
-      date: recordDate,
-      height
-    });
-  } catch (err) {
-    console.error("API POST /api/patients/:id/height Error:", err);
-    res.status(500).json({ error: "Failed to add height record" });
-  }
-});
-
-// DELETE /api/patients/height/:heightId - Delete a height record
-router.delete("/height/:heightId", async (req, res) => {
-  try {
-    const heightId = req.params.heightId;
-    await pool.query("DELETE FROM malade_info_taille WHERE ID = ?", [heightId]);
-    res.json({ success: true, deletedId: heightId });
-  } catch (err) {
-    console.error("API DELETE /api/patients/height/:heightId Error:", err);
-    res.status(500).json({ error: "Failed to delete height record" });
-  }
-});
-
-// GET /api/patients/:id/weight - List weight history for a patient
-router.get("/:id/weight", async (req, res) => {
-  try {
-    const patId = req.params.id;
-    const [patRows] = await pool.query(
-      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
-    );
-
-    const ids = [];
-    if (patRows.length > 0) {
-      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
-      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
-    }
-    if (ids.length === 0) ids.push(patId);
-
-    let rows = [];
-    try {
-      [rows] = await pool.query(
-        `SELECT ID as id, ID_MALADE as patientId, DATE_FORMAT(DATE_POIDS, '%Y-%m-%d') as date, POIDS as weight
-         FROM malade_info_poids
-         WHERE ID_MALADE IN (?)
-         ORDER BY DATE_POIDS DESC, ID DESC`,
-        [ids]
-      );
-    } catch (e1) {
-      try {
-        [rows] = await pool.query(
-          `SELECT ID as id, ID_MALADE as patientId, DATE_FORMAT(DATE_PRISE, '%Y-%m-%d') as date, POIDS as weight
-           FROM malade_info_poids
-           WHERE ID_MALADE IN (?)
-           ORDER BY DATE_PRISE DESC, ID DESC`,
-          [ids]
+        const [patRows] = await pool.query(
+            "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+            [patId, patId]
         );
-      } catch (e2) {
-        [rows] = await pool.query(
-          `SELECT ID as id, ID_MALADE as patientId, '' as date, POIDS as weight
-           FROM malade_info_poids
-           WHERE ID_MALADE IN (?)
-           ORDER BY ID DESC`,
-          [ids]
+
+        if (patRows.length === 0) {
+            return res.status(404).json({ error: "Patient not found" });
+        }
+        const patientIdForInsert = patRows[0].CODE_MALADE || patRows[0].CODE_BARRE;
+
+        await pool.query(
+            `INSERT INTO malade_measurement (ID_MALADE, DATE_PRISE, TAILLE, POIDS, PC)
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE TAILLE = VALUES(TAILLE), POIDS = VALUES(POIDS), PC = VALUES(PC)`,
+            [patientIdForInsert, recordDate, height, weight, headCirc]
         );
-      }
-    }
 
-    res.json(rows);
-  } catch (err) {
-    console.error("API GET /api/patients/:id/weight Error:", err);
-    res.status(500).json({ error: "Failed to fetch patient weight records" });
-  }
+        res.status(201).json({
+            success: true,
+            patientId: patientIdForInsert,
+            date: recordDate,
+            height,
+            weight,
+            headCirc
+        });
+    } catch (err) {
+        console.error("API POST /api/patients/:id/measurements Error:", err);
+        res.status(500).json({ error: "Failed to save measurements" });
+    }
 });
 
-// POST /api/patients/:id/weight - Add/Update weight record for today
-router.post("/:id/weight", async (req, res) => {
-  try {
-    const patId = req.params.id;
-    const { weight, date } = req.body;
-    if (!weight) {
-      return res.status(400).json({ error: "Weight value is required" });
-    }
-
-    const recordDate = date || new Date().toISOString().split("T")[0];
-
-    const [patRows] = await pool.query(
-      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
-    );
-
-    const ids = [];
-    if (patRows.length > 0) {
-      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
-      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
-    }
-    if (ids.length === 0) ids.push(patId);
-    const patientIdForInsert = ids[0];
-
-    let cols = [];
+// DELETE /api/patients/measurements/:id - Delete a measurement record
+router.delete("/measurements/:id", async (req, res) => {
     try {
-      const [c] = await pool.query("SHOW COLUMNS FROM malade_info_poids");
-      cols = c;
-    } catch (e) {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS malade_info_poids (
-          ID INT AUTO_INCREMENT PRIMARY KEY,
-          ID_MALADE VARCHAR(50),
-          DATE_POIDS DATE,
-          POIDS VARCHAR(50)
-        )
-      `);
-      const [c] = await pool.query("SHOW COLUMNS FROM malade_info_poids");
-      cols = c;
+        const measurementId = req.params.id;
+        await pool.query("DELETE FROM malade_measurement WHERE ID = ?", [measurementId]);
+        res.json({ success: true, deletedId: measurementId });
+    } catch (err) {
+        console.error("API DELETE /api/patients/measurements/:id Error:", err);
+        res.status(500).json({ error: "Failed to delete measurement record" });
     }
-
-    const hasDatePoids = cols.some(c => c.Field === 'DATE_POIDS');
-    const hasDatePrise = cols.some(c => c.Field === 'DATE_PRISE');
-    const idCol = cols.find(c => c.Field === 'ID');
-    const isAuto = idCol && idCol.Extra.includes('auto_increment');
-
-    const dateField = hasDatePoids ? 'DATE_POIDS' : (hasDatePrise ? 'DATE_PRISE' : null);
-
-    if (dateField) {
-      await pool.query(`DELETE FROM malade_info_poids WHERE ID_MALADE IN (?) AND ${dateField} = ?`, [ids, recordDate]);
-    }
-
-    let sql, params;
-    if (dateField) {
-      if (isAuto) {
-        sql = `INSERT INTO malade_info_poids (ID_MALADE, ${dateField}, POIDS) VALUES (?, ?, ?)`;
-        params = [patientIdForInsert, recordDate, weight];
-      } else {
-        sql = `INSERT INTO malade_info_poids (ID, ID_MALADE, ${dateField}, POIDS) VALUES ((SELECT COALESCE(MAX(t.ID), 0) + 1 FROM malade_info_poids t), ?, ?, ?)`;
-        params = [patientIdForInsert, recordDate, weight];
-      }
-    } else {
-      if (isAuto) {
-        sql = "INSERT INTO malade_info_poids (ID_MALADE, POIDS) VALUES (?, ?)";
-        params = [patientIdForInsert, weight];
-      } else {
-        sql = "INSERT INTO malade_info_poids (ID, ID_MALADE, POIDS) VALUES ((SELECT COALESCE(MAX(t.ID), 0) + 1 FROM malade_info_poids t), ?, ?)";
-        params = [patientIdForInsert, weight];
-      }
-    }
-
-    const [result] = await pool.query(sql, params);
-    res.status(201).json({
-      success: true,
-      id: isAuto ? result.insertId : null,
-      patientId: patientIdForInsert,
-      date: recordDate,
-      weight
-    });
-  } catch (err) {
-    console.error("API POST /api/patients/:id/weight Error:", err);
-    res.status(500).json({ error: "Failed to add weight record" });
-  }
 });
 
-// DELETE /api/patients/weight/:weightId - Delete a weight record
-router.delete("/weight/:weightId", async (req, res) => {
-  try {
-    const weightId = req.params.weightId;
-    await pool.query("DELETE FROM malade_info_poids WHERE ID = ?", [weightId]);
-    res.json({ success: true, deletedId: weightId });
-  } catch (err) {
-    console.error("API DELETE /api/patients/weight/:weightId Error:", err);
-    res.status(500).json({ error: "Failed to delete weight record" });
-  }
-});
-
-// GET /api/patients/:id/head-circ - List head circumference history for a patient
-router.get("/:id/head-circ", async (req, res) => {
-  try {
-    const patId = req.params.id;
-    const [patRows] = await pool.query(
-      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
-    );
-
-    const ids = [];
-    if (patRows.length > 0) {
-      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
-      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
-    }
-    if (ids.length === 0) ids.push(patId);
-
-    let rows = [];
-    try {
-      [rows] = await pool.query(
-        `SELECT ID as id, ID_MALADE as patientId, DATE_FORMAT(DATE_PC, '%Y-%m-%d') as date, PC as headCirc
-         FROM malade_info_pc
-         WHERE ID_MALADE IN (?)
-         ORDER BY DATE_PC DESC, ID DESC`,
-        [ids]
-      );
-    } catch (e1) {
-      try {
-        [rows] = await pool.query(
-          `SELECT ID as id, ID_MALADE as patientId, DATE_FORMAT(DATE_PRISE, '%Y-%m-%d') as date, PC as headCirc
-           FROM malade_info_pc
-           WHERE ID_MALADE IN (?)
-           ORDER BY DATE_PRISE DESC, ID DESC`,
-          [ids]
-        );
-      } catch (e2) {
-        [rows] = await pool.query(
-          `SELECT ID as id, ID_MALADE as patientId, '' as date, PC as headCirc
-           FROM malade_info_pc
-           WHERE ID_MALADE IN (?)
-           ORDER BY ID DESC`,
-          [ids]
-        );
-      }
-    }
-
-    res.json(rows);
-  } catch (err) {
-    console.error("API GET /api/patients/:id/head-circ Error:", err);
-    res.status(500).json({ error: "Failed to fetch patient head circumference records" });
-  }
-});
-
-// POST /api/patients/:id/head-circ - Add/Update head circumference record for today
-router.post("/:id/head-circ", async (req, res) => {
-  try {
-    const patId = req.params.id;
-    const { headCirc, date } = req.body;
-    if (!headCirc) {
-      return res.status(400).json({ error: "Head circumference value is required" });
-    }
-
-    const recordDate = date || new Date().toISOString().split("T")[0];
-
-    const [patRows] = await pool.query(
-      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
-    );
-
-    const ids = [];
-    if (patRows.length > 0) {
-      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
-      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
-    }
-    if (ids.length === 0) ids.push(patId);
-    const patientIdForInsert = ids[0];
-
-    let cols = [];
-    try {
-      const [c] = await pool.query("SHOW COLUMNS FROM malade_info_pc");
-      cols = c;
-    } catch (e) {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS malade_info_pc (
-          ID INT AUTO_INCREMENT PRIMARY KEY,
-          ID_MALADE VARCHAR(50),
-          DATE_PC DATE,
-          PC VARCHAR(50)
-        )
-      `);
-      const [c] = await pool.query("SHOW COLUMNS FROM malade_info_pc");
-      cols = c;
-    }
-
-    const hasDatePc = cols.some(c => c.Field === 'DATE_PC');
-    const hasDatePrise = cols.some(c => c.Field === 'DATE_PRISE');
-    const idCol = cols.find(c => c.Field === 'ID');
-    const isAuto = idCol && idCol.Extra.includes('auto_increment');
-
-    const dateField = hasDatePc ? 'DATE_PC' : (hasDatePrise ? 'DATE_PRISE' : null);
-
-    if (dateField) {
-      await pool.query(`DELETE FROM malade_info_pc WHERE ID_MALADE IN (?) AND ${dateField} = ?`, [ids, recordDate]);
-    }
-
-    let sql, params;
-    if (dateField) {
-      if (isAuto) {
-        sql = `INSERT INTO malade_info_pc (ID_MALADE, ${dateField}, PC) VALUES (?, ?, ?)`;
-        params = [patientIdForInsert, recordDate, headCirc];
-      } else {
-        sql = `INSERT INTO malade_info_pc (ID, ID_MALADE, ${dateField}, PC) VALUES ((SELECT COALESCE(MAX(t.ID), 0) + 1 FROM malade_info_pc t), ?, ?, ?)`;
-        params = [patientIdForInsert, recordDate, headCirc];
-      }
-    } else {
-      if (isAuto) {
-        sql = "INSERT INTO malade_info_pc (ID_MALADE, PC) VALUES (?, ?)";
-        params = [patientIdForInsert, headCirc];
-      } else {
-        sql = "INSERT INTO malade_info_pc (ID, ID_MALADE, PC) VALUES ((SELECT COALESCE(MAX(t.ID), 0) + 1 FROM malade_info_pc t), ?, ?)";
-        params = [patientIdForInsert, headCirc];
-      }
-    }
-
-    const [result] = await pool.query(sql, params);
-    res.status(201).json({
-      success: true,
-      id: isAuto ? result.insertId : null,
-      patientId: patientIdForInsert,
-      date: recordDate,
-      headCirc
-    });
-  } catch (err) {
-    console.error("API POST /api/patients/:id/head-circ Error:", err);
-    res.status(500).json({ error: "Failed to add head circumference record" });
-  }
-});
-
-// DELETE /api/patients/head-circ/:id - Delete a head circumference record
-router.delete("/head-circ/:id", async (req, res) => {
-  try {
-    const id = req.params.id;
-    await pool.query("DELETE FROM malade_info_pc WHERE ID = ?", [id]);
-    res.json({ success: true, deletedId: id });
-  } catch (err) {
-    console.error("API DELETE /api/patients/head-circ/:id Error:", err);
-    res.status(500).json({ error: "Failed to delete head circumference record" });
-  }
-});
 
 export default router;

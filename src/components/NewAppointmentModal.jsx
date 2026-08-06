@@ -318,7 +318,7 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
                     }
                   }, 200);
                 }}
-                placeholder={t.searchPatientPlaceholder || 'Search by name, MRN, or Barcode...'}
+                placeholder={t.searchPatientPlaceholder || (lang === 'fr' ? 'Rechercher par nom, NIP ou Code-barres...' : 'Search by name, MRN, or Barcode...')}
                 className="w-full pl-9 pr-3 py-2 text-sm bg-slate-900 text-slate-100 border border-slate-700 rounded-xl focus:border-teal-500"
               />
             </div>
@@ -439,27 +439,27 @@ export default function NewAppointmentModal({ isOpen, onClose, patients, default
           {clinicInfo?.MOTIF_RDV === 2 ? (
             <div className="grid grid-cols-1 gap-3">
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Motif *</label>
+                <label className="block text-slate-300 font-medium mb-1">{lang === 'fr' ? 'Motif *' : 'Reason *'}</label>
                 <div className="w-full bg-slate-900 border border-slate-700 rounded-xl focus-within:border-teal-500">
                   <select
                     value={motifId}
                     onChange={(e) => setMotifId(e.target.value)}
                     className="w-full px-3 py-2 text-sm bg-transparent text-slate-100 outline-none"
                   >
-                    <option value="" disabled>Select a motif</option>
+                    <option value="" disabled>{lang === 'fr' ? 'Sélectionner un motif' : 'Select a motif'}</option>
                     {motifsList.map(m => <option key={m.ID_MOTIF} value={m.ID_MOTIF} className="bg-slate-800 text-slate-100">{m.DESIGNATION}</option>)}
                   </select>
                 </div>
               </div>
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Région *</label>
+                <label className="block text-slate-300 font-medium mb-1">{lang === 'fr' ? 'Région *' : 'Region *'}</label>
                 <div className="w-full bg-slate-900 border border-slate-700 rounded-xl focus-within:border-teal-500">
                   <select
                     value={regionId}
                     onChange={(e) => setRegionId(e.target.value)}
                     className="w-full px-3 py-2 text-sm bg-transparent text-slate-100 outline-none"
                   >
-                    <option value="" disabled>Select a region</option>
+                    <option value="" disabled>{lang === 'fr' ? 'Sélectionner une région' : 'Select a region'}</option>
                     {regionsList.map(r => <option key={r.ID_REGION} value={r.ID_REGION} className="bg-slate-800 text-slate-100">{r.DESIGNATION}</option>)}
                   </select>
                 </div>

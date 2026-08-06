@@ -130,12 +130,30 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
     }
   };
 
+  const formDataRef = useRef(formData);
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+        if (formDataRef.current) {
+          handleSave(formDataRef.current);
+        }
+      }
+    };
+  }, []);
+
   const handleChange = (e) => {
     const { name, value, type } = e.target;
     
     // Convert radio button values to integers for specific fields
     let finalValue = value;
-    if (type === 'radio' && ['GEST_ORDONNANCE', 'GEST_BILAN', 'FREQ_MEDIC', 'MOTIF_RDV', 'NUM_RDV', 'IMPR_ORD', 'IMPR_ARRET', 'MODELE_ORD', 'IMPR_ORIENTATION', 'IMPR_PAPIER_PRE_IMPRIME', 'BAS_PAGE', 'IMPR_BILAN'].includes(name)) {
+    if (name === 'Affiche_CodeBarre') {
+      finalValue = Number(value) === 2 ? 0 : Number(value);
+    } else if (type === 'radio' && ['GEST_ORDONNANCE', 'GEST_BILAN', 'FREQ_MEDIC', 'MOTIF_RDV', 'NUM_RDV', 'IMPR_ORD', 'IMPR_ARRET', 'MODELE_ORD', 'IMPR_ORIENTATION', 'IMPR_PAPIER_PRE_IMPRIME', 'BAS_PAGE', 'IMPR_BILAN'].includes(name)) {
       finalValue = Number(value);
     } else if (type === 'number') {
       finalValue = parseFloat(value) || 0;
@@ -147,13 +165,21 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
     };
     setFormData(newFormData);
 
+    if (onUpdateClinicInfo) {
+      onUpdateClinicInfo(newFormData);
+    }
+
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current);
     }
 
-    debounceTimeout.current = setTimeout(() => {
+    if (type === 'radio') {
       handleSave(newFormData);
-    }, 1500); // Debounce time: 1.5 seconds
+    } else {
+      debounceTimeout.current = setTimeout(() => {
+        handleSave(newFormData);
+      }, 1500); // Debounce time: 1.5 seconds
+    }
   };
 
   const handleArabicFocus = (e) => {
@@ -434,6 +460,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="nomCabinet"
                     value={formData?.nomCabinet || ''}
                     onChange={handleChange}
+                    placeholder={lang === 'fr' ? 'ex: Cabinet Médical EL IYADA' : 'e.g. EL IYADA Medical Practice'}
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
@@ -444,6 +471,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="doctorNameFr"
                     value={formData?.doctorNameFr || ''}
                     onChange={handleChange}
+                    placeholder={lang === 'fr' ? 'ex: Dr. BENALI Mohamed' : 'e.g. Dr. BENALI Mohamed'}
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
@@ -457,6 +485,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     onChange={handleChange}
                     onFocus={handleArabicFocus}
                     onBlur={handleArabicBlur}
+                    placeholder="د. بن علي محمد"
                     dir="rtl"
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition text-right"
                   />
@@ -468,6 +497,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="specialtyFr"
                     value={formData?.specialtyFr || ''}
                     onChange={handleChange}
+                    placeholder={lang === 'fr' ? 'ex: Spécialiste en ORL et Chirurgie Cervico-Faciale' : 'e.g. ENT & Head and Neck Surgery Specialist'}
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
                     rows={3}
                   />
@@ -481,6 +511,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     onChange={handleChange}
                     onFocus={handleArabicFocus}
                     onBlur={handleArabicBlur}
+                    placeholder="مختص في أمراض الأنف والأذن والحنجرة"
                     dir="rtl"
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition text-right"
                     rows={3}
@@ -494,9 +525,8 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="detailsSpecialite"
                     value={formData?.detailsSpecialite || ''}
                     onChange={handleChange}
-                    onFocus={handleArabicFocus}
-                    onBlur={handleArabicBlur}
-                    dir="rtl"
+                    placeholder={lang === 'fr' ? 'ex: Explorations Fonctionnelles & Audiologie' : 'e.g. Functional Explorations & Audiology'}
+                    dir="auto"
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
@@ -508,6 +538,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="ordre"
                     value={formData?.ordre || ''}
                     onChange={handleChange}
+                    placeholder="ex: 23/14589"
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 font-mono focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
@@ -529,6 +560,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="phone"
                     value={formData?.phone || ''}
                     onChange={handleChange}
+                    placeholder="0661000000"
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 font-mono focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
@@ -540,6 +572,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="fixe"
                     value={formData?.fixe || ''}
                     onChange={handleChange}
+                    placeholder="038000000"
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 font-mono focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
@@ -551,6 +584,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="email"
                     value={formData?.email || ''}
                     onChange={handleChange}
+                    placeholder="contact@iyada.com"
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
@@ -562,6 +596,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="facebookPage"
                     value={formData?.facebookPage || ''}
                     onChange={handleChange}
+                    placeholder="facebook.com/drbenali"
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
@@ -573,6 +608,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="website"
                     value={formData?.website || ''}
                     onChange={handleChange}
+                    placeholder="www.drbenali.com"
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
@@ -593,6 +629,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="addressFr"
                     value={formData?.addressFr || ''}
                     onChange={handleChange}
+                    placeholder={lang === 'fr' ? 'ex: Cité 1000 Logements, Annaba' : 'e.g. 1000 Housing Estate, Annaba'}
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
                     rows={3}
                   />
@@ -606,6 +643,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     onChange={handleChange}
                     onFocus={handleArabicFocus}
                     onBlur={handleArabicBlur}
+                    placeholder="حي 1000 مسكن عنابة"
                     dir="rtl"
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition text-right"
                     rows={3}
@@ -619,6 +657,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="city"
                     value={formData?.city || ''}
                     onChange={handleChange}
+                    placeholder={lang === 'fr' ? 'ex: Annaba' : 'e.g. Annaba'}
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
@@ -639,6 +678,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="msgOrd"
                     value={formData?.msgOrd || ''}
                     onChange={handleChange}
+                    placeholder={lang === 'fr' ? 'Slogan ou message en haut des ordonnances...' : 'Top prescription slogan or message...'}
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
                     rows={3}
                   />
@@ -649,6 +689,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="msgJaune"
                     value={formData?.msgJaune || ''}
                     onChange={handleChange}
+                    placeholder={lang === 'fr' ? 'Avertissement ou note d\'attention...' : 'Warning notice or note...'}
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
                     rows={3}
                   />
@@ -659,6 +700,7 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
                     name="msgCloture"
                     value={formData?.msgCloture || ''}
                     onChange={handleChange}
+                    placeholder={lang === 'fr' ? 'Message de fin d\'ordonnance ou de salutation...' : 'End of prescription message or closing...'}
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
                     rows={3}
                   />
@@ -726,10 +768,14 @@ export default function ClinicSettings({ onUpdateClinicInfo, currentUser, onLogo
 
               <div className="space-y-3">
                 <h4 className="text-xs font-bold text-slate-200 uppercase tracking-widest border-b border-slate-700 pb-2">{t.printBilanLabel}</h4>
-                <label className="flex items-center gap-3 text-sm text-slate-200 cursor-pointer"><input type="radio" name="IMPR_BILAN" value="1" checked={String(formData?.IMPR_BILAN ?? '1') === '1'} onChange={(e) => handleChange({ target: { name: 'IMPR_BILAN', value: e.target.value, type: 'radio' } })} className="w-4 h-4 text-teal-500 bg-slate-900 border-slate-700" />{t.printBilanA5}</label>
-                <label className="flex items-center gap-3 text-sm text-slate-200 cursor-pointer"><input type="radio" name="IMPR_BILAN" value="2" checked={String(formData?.IMPR_BILAN ?? '1') === '2'} onChange={(e) => handleChange({ target: { name: 'IMPR_BILAN', value: e.target.value, type: 'radio' } })} className="w-4 h-4 text-teal-500 bg-slate-900 border-slate-700" />{t.printBilanTicket}</label>
-                <label className="flex items-center gap-3 text-sm text-slate-200 cursor-pointer"><input type="radio" name="IMPR_BILAN" value="3" checked={String(formData?.IMPR_BILAN ?? '1') === '3'} onChange={(e) => handleChange({ target: { name: 'IMPR_BILAN', value: e.target.value, type: 'radio' } })} className="w-4 h-4 text-teal-500 bg-slate-900 border-slate-700" />{t.printBilanA4}</label>
-                <label className="flex items-center gap-3 text-sm text-slate-200 cursor-pointer"><input type="radio" name="IMPR_BILAN" value="4" checked={String(formData?.IMPR_BILAN ?? '1') === '4'} onChange={(e) => handleChange({ target: { name: 'IMPR_BILAN', value: e.target.value, type: 'radio' } })} className="w-4 h-4 text-teal-500 bg-slate-900 border-slate-700" />{t.printBilanA5Ticket}</label>
+                <label className="flex items-center gap-3 text-sm text-slate-200 cursor-pointer"><input type="radio" name="IMPR_BILAN" value="2" checked={String(formData?.IMPR_BILAN ?? '2') === '2'} onChange={(e) => handleChange({ target: { name: 'IMPR_BILAN', value: e.target.value, type: 'radio' } })} className="w-4 h-4 text-teal-500 bg-slate-900 border-slate-700" />{t.printBilanA5}</label>
+                <label className="flex items-center gap-3 text-sm text-slate-200 cursor-pointer"><input type="radio" name="IMPR_BILAN" value="1" checked={String(formData?.IMPR_BILAN ?? '2') === '1'} onChange={(e) => handleChange({ target: { name: 'IMPR_BILAN', value: e.target.value, type: 'radio' } })} className="w-4 h-4 text-teal-500 bg-slate-900 border-slate-700" />{t.printBilanA4}</label>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-200 uppercase tracking-widest border-b border-slate-700 pb-2">{t.printBarcodeLabel || 'Imprimer Code Barre'}</h4>
+                <label className="flex items-center gap-3 text-sm text-slate-200 cursor-pointer"><input type="radio" name="Affiche_CodeBarre" value="1" checked={String(formData?.Affiche_CodeBarre ?? '1') === '1'} onChange={(e) => handleChange({ target: { name: 'Affiche_CodeBarre', value: e.target.value, type: 'radio' } })} className="w-4 h-4 text-teal-500 bg-slate-900 border-slate-700" />{t.yesOption || 'Oui'}</label>
+                <label className="flex items-center gap-3 text-sm text-slate-200 cursor-pointer"><input type="radio" name="Affiche_CodeBarre" value="2" checked={String(formData?.Affiche_CodeBarre) === '0' || String(formData?.Affiche_CodeBarre) === '2'} onChange={(e) => handleChange({ target: { name: 'Affiche_CodeBarre', value: e.target.value, type: 'radio' } })} className="w-4 h-4 text-teal-500 bg-slate-900 border-slate-700" />{t.noOption || 'Non'}</label>
               </div>
             </div>
           </div>

@@ -1328,7 +1328,7 @@ export default function PatientOverviewPanel({
                         {patientObservations.map((obs) => (
                           <div
                             key={obs.id}
-                            className="p-3 bg-slate-900/90 border border-slate-800/90 rounded-xl flex items-start justify-between gap-3 hover:border-slate-700 transition"
+                            className="p-3 bg-slate-900/90 border border-slate-800/90 rounded-xl flex items-start justify-between gap-6 hover:border-slate-700 transition"
                           >
                             <div className="space-y-1 flex-1">
                               <div className="flex items-center gap-2 text-[11px] font-bold text-teal-400">
@@ -1748,20 +1748,48 @@ export default function PatientOverviewPanel({
                 </div>
               )}
 
-              {/* VIEW 4. Taille */}
-              {activeTab === 'taille' && (
-                <div className="space-y-3 p-4 bg-slate-950/80 rounded-xl border border-slate-800 animate-in fade-in duration-200">
-                  <label className="text-xs font-bold text-cyan-300 uppercase flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-cyan-400" />
-                    {lang === 'fr' ? 'Taille du Patient (cm)' : 'Patient Height (cm)'}
-                  </label>
-                  <input
-                    type="number"
-                    value={editTaille}
-                    onChange={(e) => setEditTaille(e.target.value)}
-                    placeholder="170"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 font-mono text-xs focus:outline-none focus:border-cyan-500"
-                  />
+              {/* VIEW 4. Mensurations */}
+              {activeTab === 'mensurations' && (
+                <div className="space-y-4 p-4 bg-slate-950/80 rounded-xl border border-slate-800 animate-in fade-in duration-200">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-cyan-300 uppercase flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-cyan-400" />
+                      {lang === 'fr' ? 'Nouvelles Mesures (Taille, Poids, PC)' : 'New Measurements (Height, Weight, HC)'}
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Taille (cm)</label>
+                        <input
+                          type="number"
+                          value={editTaille}
+                          onChange={(e) => setEditTaille(e.target.value)}
+                          placeholder="170"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-cyan-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Poids (kg)</label>
+                        <input
+                          type="number"
+                          value={editPoids}
+                          onChange={(e) => setEditPoids(e.target.value)}
+                          placeholder="70"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Périm. Crân. (cm)</label>
+                        <input
+                          type="number"
+                          value={editPerimCran}
+                          onChange={(e) => setEditPerimCran(e.target.value)}
+                          placeholder="45"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex justify-end pt-1">
                     <button
                       type="submit"
@@ -1772,59 +1800,86 @@ export default function PatientOverviewPanel({
                       {isSaving ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Enregistrer' : 'Save')}
                     </button>
                   </div>
-                </div>
-              )}
 
-              {/* VIEW 5. Poids */}
-              {activeTab === 'poids' && (
-                <div className="space-y-3 p-4 bg-slate-950/80 rounded-xl border border-slate-800 animate-in fade-in duration-200">
-                  <label className="text-xs font-bold text-emerald-300 uppercase flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-emerald-400" />
-                    {lang === 'fr' ? 'Poids du Patient (kg)' : 'Patient Weight (kg)'}
-                  </label>
-                  <input
-                    type="number"
-                    value={editPoids}
-                    onChange={(e) => setEditPoids(e.target.value)}
-                    placeholder="70"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 font-mono text-xs focus:outline-none focus:border-emerald-500"
-                  />
-                  <div className="flex justify-end pt-1">
-                    <button
-                      type="submit"
-                      disabled={isSaving}
-                      className="px-5 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold rounded-xl flex items-center gap-2 shadow-md shadow-teal-500/20 transition text-xs"
-                    >
-                      <Save className="w-4 h-4" />
-                      {isSaving ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Enregistrer' : 'Save')}
-                    </button>
-                  </div>
-                </div>
-              )}
+                  {/* List of Mensurations for this Patient */}
+                  <div className="pt-3 border-t border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold uppercase text-slate-300 tracking-wider flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                        {lang === 'fr' ? 'Historique des Mensurations' : 'Measurement History'}
+                      </h4>
+                      {(loadingHeights || loadingWeights || loadingHeadCircs) && (
+                        <span className="text-[10px] text-cyan-400 animate-pulse">{lang === 'fr' ? 'Chargement...' : 'Loading...'}</span>
+                      )}
+                    </div>
 
-              {/* VIEW 6. Périm. Cran. */}
-              {activeTab === 'perimCran' && (
-                <div className="space-y-3 p-4 bg-slate-950/80 rounded-xl border border-slate-800 animate-in fade-in duration-200">
-                  <label className="text-xs font-bold text-purple-300 uppercase flex items-center gap-2">
-                    <User className="w-4 h-4 text-purple-400" />
-                    {lang === 'fr' ? 'Périmètre Crânien (cm)' : 'Head Circumference (cm)'}
-                  </label>
-                  <input
-                    type="number"
-                    value={editPerimCran}
-                    onChange={(e) => setEditPerimCran(e.target.value)}
-                    placeholder="45"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 font-mono text-xs focus:outline-none focus:border-purple-500"
-                  />
-                  <div className="flex justify-end pt-1">
-                    <button
-                      type="submit"
-                      disabled={isSaving}
-                      className="px-5 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold rounded-xl flex items-center gap-2 shadow-md shadow-teal-500/20 transition text-xs"
-                    >
-                      <Save className="w-4 h-4" />
-                      {isSaving ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Enregistrer' : 'Save')}
-                    </button>
+                    {(loadingHeights || loadingWeights || loadingHeadCircs) ? (
+                      <div className="text-center text-xs text-slate-400">Chargement...</div>
+                    ) : combinedMensurationsHistory.length > 0 ? (
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                        {/* Table Headers */}
+                        <div className="grid grid-cols-5 items-center gap-2 text-xs text-slate-400 uppercase font-semibold bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+                          <div className="col-span-1">{lang === 'fr' ? 'Date' : 'Date'}</div>
+                          <div className="text-right col-span-1">{lang === 'fr' ? 'Taille' : 'Height'}</div>
+                          <div className="text-right col-span-1">{lang === 'fr' ? 'Poids' : 'Weight'}</div>
+                          <div className="text-right col-span-1">{lang === 'fr' ? 'PC' : 'HC'}</div>
+                          <div className="text-right col-span-1">{lang === 'fr' ? 'Actions' : 'Actions'}</div>
+                        </div>
+                        {combinedMensurationsHistory.map((m, index) => (
+                          <div
+                            key={index}
+                            className="p-3 bg-slate-900/90 border border-slate-800/90 rounded-xl grid grid-cols-5 items-center gap-2 text-xs hover:border-slate-700 transition"
+                          >
+                            <div className="font-bold text-cyan-400 flex items-center gap-2 col-span-1">
+                              <Calendar className="w-3 h-3 shrink-0" />
+                              <span>{m.date}</span>
+                            </div>
+                            <div className="text-right text-slate-200 col-span-1">
+                              {m.height ? `${m.height} cm` : <span className="text-slate-500">-</span>}
+                            </div>
+                            <div className="text-right text-slate-200 col-span-1">
+                              {m.weight ? `${m.weight} kg` : <span className="text-slate-500">-</span>}
+                            </div>
+                            <div className="text-right text-slate-200 col-span-1">
+                              {m.headCirc ? `${m.headCirc} cm` : <span className="text-slate-500">-</span>}
+                            </div>
+                            <div className="flex items-center gap-0.5 justify-end col-span-1">
+                              {m.heightId && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteHeight(m.heightId)}
+                                  className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-lg transition"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {m.weightId && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteWeight(m.weightId)}
+                                  className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-lg transition"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {m.headCircId && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteHeadCirc(m.headCircId)}
+                                  className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-lg transition"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl text-center text-slate-400 text-xs italic">
+                        {lang === 'fr' ? 'Aucun historique de mesures disponible.' : 'No measurement history available.'}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1836,12 +1891,12 @@ export default function PatientOverviewPanel({
                     <Sparkles className="w-4 h-4 text-amber-400" />
                     {lang === 'fr' ? 'Alimentation / Régime' : 'Diet & Nutrition'}
                   </label>
-                  <input
-                    type="text"
+                  <textarea
+                    rows={3}
                     value={editAlimentation}
                     onChange={(e) => setEditAlimentation(e.target.value)}
-                    placeholder="ex: Allaitement maternel / Régime hyposodé..."
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 text-xs focus:outline-none focus:border-amber-500"
+                    placeholder={t.exDiet || (lang === 'fr' ? 'ex: Allaitement maternel / Régime hyposodé...' : 'e.g. Breastfeeding / Low sodium diet...')}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 text-xs focus:outline-none focus:border-amber-500 resize-y"
                   />
                   <div className="flex justify-end pt-1">
                     <button
@@ -1952,7 +2007,7 @@ export default function PatientOverviewPanel({
                         {patientDiagConsults.map((diag) => (
                           <div
                             key={diag.id}
-                            className="p-3 bg-slate-900/90 border border-slate-800/90 rounded-xl flex items-start justify-between gap-3 hover:border-slate-700 transition"
+                            className="p-3 bg-slate-900/90 border border-slate-800/90 rounded-xl flex items-start justify-between gap-6 hover:border-slate-700 transition"
                           >
                             <div className="space-y-1 flex-1">
                               <div className="flex items-center gap-2 text-[11px] font-bold text-teal-400">
@@ -1992,6 +2047,7 @@ export default function PatientOverviewPanel({
                     rows={4}
                     value={editExplorConsult}
                     onChange={(e) => setEditExplorConsult(e.target.value)}
+                    placeholder={t.exGeneralDiag || (lang === 'fr' ? 'Saisir le diagnostique général...' : 'Enter general diagnosis...')}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 text-xs focus:outline-none focus:border-indigo-500"
                   />
                   <div className="flex justify-end pt-1">

@@ -1,5 +1,5 @@
 import express from "express";
-import pool from "../../db.js";
+import pool, { myDB } from "../../db.js";
 import { requireExistingUser } from "../../middleware/auth.js";
 import {
   CONSULTATION_OPTION_FIELDS,
@@ -27,6 +27,7 @@ router.get("/clinic", async (req, res) => {
       const consultationOptions = consultRows[0] || {};
       const infoSupp = infoSuppRows[0] || {};
       res.json({
+        dbName: myDB,
         raw: p,
         paramInfoSupp: {
           OBS: Number(infoSupp.OBS ?? 1),
@@ -76,6 +77,7 @@ router.get("/clinic", async (req, res) => {
         IMPR_PAPIER_PRE_IMPRIME: normalizeRadioOption(p.IMPR_PAPIER_PRE_IMPRIME),
         BAS_PAGE: normalizeRadioOption(p.BAS_PAGE),
         IMPR_BILAN: normalizeRadioOption(p.IMPR_BILAN),
+        Affiche_CodeBarre: (p.Affiche_CodeBarre !== undefined && p.Affiche_CodeBarre !== null) ? (Number(p.Affiche_CodeBarre) === 2 ? 0 : Number(p.Affiche_CodeBarre)) : ((p.AFFICHE_CODEBARRE !== undefined && p.AFFICHE_CODEBARRE !== null) ? (Number(p.AFFICHE_CODEBARRE) === 2 ? 0 : Number(p.AFFICHE_CODEBARRE)) : 1),
         GEST_ORDONNANCE: normalizeRadioOption(p.GEST_ORDONNANCE),
         GEST_BILAN: normalizeRadioOption(p.GEST_BILAN),
         FREQ_MEDIC: normalizeRadioOption(p.FREQ_MEDIC),
@@ -95,12 +97,12 @@ router.get("/clinic", async (req, res) => {
       });
     } else {
       res.json({
-        doctorNameFr: "Dr. A. BENKERMI Ep. TATI",
-        specialtyFr:
-          "Spécialiste en Maladies et Chirurgie ORL • Thyroïde • Audition • Vertige",
-        addressFr: "El Bouni ANNABA",
-        phone: "0558 413 240",
-        msgOrd: "Sauver des vies - Donnez de votre sang",
+        dbName: myDB,
+        doctorNameFr: "Cabinet Médical",
+        specialtyFr: "",
+        addressFr: "",
+        phone: "",
+        msgOrd: "",
         GEST_ORDONNANCE: null,
         GEST_BILAN: null,
         FREQ_MEDIC: null,
@@ -160,6 +162,7 @@ router.put("/clinic", async (req, res) => {
       IMPR_PAPIER_PRE_IMPRIME,
       BAS_PAGE,
       IMPR_BILAN,
+      Affiche_CodeBarre,
       GEST_RDV,
       RESUME_DERN_CONS,
       GEST_IMAGE,
@@ -171,10 +174,21 @@ router.put("/clinic", async (req, res) => {
       ARRET_TRAV,
       MOTIF,
     } = req.body;
+    const rawBarcode = Affiche_CodeBarre ?? req.body.AFFICHE_CODEBARRE ?? 1;
+    const afficheCodeBarreVal = Number(rawBarcode) === 2 ? 0 : Number(rawBarcode);
     const gestRdvValue = normalizeCheckboxOption(GEST_RDV);
     const resumeDernConsValue = normalizeCheckboxOption(RESUME_DERN_CONS);
     const gestImageValue = normalizeCheckboxOption(GEST_IMAGE);
     const apercuValue = normalizeCheckboxOption(APERCU);
+
+    // Auto-ensure Affiche_CodeBarre column exists in parametre table
+    try {
+      await pool.query("ALTER TABLE parametre ADD COLUMN Affiche_CodeBarre INT DEFAULT 1");
+    } catch (err) {
+      if (err.code !== 'ER_DUP_FIELDNAME' && !err.message.includes('duplicate column')) {
+        // ignore if column exists
+      }
+    }
 
     const [rows] = await pool.query("SELECT ID_PARAMETRE FROM parametre LIMIT 1");
     if (rows.length === 0) {
@@ -183,8 +197,8 @@ router.put("/clinic", async (req, res) => {
           ID_PARAMETRE, NOM_CABINET, NOM_FR, NOM_AR, SPECIALITE_FR, SPECIALITE_AR, DETAILS_SPECIALITE, TEL, FIXE,
           ADRESSE_FR, ADRESSE_AR, VILLE, EMAIL, MSG_ORD, MSG_JAUNE, MSG_CLOTURE, ORDRE,
           PRIX_CONSULTATION, PRIX_ORDONNANCE, NBR_RDV, NB_MINUTE_RDV, PAGE_FACEBOOK, SITE_WEB,
-          MIN_EXERCICE_DETAILS_ORD, MAX_EXERCICE_DETAILS_ORD, GEST_ORDONNANCE, GEST_BILAN, FREQ_MEDIC, INFO_SUP_ORD, MOTIF_RDV, NUM_RDV, IMPR_ORD, IMPR_ARRET, MODELE_ORD, IMPR_ORIENTATION, IMPR_PAPIER_PRE_IMPRIME, BAS_PAGE, IMPR_BILAN, GEST_RDV, RESUME_DERN_CONS, GEST_IMAGE, APERCU
-        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          MIN_EXERCICE_DETAILS_ORD, MAX_EXERCICE_DETAILS_ORD, GEST_ORDONNANCE, GEST_BILAN, FREQ_MEDIC, INFO_SUP_ORD, MOTIF_RDV, NUM_RDV, IMPR_ORD, IMPR_ARRET, MODELE_ORD, IMPR_ORIENTATION, IMPR_PAPIER_PRE_IMPRIME, BAS_PAGE, IMPR_BILAN, Affiche_CodeBarre, GEST_RDV, RESUME_DERN_CONS, GEST_IMAGE, APERCU
+        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           nomCabinet || "",
           doctorNameFr || "",
@@ -223,6 +237,7 @@ router.put("/clinic", async (req, res) => {
           IMPR_PAPIER_PRE_IMPRIME || 1,
           BAS_PAGE || 1,
           IMPR_BILAN || 1,
+          afficheCodeBarreVal,
           gestRdvValue,
           resumeDernConsValue,
           gestImageValue,
@@ -236,7 +251,7 @@ router.put("/clinic", async (req, res) => {
           ADRESSE_FR = ?, ADRESSE_AR = ?, VILLE = ?, EMAIL = ?, MSG_ORD = ?, MSG_JAUNE = ?, MSG_CLOTURE = ?, ORDRE = ?,
           PRIX_CONSULTATION = ?, PRIX_ORDONNANCE = ?, NBR_RDV = ?, NB_MINUTE_RDV = ?, PAGE_FACEBOOK = ?, SITE_WEB = ?,
           MIN_EXERCICE_DETAILS_ORD = ?, MAX_EXERCICE_DETAILS_ORD = ?, GEST_ORDONNANCE = ?, GEST_BILAN = ?, FREQ_MEDIC = ?, INFO_SUP_ORD = ?, MOTIF_RDV = ?, NUM_RDV = ?, GEST_RDV = ?, RESUME_DERN_CONS = ?, GEST_IMAGE = ?, APERCU = ?,
-          IMPR_ORD = ?, IMPR_ARRET = ?, MODELE_ORD = ?, IMPR_ORIENTATION = ?, IMPR_PAPIER_PRE_IMPRIME = ?, BAS_PAGE = ?, IMPR_BILAN = ?
+          IMPR_ORD = ?, IMPR_ARRET = ?, MODELE_ORD = ?, IMPR_ORIENTATION = ?, IMPR_PAPIER_PRE_IMPRIME = ?, BAS_PAGE = ?, IMPR_BILAN = ?, Affiche_CodeBarre = ?
         WHERE ID_PARAMETRE = ?`,
         [
           nomCabinet || "",
@@ -280,6 +295,7 @@ router.put("/clinic", async (req, res) => {
           IMPR_PAPIER_PRE_IMPRIME || 1,
           BAS_PAGE || 1,
           IMPR_BILAN || 1,
+          afficheCodeBarreVal,
           rows[0].ID_PARAMETRE,
         ]
       );

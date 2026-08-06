@@ -1,5 +1,5 @@
 import express from "express";
-import pool from "../db.js";
+import pool, { myDB } from "../db.js";
 
 const router = express.Router();
 
@@ -34,6 +34,7 @@ router.get("/", async (req, res) => {
     const nextAppointment = nextAppointmentRows[0] || null;
 
     res.json({
+      dbName: myDB,
       totalPatients: totPatients.count || 0,
       todayAppointments: totAppts.count || 0,
       criticalCases: critCases.count || 0,

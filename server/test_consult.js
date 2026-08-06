@@ -1,12 +1,8 @@
 import mysql from 'mysql2/promise';
+import { dbConfig, myDB } from './db.js';
 
-async function checkConsultation() {
-  const connection = await mysql.createConnection({
-    host: '127.0.0.1',
-    user: 'citrus',
-    password: 'citrus21012013',
-    database: 'docteur4'
-  });
+async function testConsultation() {
+  const connection = await mysql.createConnection(dbConfig);
 
   const [cols] = await connection.query('DESCRIBE `consultation`');
   console.log('consultation table structure:');
