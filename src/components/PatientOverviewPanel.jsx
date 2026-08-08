@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Activity, ShieldAlert, AlertTriangle, Edit3, Plus, Stethoscope, Save, X, CheckCircle2, Heart, Layers, User, Users, Sparkles, Calendar, TestTube, Trash2 } from 'lucide-react';
+import { useConfirm } from '../context/ConfirmDialogContext';
 
 function normalizeList(val) {
   if (!val) return [];
@@ -25,6 +26,7 @@ export default function PatientOverviewPanel({
   title,
   clinicInfo
 }) {
+  const confirm = useConfirm();
   const [fullPatientData, setFullPatientData] = useState(patient);
   const [isEditingVitalsModal, setIsEditingVitalsModal] = useState(false);
   const [localClinicInfo, setLocalClinicInfo] = useState(clinicInfo || null);
@@ -345,7 +347,13 @@ export default function PatientOverviewPanel({
   };
 
   const handleDeleteObservation = async (obsId) => {
-    if (!window.confirm(lang === 'fr' ? 'Voulez-vous vraiment supprimer cette observation ?' : 'Are you sure you want to delete this observation?')) return;
+    const isConfirmed = await confirm({
+      title: lang === 'fr' ? 'Supprimer l\'observation' : 'Delete Observation',
+      message: lang === 'fr' ? 'Voulez-vous vraiment supprimer cette observation ?' : 'Are you sure you want to delete this observation?',
+      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      variant: 'danger'
+    });
+    if (!isConfirmed) return;
     try {
       const res = await fetch(`/api/patients/observations/${obsId}`, { method: 'DELETE' });
       if (res.ok) {
@@ -357,7 +365,13 @@ export default function PatientOverviewPanel({
   };
 
   const handleDeleteHeight = async (heightId) => {
-    if (!window.confirm(lang === 'fr' ? 'Voulez-vous vraiment supprimer cette mesure de taille ?' : 'Are you sure you want to delete this height record?')) return;
+    const isConfirmed = await confirm({
+      title: lang === 'fr' ? 'Supprimer la mesure' : 'Delete Height',
+      message: lang === 'fr' ? 'Voulez-vous vraiment supprimer cette mesure de taille ?' : 'Are you sure you want to delete this height record?',
+      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      variant: 'danger'
+    });
+    if (!isConfirmed) return;
     try {
       const res = await fetch(`/api/patients/height/${heightId}`, { method: 'DELETE' });
       if (res.ok) {
@@ -369,7 +383,13 @@ export default function PatientOverviewPanel({
   };
 
   const handleDeleteWeight = async (weightId) => {
-    if (!window.confirm(lang === 'fr' ? 'Voulez-vous vraiment supprimer cette mesure de poids ?' : 'Are you sure you want to delete this weight record?')) return;
+    const isConfirmed = await confirm({
+      title: lang === 'fr' ? 'Supprimer la mesure' : 'Delete Weight',
+      message: lang === 'fr' ? 'Voulez-vous vraiment supprimer cette mesure de poids ?' : 'Are you sure you want to delete this weight record?',
+      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      variant: 'danger'
+    });
+    if (!isConfirmed) return;
     try {
       const res = await fetch(`/api/patients/weight/${weightId}`, { method: 'DELETE' });
       if (res.ok) {
@@ -381,7 +401,13 @@ export default function PatientOverviewPanel({
   };
 
   const handleDeleteHeadCirc = async (id) => {
-    if (!window.confirm(lang === 'fr' ? 'Voulez-vous vraiment supprimer cette mesure de périmètre crânien ?' : 'Are you sure you want to delete this head circumference record?')) return;
+    const isConfirmed = await confirm({
+      title: lang === 'fr' ? 'Supprimer la mesure' : 'Delete Record',
+      message: lang === 'fr' ? 'Voulez-vous vraiment supprimer cette mesure de périmètre crânien ?' : 'Are you sure you want to delete this head circumference record?',
+      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      variant: 'danger'
+    });
+    if (!isConfirmed) return;
     try {
       const res = await fetch(`/api/patients/head-circ/${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -393,7 +419,13 @@ export default function PatientOverviewPanel({
   };
 
   const handleDeleteNutrition = async (id) => {
-    if (!window.confirm(lang === 'fr' ? 'Voulez-vous vraiment supprimer cet enregistrement d’alimentation ?' : 'Are you sure you want to delete this nutrition record?')) return;
+    const isConfirmed = await confirm({
+      title: lang === 'fr' ? 'Supprimer l\'alimentation' : 'Delete Nutrition',
+      message: lang === 'fr' ? 'Voulez-vous vraiment supprimer cet enregistrement d’alimentation ?' : 'Are you sure you want to delete this nutrition record?',
+      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      variant: 'danger'
+    });
+    if (!isConfirmed) return;
     try {
       const res = await fetch(`/api/patients/nutrition/${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -405,7 +437,13 @@ export default function PatientOverviewPanel({
   };
 
   const handleDeleteDiagConsult = async (id) => {
-    if (!window.confirm(lang === 'fr' ? 'Voulez-vous vraiment supprimer ce diagnostic de consultation ?' : 'Are you sure you want to delete this consult diagnosis record?')) return;
+    const isConfirmed = await confirm({
+      title: lang === 'fr' ? 'Supprimer le diagnostic' : 'Delete Diagnosis',
+      message: lang === 'fr' ? 'Voulez-vous vraiment supprimer ce diagnostic de consultation ?' : 'Are you sure you want to delete this consult diagnosis record?',
+      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      variant: 'danger'
+    });
+    if (!isConfirmed) return;
     try {
       const res = await fetch(`/api/patients/diag-consult/${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -417,7 +455,13 @@ export default function PatientOverviewPanel({
   };
 
   const handleDeleteDdrDpa = async (id) => {
-    if (!window.confirm(lang === 'fr' ? 'Voulez-vous vraiment supprimer cet enregistrement DDR/DPA ?' : 'Are you sure you want to delete this LMP/EDD record?')) return;
+    const isConfirmed = await confirm({
+      title: lang === 'fr' ? 'Supprimer l\'enregistrement' : 'Delete Record',
+      message: lang === 'fr' ? 'Voulez-vous vraiment supprimer cet enregistrement DDR/DPA ?' : 'Are you sure you want to delete this LMP/EDD record?',
+      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      variant: 'danger'
+    });
+    if (!isConfirmed) return;
     try {
       const res = await fetch(`/api/patients/ddr-dpa/${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -578,7 +622,13 @@ export default function PatientOverviewPanel({
   const handleDeleteVitals = async (date) => {
     const patId = p.id || p.codeBarre || p.mrn;
     if (!patId || !date) return;
-    if (!window.confirm(lang === 'fr' ? `Voulez-vous supprimer les signes vitaux du ${date} ?` : `Delete vitals for ${date}?`)) return;
+    const isConfirmed = await confirm({
+      title: lang === 'fr' ? 'Supprimer les signes vitaux' : 'Delete Vitals',
+      message: lang === 'fr' ? `Voulez-vous supprimer les signes vitaux du ${date} ?` : `Delete vitals for ${date}?`,
+      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      variant: 'danger'
+    });
+    if (!isConfirmed) return;
     try {
       const res = await fetch(`/api/patients/${encodeURIComponent(patId)}/vitals?date=${encodeURIComponent(date)}`, { method: 'DELETE' });
       if (res.ok) {

@@ -44,8 +44,10 @@ import PatientOverviewPanel from './PatientOverviewPanel';
 import { generatePrescriptionHtml } from './prescriptionTemplates';
 import { renderBilanBody } from './prescriptionTemplates/documentBodies';
 import ReplacePrescriptionModal from './consultation/ReplacePrescriptionModal';
+import { useConfirm } from '../context/ConfirmDialogContext';
 
 export default function AddConsultationModal({ draft, patient, patients = [], onSelectPatient, onConsultationAdded, onCancel, onUpdateDraft, onClose, onEditPatient, onOpenNewConsultation, lang = 'fr', clinicInfo }) {
+  const confirm = useConfirm();
   const t = translations[lang] || translations.fr;
   const activePatient = patient || draft?.patient || (patients && patients.length > 0 ? patients[0] : null);
 
@@ -203,6 +205,28 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
     }
 
     return { fullname, age: '', typeAge: 'ans', sexe, infoSupp };
+  };
+
+  const getPatientDisplayAge = (p) => {
+    if (!p) return '—';
+    const rawAge = p.AGE !== undefined && p.AGE !== null && p.AGE !== '' ? p.AGE : (p.age !== undefined && p.age !== null && p.age !== '' ? p.age : '');
+    const rawType = p.TYPE || p.type || p.typeAge;
+    let typeAge = 'ans';
+    const tNum = Number(rawType);
+    if (tNum === 2 || rawType === 'mois') typeAge = 'mois';
+    else if (tNum === 3 || rawType === 'jours') typeAge = 'jours';
+    else if (typeof rawType === 'string' && rawType) typeAge = rawType;
+
+    if (rawAge !== undefined && rawAge !== null && rawAge !== '') {
+      return `${rawAge} ${typeAge}`;
+    }
+
+    const calculated = getDefaultAssureInfo(p);
+    if (calculated && calculated.age) {
+      return `${calculated.age} ${calculated.typeAge || 'ans'}`;
+    }
+
+    return '—';
   };
 
   // 0. ASSURÉ (Insured Person) State - Defaults to active patient info (fullname, age, typeAge, sexe, infoSupp)
@@ -503,7 +527,9 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
       startDate: draft?.arretTravail?.startDate || new Date().toISOString().split('T')[0],
       reason: sanitizedReason,
       allowedOutings: true,
-      outingHours: '10h-12h et 15h-17h'
+      outingHours: '10h-12h et 15h-17h',
+      idConsultation: draft?.arretTravail?.idConsultation || null,
+      exercice: draft?.arretTravail?.exercice || null
     };
   });
 
@@ -527,6 +553,93 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
       })
       .catch(() => setArretHistory([]))
       .finally(() => setLoadingArretHistory(false));
+  };
+
+  const handleDeleteArret = async (row) => {
+    const confirmObj = confirm({
+      title: lang === 'fr' ? 'Supprimer l\'Arrêt de Travail' : 'Delete Sick Leave',
+      message: lang === 'fr'
+        ? `Voulez-vous vraiment supprimer cet arrêt de travail (${row.dateDebut || ''} - ${row.dateFin || ''}) ?`
+        : `Are you sure you want to delete this sick leave record (${row.dateDebut || ''} - ${row.dateFin || ''})?`,
+      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      cancelText: lang === 'fr' ? 'Annuler' : 'Cancel',
+      variant: 'danger'
+    });
+
+    const ok = await confirmObj;
+    if (!ok) return;
+
+    const patId = activePatient?.id || activePatient?.codeBarre || activePatient?.mrn;
+    if (!patId) return;
+
+    const idConsult = row.ID_CONSULTATION || row.idConsultation;
+    const exYear = row.EXERCICE || row.exercice || new Date().getFullYear();
+
+    try {
+      const res = await fetch(`/api/patients/${encodeURIComponent(patId)}/arret/${idConsult}/${exYear}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        fetchArretHistory(patId);
+        if (arretTravail.idConsultation === idConsult) {
+          setArretTravail({ type: 'arret', days: '3', startDate: new Date().toISOString().split('T')[0], reason: '', idConsultation: null, exercice: null });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete sick leave:', err);
+    }
+  };
+
+  const numberToWordOnly = (n, currentLang = lang) => {
+    const num = parseInt(n, 10);
+    if (isNaN(num) || num <= 0) return '';
+
+    if (currentLang === 'en') {
+      const units = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+      const tens = ['', 'ten', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+      let res = '';
+      if (num < 20) res = units[num];
+      else if (num < 100) {
+        const t = Math.floor(num / 10);
+        const u = num % 10;
+        res = u === 0 ? tens[t] : `${tens[t]}-${units[u]}`;
+      } else res = String(num);
+      return res.charAt(0).toUpperCase() + res.slice(1);
+    }
+
+    if (currentLang === 'ar') {
+      const units = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة', 'عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+      const tens = ['', 'عشرة', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+      if (num <= 19) return units[num] || String(num);
+      if (num < 100) {
+        const t = Math.floor(num / 10);
+        const u = num % 10;
+        return u === 0 ? tens[t] : `${units[u]} و${tens[t]}`;
+      }
+      return String(num);
+    }
+
+    // French (default)
+    const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+    const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingts', 'quatre-vingt-dix'];
+
+    let res = '';
+    if (num < 20) res = units[num];
+    else if (num < 100) {
+      const t = Math.floor(num / 10);
+      const u = num % 10;
+      if (t === 7) res = `soixante-${units[10 + u]}`;
+      else if (t === 9) res = `quatre-vingt-${units[10 + u]}`;
+      else if (u === 0) res = tens[t];
+      else if (u === 1 && t !== 8) res = `${tens[t]}-et-un`;
+      else res = `${tens[t]}-${units[u]}`;
+    } else if (num === 100) {
+      res = 'cent';
+    } else {
+      res = String(num);
+    }
+
+    return res.charAt(0).toUpperCase() + res.slice(1);
   };
 
   const numberToWords = (n, currentLang = lang) => {
@@ -1208,11 +1321,14 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
           startDate: arretTravail.startDate,
           endDate,
           reason: arretTravail.reason,
-          type: arretTravail.type
+          type: arretTravail.type,
+          idConsultation: arretTravail.idConsultation || null,
+          exercice: arretTravail.exercice || null
         })
       });
       if (res.ok) {
         setArretSaveStatus(lang === 'fr' ? 'Arrêt enregistré avec succès' : 'Sick leave saved');
+        setArretTravail(prev => ({ ...prev, idConsultation: null, exercice: null }));
         fetchArretHistory(pId);
         setTimeout(() => setArretSaveStatus(''), 3000);
       }
@@ -1223,7 +1339,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
     }
   };
 
-  const handlePrintArret = (rowItem = null) => {
+  const handlePrintArret = (rowItem = null) => { 
     const win = window.open('', '_blank', 'width=900,height=750');
     if (!win) {
       window.print();
@@ -1336,36 +1452,71 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
     const returnDate = formatDateToFrench(calculateReturnDate(item.startDate || item.dateDebut, daysCount));
     const reasonText = item.obs || item.reason || '';
 
-    const daysInLetters = numberToWords(daysCount, lang);
+    const daysWordOnly = numberToWordOnly(daysCount, lang);
+
+    const patientSex = (assureToPrint?.sexe || activePatient?.SEXE || activePatient?.sexe || activePatient?.gender || 'M').toString().toUpperCase();
+    const isFemale = patientSex.startsWith('F');
 
     let bodyHtml = '';
-    if (typeVal === 3) {
+    if (typeVal === 3) { // Reprise
       bodyHtml = `
         <div style="min-height: 200px; padding: 15px 5px; font-size: 15px; line-height: 1.8; font-family: 'Segoe UI', Arial, sans-serif; color: #000;">
-          Je soussigné, Docteur en médecine, certifie que l'état de santé du patient susnommé lui permet la reprise du travail à compter du :<br/><br/>
-          <div style="font-size: 16.5px; font-weight: bold; text-align: center; margin: 15px 0; color: #000;">
-            ${startDate}
-          </div>
-          ${reasonText ? `<br/><strong>Motif & Remarques :</strong> ${reasonText}` : ''}
+          <p style="text-align: left; margin-bottom: 10px;">
+            ${t.sickLeaveCertify}
+          </p>
+          <p style="text-align: left; margin-left: 20px; margin-bottom: 5px;">
+            ${isFemale ? t.sickLeaveMrs : t.sickLeaveMr} : <strong style="text-transform: uppercase;">${assureName}</strong>
+          </p>
+          <p style="text-align: left; margin-left: 20px; margin-bottom: 10px;">
+            ${isFemale ? t.sickLeaveBornF : t.sickLeaveBorn} ${t.sickLeaveOn} : <strong>${fullPatientDetails.dob || 'N/A'}</strong>
+          </p>
+          <p style="text-align: left; margin-left: 20px; margin-bottom: 2px;">
+            ${lang === 'fr' ? 'Lui permet de reprendre son travail à dater' : 'Allows them to resume work starting from'}
+          </p>
+          <p style="text-align: left; margin-left: 40px; margin-bottom: 10px;">
+            ${lang === 'fr' ? 'du :' : 'from :'} <strong>${startDate}</strong>
+          </p>
+          ${reasonText ? `<p style="text-align: left; margin-left: 20px; margin-bottom: 10px;"><strong>Observation : </strong>${reasonText}</p>` : ''}
+          <p style="text-align: left; margin-bottom: 20px;">
+            ${t.sickLeaveAsLegalRight}
+          </p>
+          <p style="text-align: right; margin-top: 30px;">
+            ${t.sickLeaveTheDoctor}
+          </p>
         </div>
       `;
-    } else {
-      const termTitle = typeVal === 2 ? 'une prolongation d\'arrêt de travail' : 'un arrêt de travail';
+    } else { // Arrêt ou Prolongation
       bodyHtml = `
         <div style="min-height: 200px; padding: 15px 5px; font-size: 15px; line-height: 1.8; font-family: 'Segoe UI', Arial, sans-serif; color: #000;">
-          Je soussigné, Docteur en médecine, certifie que l'état de santé du patient susnommé nécessite ${termTitle} de :<br/><br/>
-          <div style="font-size: 16px; font-weight: bold; text-align: center; margin: 15px 0; color: #000;">
-            ${daysCount} Jour(s) (${daysInLetters})
-          </div>
-          Du <strong>${startDate}</strong> au <strong>${endDate}</strong> (inclus).<br/>
-          Reprise du travail prévue le : <strong>${returnDate}</strong>.
-          ${reasonText ? `<br/><br/><strong>Motif & Remarques :</strong> ${reasonText}` : ''}
+          <p style="text-align: left; margin-bottom: 10px;">
+            ${t.sickLeaveCertify}
+          </p>
+          <p style="text-align: left; margin-left: 20px; margin-bottom: 5px;">
+            ${isFemale ? t.sickLeaveMrs : t.sickLeaveMr} : <strong style="text-transform: uppercase;">${assureName}</strong>
+          </p>
+          <p style="text-align: left; margin-left: 20px; margin-bottom: 10px;">
+            ${isFemale ? t.sickLeaveBornF : t.sickLeaveBorn} ${t.sickLeaveOn} : <strong>${fullPatientDetails.dob || 'N/A'}</strong>
+          </p>
+          <p style="text-align: left; margin-left: 20px; margin-bottom: 5px;">
+            ${typeVal === 2 ? (lang === 'fr' ? "Nécessite une prolongation d'arrêt de travail :" : "Requires a sick leave extension of:") : t.sickLeaveRequires}
+          </p>
+          <p style="text-align: left; margin-left: 40px; margin-bottom: 5px;">
+            ${t.sickLeaveOf} : <strong>${daysCount}${daysWordOnly ? ` (${daysWordOnly})` : ''}</strong> ${t.sickLeaveDaysSuffix}
+          </p>
+          <p style="text-align: left; margin-left: 40px; margin-bottom: 10px;">
+            ${t.sickLeaveFrom} : <strong>${startDate}</strong> ${t.sickLeaveTo} : <strong>${endDate}</strong> ${t.sickLeaveIncluded}
+          </p>
+          ${reasonText ? `<p style="text-align: left; margin-left: 20px; margin-bottom: 10px;"><strong>Observation : </strong>${reasonText}</p>` : ''}
+          <p style="text-align: left; margin-bottom: 20px;">
+            ${t.sickLeaveAsLegalRight}
+          </p>
+          <p style="text-align: right; margin-top: 30px;">
+            ${t.sickLeaveTheDoctor}
+          </p>
         </div>
       `;
     }
 
-    const patientSex = (assureToPrint?.sexe || activePatient?.SEXE || activePatient?.sexe || activePatient?.gender || 'M').toString().toUpperCase();
-    const isFemale = patientSex.startsWith('F');
     const agePrefix = isFemale ? 'âgée de' : 'âgé de';
 
     const htmlContent = generatePrescriptionHtml({
@@ -1384,7 +1535,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
       isFemale,
       agePrefix,
       rxHtml: bodyHtml,
-      documentTitle: typeTitle,
+      documentTitle: typeTitle, // This will be used as the main title
       docType: 'arret_travail',
       clinicHeader,
       clinicLogo,
@@ -2110,9 +2261,8 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                 </span>
                 <span className="text-slate-600">•</span>
                 <span className="text-slate-400 font-medium">{lang === 'fr' ? 'Âge :' : 'Age:'}</span>
-                <span className="font-bold text-teal-300 font-mono bg-teal-950/60 px-2.5 py-0.5 rounded-lg border border-teal-800/60">
-                  {activePatient.AGE !== undefined && activePatient.AGE !== null && activePatient.AGE !== '' ? activePatient.AGE : (activePatient.age !== undefined && activePatient.age !== null && activePatient.age !== '' ? activePatient.age : '—')}{' '}
-                  {Number(activePatient.TYPE || activePatient.type) === 2 ? 'mois' : Number(activePatient.TYPE || activePatient.type) === 3 ? 'jours' : (activePatient.typeAge || 'ans')}
+                <span className="font-bold text-teal-300 font-mono bg-teal-500/10 px-2.5 py-0.5 rounded-lg border border-teal-500/20 shadow-sm">
+                  {getPatientDisplayAge(fullPatientDetails || activePatient)}
                 </span>
                 <span className="text-slate-600">•</span>
                 <span className="text-slate-400 font-medium">{lang === 'fr' ? 'Sexe :' : 'Sex:'}</span>
@@ -3557,6 +3707,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                         min="1"
                         max="90"
                         value={arretTravail.days}
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) => {
                           const newAT = { ...arretTravail, days: e.target.value };
                           setArretTravail(newAT);
@@ -3658,6 +3809,19 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                 </div>
 
                 {/* Add / Save Button for Arrêt de Travail */}
+                {arretTravail.idConsultation && (
+                  <div className="flex items-center justify-between bg-amber-950/70 border border-amber-800/80 px-3 py-1.5 rounded-xl text-xs text-amber-300 mb-2">
+                    <span>{lang === 'fr' ? `Modification de l'arrêt de la consultation en cours` : `Editing current consultation sick leave`}</span>
+                    <button
+                      type="button"
+                      onClick={() => setArretTravail(prev => ({ ...prev, idConsultation: null, exercice: null }))}
+                      className="text-amber-400 hover:text-amber-200 underline font-bold cursor-pointer"
+                    >
+                      {lang === 'fr' ? 'Annuler' : 'Cancel'}
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between pt-1">
                   {arretSaveStatus ? (
                     <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 px-3 py-1.5 rounded-lg border border-emerald-800 flex items-center gap-1.5 animate-in fade-in">
@@ -3671,11 +3835,17 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                   <button
                     type="button"
                     onClick={handleSaveArret}
-                    disabled={savingArret}
-                    className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-lg shadow-rose-500/20 transition cursor-pointer active:scale-95 disabled:opacity-50"
+                    disabled={savingArret || !arretTravail.startDate || !arretTravail.days}
+                    className="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-lg shadow-teal-500/20 transition cursor-pointer active:scale-95 disabled:opacity-50"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>{savingArret ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Ajouter / Enregistrer l\'Arrêt' : 'Add / Save Sick Leave')}</span>
+                    <span>
+                      {savingArret
+                        ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...')
+                        : arretTravail.idConsultation
+                          ? (lang === 'fr' ? 'Mettre à jour l\'Arrêt' : 'Update Sick Leave')
+                          : (lang === 'fr' ? 'Ajouter / Enregistrer l\'Arrêt' : 'Add / Save Sick Leave')}
+                    </span>
                   </button>
                 </div>
 
@@ -3709,6 +3879,8 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                           {arretHistory.map((row, idx) => {
                             const typeLabel = Number(row.type) === 2 ? (lang === 'fr' ? 'Prolongation' : 'Extension') : Number(row.type) === 3 ? (lang === 'fr' ? 'Reprise' : 'Return') : (lang === 'fr' ? 'Arrêt de Travail' : 'Sick Leave');
                             const typeBadgeClass = Number(row.type) === 2 ? 'bg-amber-950 text-amber-300 border-amber-800' : Number(row.type) === 3 ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-rose-950 text-rose-300 border-rose-800';
+                            const todayStr = new Date().toISOString().split('T')[0];
+                            const isTodayRecord = Boolean(row.isToday || row.dateArret === todayStr || row.dateDebut === todayStr);
 
                             return (
                               <tr key={idx} className="hover:bg-slate-900/60 transition">
@@ -3724,25 +3896,29 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                                 <td className="py-2 px-3 text-slate-400 italic">{row.obs || '-'}</td>
                                 <td className="py-2 px-3 text-right">
                                   <div className="flex items-center justify-end gap-1.5">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const typeStr = Number(row.type) === 2 ? 'prolongation' : Number(row.type) === 3 ? 'reprise' : 'arret';
-                                        const updated = {
-                                          ...arretTravail,
-                                          type: typeStr,
-                                          days: row.nbJour || 1,
-                                          startDate: row.dateDebut || new Date().toISOString().split('T')[0],
-                                          reason: row.obs || ''
-                                        };
-                                        setArretTravail(updated);
-                                        notifyDraftUpdate({ arretTravail: updated });
-                                      }}
-                                      className="p-1 text-teal-400 hover:text-teal-300 hover:bg-slate-900 rounded-lg transition cursor-pointer"
-                                      title={lang === 'fr' ? 'Éditer' : 'Edit'}
-                                    >
-                                      <Edit3 className="w-3.5 h-3.5" />
-                                    </button>
+                                    {isTodayRecord && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const typeStr = Number(row.type) === 2 ? 'prolongation' : Number(row.type) === 3 ? 'reprise' : 'arret';
+                                          const updated = {
+                                            ...arretTravail,
+                                            type: typeStr,
+                                            days: row.nbJour || 1,
+                                            startDate: row.dateDebut || todayStr,
+                                            reason: row.obs || '',
+                                            idConsultation: row.ID_CONSULTATION || row.idConsultation || null,
+                                            exercice: row.EXERCICE || row.exercice || null
+                                          };
+                                          setArretTravail(updated);
+                                          notifyDraftUpdate({ arretTravail: updated });
+                                        }}
+                                        className="p-1 text-teal-400 hover:text-teal-300 hover:bg-slate-900 rounded-lg transition cursor-pointer"
+                                        title={lang === 'fr' ? 'Éditer' : 'Edit'}
+                                      >
+                                        <Edit3 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
 
                                     <button
                                       type="button"

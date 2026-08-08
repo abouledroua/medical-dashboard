@@ -11,6 +11,7 @@ import ClinicSettings from './components/ClinicSettings';
 import NewAppointmentModal from './components/NewAppointmentModal';
 import AddConsultationModal from './components/AddConsultationModal';
 import DeviceNameModal from './components/DeviceNameModal';
+import { ConfirmDialogProvider } from './context/ConfirmDialogContext';
 
 function getOrCreateDeviceId() {
   try {
@@ -64,11 +65,22 @@ export default function App() {
   const [theme, setThemeState] = useState(() => {
     try {
       const savedTheme = localStorage.getItem('el_iyada_theme');
-      return savedTheme === 'light' ? 'light' : 'dark';
+      if (savedTheme) {
+        if (savedTheme === 'dark') return 'dark-emerald';
+        if (savedTheme === 'light') return 'light-medical';
+        return savedTheme;
+      }
+      return 'dark-emerald';
     } catch (e) {
-      return 'dark';
+      return 'dark-emerald';
     }
   });
+
+  useEffect(() => {
+    try {
+      document.documentElement.dataset.theme = theme;
+    } catch (e) {}
+  }, [theme]);
 
   const setLang = (newLang) => {
     setLangState(newLang);
@@ -639,212 +651,216 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* Top Animated Progress Bar */}
-      {loading && (
-        <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-slate-900 overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-teal-500 via-cyan-400 to-emerald-400 animate-pulse w-full"></div>
-        </div>
-      )}
+    <ConfirmDialogProvider>
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+        {/* Top Animated Progress Bar */}
+        {loading && (
+          <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-slate-900 overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-teal-500 via-cyan-400 to-emerald-400 animate-pulse w-full"></div>
+          </div>
+        )}
 
-      {/* Top Header */}
-      <Header
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onSelectTab={setActiveTab}
-        activeTab={activeTab}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        lang={lang}
-        setLang={setLang}
-        theme={theme}
-        setTheme={setTheme}
-        clinicInfo={clinicInfo}
-        onRefreshData={fetchAllData}
-        deviceId={deviceId}
-        deviceName={deviceName}
-      />
-
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Navigation Sidebar */}
-        <Sidebar
+        {/* Top Header */}
+        <Header
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSelectTab={setActiveTab}
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          selectedPatient={selectedPatient}
-          ongoingConsultations={ongoingConsultations}
-          activeConsultationPatientId={activeConsultationPatientId}
-          onSelectConsultationDraft={handleSelectConsultationDraft}
+          currentUser={currentUser}
+          onLogout={handleLogout}
           lang={lang}
+          setLang={setLang}
+          theme={theme}
+          setTheme={setTheme}
+          clinicInfo={clinicInfo}
+          onRefreshData={fetchAllData}
+          deviceId={deviceId}
+          deviceName={deviceName}
         />
 
-        {/* Dynamic Main Workspace Content */}
-        <main className={`flex-1 p-4 md:p-6 overflow-y-auto w-full ${['add-consultation', 'medical-history'].includes(activeTab) ? 'max-w-none' : 'max-w-7xl mx-auto'}`}>
-          {loading ? (
-            <div className="space-y-6">
-              {/* Progress Bar Header */}
-              <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-teal-400">
-                    <div className="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin"></div>
-                    {lang === 'fr' ? 'Chargement des données en cours...' : 'Loading database records...'}
-                  </div>
-                  <span className="text-xs font-mono text-slate-400">
-                    {clinicInfo?.dbName || stats?.dbName ? `MySQL ${clinicInfo?.dbName || stats?.dbName}` : 'MySQL'}
-                  </span>
-                </div>
-                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-gradient-to-r from-teal-500 to-cyan-400 h-full w-2/3 animate-pulse"></div>
-                </div>
-              </div>
+        {/* Main Container */}
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          {/* Navigation Sidebar */}
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            selectedPatient={selectedPatient}
+            ongoingConsultations={ongoingConsultations}
+            activeConsultationPatientId={activeConsultationPatientId}
+            onSelectConsultationDraft={handleSelectConsultationDraft}
+            lang={lang}
+          />
 
-              {/* Skeleton Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {[1, 2, 3, 4, 5, 6].map(i => (
-                  <div key={i} className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4 animate-pulse">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-slate-800"></div>
-                      <div className="space-y-2 flex-1">
-                        <div className="h-4 bg-slate-800 rounded w-3/4"></div>
-                        <div className="h-3 bg-slate-800/60 rounded w-1/2"></div>
-                      </div>
+          {/* Dynamic Main Workspace Content */}
+          <main className={`flex-1 p-4 md:p-6 overflow-y-auto w-full ${['add-consultation', 'medical-history'].includes(activeTab) ? 'max-w-none' : 'max-w-7xl mx-auto'}`}>
+            {loading ? (
+              <div className="space-y-6">
+                {/* Progress Bar Header */}
+                <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-teal-400">
+                      <div className="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin"></div>
+                      {lang === 'fr' ? 'Chargement des données en cours...' : 'Loading database records...'}
                     </div>
-                    <div className="h-10 bg-slate-900 rounded-xl"></div>
-                    <div className="h-12 bg-slate-900/50 rounded-lg"></div>
+                    <span className="text-xs font-mono text-slate-400">
+                      {clinicInfo?.dbName || stats?.dbName ? `MySQL ${clinicInfo?.dbName || stats?.dbName}` : 'MySQL'}
+                    </span>
                   </div>
-                ))}
+                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-teal-500 to-cyan-400 h-full w-2/3 animate-pulse"></div>
+                  </div>
+                </div>
+
+                {/* Skeleton Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div key={i} className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4 animate-pulse">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-2xl bg-slate-800"></div>
+                        <div className="space-y-2 flex-1">
+                          <div className="h-4 bg-slate-800 rounded w-3/4"></div>
+                          <div className="h-3 bg-slate-800/60 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                      <div className="h-10 bg-slate-900 rounded-xl"></div>
+                      <div className="h-12 bg-slate-900/50 rounded-lg"></div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : (
-            <>
-              {activeTab === 'overview' && (
-                <DashboardOverview
-                  stats={stats}
-                  patients={patients}
-                  appointments={appointments}
-                  clinicInfo={clinicInfo}
-                  onSelectPatient={handleSelectPatient}
-                  onOpenNewAppointment={() => openAppointmentForPatient()}
-                  onSelectTab={setActiveTab}
-                  onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
-                  lang={lang}
-                />
-              )}
-
-              {activeTab === 'patients' && (
-                <PatientList
-                  patients={patients}
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  onSelectPatient={handleSelectPatient}
-                  onOpenNewAppointment={openAppointmentForPatient}
-                  onOpenNewConsultation={openConsultationForPatient}
-                  onEditPatient={handleEditPatient}
-                  onSelectTab={setActiveTab}
-                  lang={lang}
-                />
-              )}
-
-              {activeTab === 'add-patient' && (
-                <AddPatientForm
-                  patientToEdit={editingPatient}
-                  onAddPatient={handlePatientAdded}
-                  onUpdatePatient={handlePatientUpdated}
-                  onCancel={() => {
-                    setEditingPatient(null);
-                    setActiveTab(previousTab || 'patients');
-                  }}
-                  lang={lang}
-                />
-              )}
-
-              {activeTab === 'add-consultation' && (() => {
-                const activeDraft = ongoingConsultations.find(c => String(c.patientId) === String(activeConsultationPatientId)) || ongoingConsultations[0];
-                return (
-                  <AddConsultationModal
-                    key={activeDraft ? activeDraft.patientId : 'default-consultation'}
-                    draft={activeDraft}
-                    patient={activeDraft?.patient || selectedPatient}
+            ) : (
+              <>
+                {activeTab === 'overview' && (
+                  <DashboardOverview
+                    stats={stats}
                     patients={patients}
+                    appointments={appointments}
                     clinicInfo={clinicInfo}
-                    onSelectPatient={(p) => {
-                      setSelectedPatient(p);
-                      setActiveConsultationPatientId(p.id || p.codeBarre);
-                    }}
-                    onUpdateDraft={handleUpdateConsultationDraft}
-                    onConsultationAdded={handleConsultationAdded}
-                    onCancel={handleCancelConsultation}
-                    onEditPatient={handleEditPatient}
-                    onOpenNewConsultation={() => openConsultationForPatient()}
+                    onSelectPatient={handleSelectPatient}
+                    onOpenNewAppointment={() => openAppointmentForPatient()}
+                    onSelectTab={setActiveTab}
+                    onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
                     lang={lang}
                   />
-                );
-              })()}
+                )}
 
-              {activeTab === 'medical-history' && (
-                <PatientMedicalHistory
-                  selectedPatient={selectedPatient}
-                  onSelectPatient={setSelectedPatient}
-                  allPatients={patients}
-                  onOpenNewConsultation={() => openConsultationForPatient()}
-                  onOpenNewAppointment={() => openAppointmentForPatient()}
-                  onEditPatient={handleEditPatient}
-                  lang={lang}
-                  clinicInfo={clinicInfo}
-                  onSelectTab={setActiveTab}
-                />
-              )}
+                {activeTab === 'patients' && (
+                  <PatientList
+                    patients={patients}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    onSelectPatient={handleSelectPatient}
+                    onOpenNewAppointment={openAppointmentForPatient}
+                    onOpenNewConsultation={openConsultationForPatient}
+                    onEditPatient={handleEditPatient}
+                    onSelectTab={setActiveTab}
+                    lang={lang}
+                  />
+                )}
 
-              {activeTab === 'appointments' && (
-                <AppointmentsList
-                  appointments={appointments}
-                  patients={patients}
-                  onOpenNewAppointment={openAppointmentForPatient}
-                  onOpenEditAppointment={openEditAppointmentModal}
-                  onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
-                  onEditAppointment={handleEditAppointment}
-                  onSelectPatient={handleSelectPatient}
-                  lang={lang}
-                />
-              )}
+                {activeTab === 'add-patient' && (
+                  <AddPatientForm
+                    patientToEdit={editingPatient}
+                    onAddPatient={handlePatientAdded}
+                    onUpdatePatient={handlePatientUpdated}
+                    onCancel={() => {
+                      setEditingPatient(null);
+                      setActiveTab(previousTab || 'patients');
+                    }}
+                    lang={lang}
+                  />
+                )}
 
-              {activeTab === 'settings' && (
-                <ClinicSettings
-                  clinicInfo={clinicInfo}
-                  onUpdateClinicInfo={setClinicInfo}
-                  currentUser={currentUser}
-                  onLogout={handleLogout}
-                  lang={lang}
-                />
-              )}
-            </>
-          )}
-        </main>
+                {activeTab === 'add-consultation' && (() => {
+                  const activeDraft = ongoingConsultations.find(c => String(c.patientId) === String(activeConsultationPatientId)) || ongoingConsultations[0];
+                  return (
+                    <AddConsultationModal
+                      key={activeDraft ? activeDraft.patientId : 'default-consultation'}
+                      draft={activeDraft}
+                      patient={activeDraft?.patient || selectedPatient}
+                      patients={patients}
+                      clinicInfo={clinicInfo}
+                      onSelectPatient={(p) => {
+                        setSelectedPatient(p);
+                        setActiveConsultationPatientId(p.id || p.codeBarre);
+                      }}
+                      onUpdateDraft={handleUpdateConsultationDraft}
+                      onConsultationAdded={handleConsultationAdded}
+                      onCancel={handleCancelConsultation}
+                      onEditPatient={handleEditPatient}
+                      onOpenNewConsultation={() => openConsultationForPatient()}
+                      lang={lang}
+                    />
+                  );
+                })()}
+
+                {activeTab === 'medical-history' && (
+                  <PatientMedicalHistory
+                    selectedPatient={selectedPatient}
+                    onSelectPatient={setSelectedPatient}
+                    allPatients={patients}
+                    onOpenNewConsultation={() => openConsultationForPatient()}
+                    onOpenNewAppointment={() => openAppointmentForPatient()}
+                    onEditPatient={handleEditPatient}
+                    lang={lang}
+                    clinicInfo={clinicInfo}
+                    onSelectTab={setActiveTab}
+                  />
+                )}
+
+                {activeTab === 'appointments' && (
+                  <AppointmentsList
+                    appointments={appointments}
+                    patients={patients}
+                    onOpenNewAppointment={openAppointmentForPatient}
+                    onOpenEditAppointment={openEditAppointmentModal}
+                    onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
+                    onEditAppointment={handleEditAppointment}
+                    onSelectPatient={handleSelectPatient}
+                    lang={lang}
+                  />
+                )}
+
+                {activeTab === 'settings' && (
+                  <ClinicSettings
+                    clinicInfo={clinicInfo}
+                    onUpdateClinicInfo={setClinicInfo}
+                    currentUser={currentUser}
+                    onLogout={handleLogout}
+                    lang={lang}
+                    currentTheme={theme}
+                    onThemeChange={setTheme}
+                  />
+                )}
+              </>
+            )}
+          </main>
+        </div>
+
+        {/* Global Modals */}
+        <NewAppointmentModal
+          isOpen={isAppointmentModalOpen}
+          onClose={() => {
+            setIsAppointmentModalOpen(false);
+            setEditingAppointment(null);
+          }}
+          patients={patients}
+          defaultPatient={appointmentDefaultPatient}
+          appointmentToEdit={editingAppointment}
+          onAppointmentCreated={handleAppointmentCreated}
+          onAppointmentUpdated={handleEditAppointment}
+          lang={lang}
+          clinicInfo={clinicInfo}
+        />
+
+        <DeviceNameModal
+          isOpen={showDeviceModal}
+          onClose={() => setShowDeviceModal(false)}
+          onSave={handleSaveDeviceName}
+          currentDeviceId={deviceId}
+          lang={lang}
+        />
       </div>
-
-      {/* Global Modals */}
-      <NewAppointmentModal
-        isOpen={isAppointmentModalOpen}
-        onClose={() => {
-          setIsAppointmentModalOpen(false);
-          setEditingAppointment(null);
-        }}
-        patients={patients}
-        defaultPatient={appointmentDefaultPatient}
-        appointmentToEdit={editingAppointment}
-        onAppointmentCreated={handleAppointmentCreated}
-        onAppointmentUpdated={handleEditAppointment}
-        lang={lang}
-        clinicInfo={clinicInfo}
-      />
-
-      <DeviceNameModal
-        isOpen={showDeviceModal}
-        onClose={() => setShowDeviceModal(false)}
-        onSave={handleSaveDeviceName}
-        currentDeviceId={deviceId}
-        lang={lang}
-      />
-    </div>
+    </ConfirmDialogProvider>
   );
 }

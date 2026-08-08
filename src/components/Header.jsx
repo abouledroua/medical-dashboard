@@ -131,14 +131,7 @@ export default function Header({ searchQuery, setSearchQuery, onSelectTab, activ
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setTheme && setTheme(theme === 'dark' ? 'light' : 'dark')}
-          title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-          className="relative p-2 text-slate-300 hover:text-white bg-slate-900/60 rounded-lg border border-slate-800 hover:border-slate-700 transition"
-        >
-          {theme === 'dark' ? <SunMedium className="w-4 h-4" /> : <MoonStar className="w-4 h-4" />}
-        </button>
+
 
         {/* Manual Data Sync Button */}
         {onRefreshData && (

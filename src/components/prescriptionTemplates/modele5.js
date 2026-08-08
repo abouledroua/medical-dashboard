@@ -27,9 +27,52 @@ export function renderModele5Html({
   prescriptionsCount,
   prescriptionsCountLabel,
   documentTitle,
-  isBilan
+  isBilan,
+  docType
 }) {
   const doctorTitleFr = clinicInfo?.doctorNameFr || doctorNameFr || doctor || 'Nom DOcteur Fr';
+
+  const isPrescription =
+    (!docType || docType === 'ordonnance') &&
+    !isBilan &&
+    (!documentTitle || documentTitle === 'ORDONNANCE');
+
+  const titleSectionHtml = isPrescription
+    ? `
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+        <div style="flex: 1;"></div>
+        <div style="text-align: center;">
+          <div style="font-size: 18px; font-weight: bold; font-family: 'Amiri', 'Traditional Arabic', sans-serif; color: #000; line-height: 1.2;">
+            وصفة
+          </div>
+          <div style="font-size: 21px; font-weight: bold; text-decoration: underline; letter-spacing: 1px; font-family: 'Segoe UI', Arial, sans-serif; color: #000; margin-top: 1px;">
+            ${documentTitle || 'ORDONNANCE'}
+          </div>
+        </div>
+        <div style="flex: 1; text-align: right; font-size: 15px; color: #000; font-family: 'Segoe UI', Arial, sans-serif;">
+          du : <strong>${dateToPrint}</strong>
+        </div>
+      </div>
+    `
+    : `
+      <div style="text-align: center; margin-bottom: 10px;">
+        ${
+          isBilan || docType === 'bilan' || documentTitle === 'BILAN'
+            ? `
+          <div style="font-size: 18px; font-weight: bold; font-family: 'Amiri', 'Traditional Arabic', sans-serif; color: #000; line-height: 1.2;">
+            فحوصات
+          </div>
+        `
+            : ''
+        }
+        <div style="font-size: 21px; font-weight: bold; text-decoration: underline; letter-spacing: 1px; font-family: 'Segoe UI', Arial, sans-serif; color: #000; margin-top: 1px;">
+          ${documentTitle || 'DOCUMENT'}
+        </div>
+        <div style="text-align: right; font-size: 14.5px; color: #000; font-family: 'Segoe UI', Arial, sans-serif; margin-top: 4px;">
+          du : <strong>${dateToPrint}</strong>
+        </div>
+      </div>
+    `;
 
   return `
     <!-- Modèle 5 Layout -->
@@ -107,21 +150,8 @@ export function renderModele5Html({
       </div>
     </div>
 
-    <!-- Bilingual Title Section -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
-      <div style="flex: 1;"></div>
-      <div style="text-align: center;">
-        <div style="font-size: 18px; font-weight: bold; font-family: 'Amiri', 'Traditional Arabic', sans-serif; color: #000; line-height: 1.2;">
-          ${(isBilan || documentTitle === 'BILAN') ? 'فحوصات' : 'وصفة'}
-        </div>
-        <div style="font-size: 21px; font-weight: bold; text-decoration: underline; letter-spacing: 1px; font-family: 'Segoe UI', Arial, sans-serif; color: #000; margin-top: 1px;">
-          ${documentTitle || 'ORDONNANCE'}
-        </div>
-      </div>
-      <div style="flex: 1; text-align: right; font-size: 15px; color: #000; font-family: 'Segoe UI', Arial, sans-serif;">
-        du : <strong>${dateToPrint}</strong>
-      </div>
-    </div>
+    <!-- Title & Date Section -->
+    ${titleSectionHtml}
 
     <!-- Main Prescriptions Area -->
     <style>

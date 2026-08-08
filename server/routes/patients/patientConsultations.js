@@ -625,7 +625,7 @@ router.post("/:id/bilan-saisie", async (req, res) => {
 router.post("/:id/arret", async (req, res) => {
   try {
     const patId = req.params.id;
-    const { days, startDate, endDate, reason, type } = req.body;
+    const { days, startDate, endDate, reason, type, idConsultation, exercice } = req.body;
 
     const [patRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
@@ -642,27 +642,31 @@ router.post("/:id/arret", async (req, res) => {
 
     const year = String(new Date().getFullYear());
 
-    let [cRows] = await pool.query(
-      "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
-      [ids]
-    ).catch(() => [[]]);
+    let idConsult = idConsultation;
+    let exYear = exercice;
 
-    let idConsult, exYear;
-    if (cRows.length > 0) {
-      idConsult = cRows[0].ID_CONSULTATION;
-      exYear = cRows[0].EXERCICE || year;
-    } else {
-      const [cMax] = await pool.query(
-        "SELECT COALESCE(MAX(ID_CONSULTATION), 0) + 1 AS nextId FROM consultation WHERE EXERCICE = ?",
-        [year]
-      ).catch(() => [[{ nextId: 1 }]]);
-      idConsult = cMax[0].nextId;
-      exYear = year;
+    if (!idConsult) {
+      let [cRows] = await pool.query(
+        "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
+        [ids]
+      ).catch(() => [[]]);
 
-      await pool.query(
-        "INSERT INTO consultation (ID_CONSULTATION, ID_MALADE, DATE_CONSULTATION, EXERCICE, TOTAL, ETAT, ID_USER, ID_VERSEMENT, ID_POSTE, FOCUS, INT_CONSULTATION, INT_LASER, INT_SCLERO) VALUES (?, ?, CURRENT_DATE(), ?, 0, 1, 1, 0, '', 0, 1, 0, 0)",
-        [idConsult, String(patientIdForInsert), year]
-      ).catch(err => console.error("Error creating consultation for arret:", err));
+      if (cRows.length > 0) {
+        idConsult = cRows[0].ID_CONSULTATION;
+        exYear = cRows[0].EXERCICE || year;
+      } else {
+        const [cMax] = await pool.query(
+          "SELECT COALESCE(MAX(ID_CONSULTATION), 0) + 1 AS nextId FROM consultation WHERE EXERCICE = ?",
+          [year]
+        ).catch(() => [[{ nextId: 1 }]]);
+        idConsult = cMax[0].nextId;
+        exYear = year;
+
+        await pool.query(
+          "INSERT INTO consultation (ID_CONSULTATION, ID_MALADE, DATE_CONSULTATION, EXERCICE, TOTAL, ETAT, ID_USER, ID_VERSEMENT, ID_POSTE, FOCUS, INT_CONSULTATION, INT_LASER, INT_SCLERO) VALUES (?, ?, CURRENT_DATE(), ?, 0, 1, 1, 0, '', 0, 1, 0, 0)",
+          [idConsult, String(patientIdForInsert), year]
+        ).catch(err => console.error("Error creating consultation for arret:", err));
+      }
     }
 
     const nbDays = parseInt(days, 10) || 1;
@@ -710,7 +714,8 @@ router.get("/:id/arret-history", async (req, res) => {
         DATE_FORMAT(AC.DATE_FIN, '%Y-%m-%d') AS dateFin,
         AC.NB_JOUR AS nbJour,
         AC.TYPE AS type,
-        AC.OBS AS obs
+        AC.OBS AS obs,
+        (DATE(AC.DATE_ARRET) = CURRENT_DATE() OR DATE(C.DATE_CONSULTATION) = CURRENT_DATE()) AS isToday
       FROM arret_consult AC
       INNER JOIN consultation C ON C.ID_CONSULTATION = AC.ID_CONSULTATION AND C.EXERCICE = AC.EXERCICE
       WHERE C.ID_MALADE IN (?) AND C.ETAT != 2
@@ -721,6 +726,21 @@ router.get("/:id/arret-history", async (req, res) => {
   } catch (err) {
     console.error("GET /api/patients/:id/arret-history error:", err);
     res.status(500).json({ error: "Failed to fetch sick leave history" });
+  }
+});
+
+// DELETE /api/patients/:id/arret/:idConsultation/:exercice - Delete a sick leave record from arret_consult
+router.delete("/:id/arret/:idConsultation/:exercice", async (req, res) => {
+  try {
+    const { idConsultation, exercice } = req.params;
+    await pool.query(
+      "DELETE FROM arret_consult WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
+      [idConsultation, String(exercice)]
+    );
+    res.json({ success: true, message: "Sick leave record deleted successfully" });
+  } catch (err) {
+    console.error("DELETE /api/patients/:id/arret error:", err);
+    res.status(500).json({ error: "Failed to delete sick leave" });
   }
 });
 

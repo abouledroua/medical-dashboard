@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar as CalendarIcon, Clock, Plus, CheckCircle2, AlertCircle, User, Filter, ArrowUpRight, Search, ChevronDown, Loader2, Edit3, X, Save, List, Trash2 } from 'lucide-react';
 import { translations } from '../translations';
+import { useConfirm } from '../context/ConfirmDialogContext';
 
 export default function AppointmentsList({
   appointments,
@@ -12,6 +13,7 @@ export default function AppointmentsList({
   onSelectPatient,
   lang = 'fr'
 }) {
+  const confirm = useConfirm();
   const t = translations[lang] || translations.fr;
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -101,7 +103,13 @@ export default function AppointmentsList({
 
   const handleDeleteItem = async (id, e) => {
     e.stopPropagation();
-    if (!window.confirm(lang === 'fr' ? 'Êtes-vous sûr de vouloir supprimer cet élément ?' : 'Are you sure you want to delete this item?')) return;
+    const isConfirmed = await confirm({
+      title: lang === 'fr' ? 'Supprimer l\'élément' : 'Delete Item',
+      message: lang === 'fr' ? 'Êtes-vous sûr de vouloir supprimer cet élément ?' : 'Are you sure you want to delete this item?',
+      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      variant: 'danger'
+    });
+    if (!isConfirmed) return;
     setActionLoading(true);
     try {
       const endpoint = listModal.type === 'motif'

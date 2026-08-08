@@ -1,0 +1,705 @@
+/* 6 Custom Themes System (3 Dark & 3 Light) */
+
+:root {
+  /* 1. Cyber Emerald (Dark - Default) */
+  --bg-main: #070d1e;
+  --bg-panel: rgba(15, 23, 42, 0.75);
+  --bg-card: rgba(11, 19, 41, 0.65);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --border-subtle: rgba(51, 65, 85, 0.6);
+  --accent-primary: #14b8a6;
+  --accent-hover: #0d9488;
+  --table-header-bg: #0f172a;
+  --table-row-hover: rgba(30, 41, 59, 0.6);
+}
+
+/* --- DARK THEMES --- */
+
+/* Theme 1: Cyber Emerald (Dark) */
+html[data-theme='dark-emerald'],
+html[data-theme='dark'] {
+  --bg-main: #070d1e;
+  --bg-panel: rgba(15, 23, 42, 0.78);
+  --bg-card: rgba(11, 19, 41, 0.7);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --border-subtle: rgba(51, 65, 85, 0.6);
+  --accent-primary: #14b8a6;
+  --accent-hover: #0d9488;
+  --table-header-bg: #0f172a;
+  --table-row-hover: rgba(30, 41, 59, 0.6);
+}
+
+/* Theme 2: Violet Nebula (Dark) */
+html[data-theme='dark-violet'] {
+  --bg-main: #0d0a1a;
+  --bg-panel: rgba(24, 18, 43, 0.8);
+  --bg-card: rgba(18, 13, 35, 0.7);
+  --text-main: #fae8ff;
+  --text-muted: #c084fc;
+  --text-dim: #9333ea;
+  --border-subtle: rgba(126, 34, 206, 0.35);
+  --accent-primary: #a855f7;
+  --accent-hover: #9333ea;
+  --table-header-bg: #1c1335;
+  --table-row-hover: rgba(46, 27, 78, 0.5);
+}
+
+html[data-theme='dark-violet'] body {
+  background-color: #0d0a1a !important;
+  color: #fae8ff !important;
+}
+html[data-theme='dark-violet'] .glass-panel {
+  background: rgba(24, 18, 43, 0.8) !important;
+  border-color: rgba(168, 85, 247, 0.2) !important;
+}
+html[data-theme='dark-violet'] .glass-card {
+  background: rgba(18, 13, 35, 0.75) !important;
+  border-color: rgba(168, 85, 247, 0.15) !important;
+}
+html[data-theme='dark-violet'] .text-teal-400,
+html[data-theme='dark-violet'] .text-teal-300,
+html[data-theme='dark-violet'] .text-emerald-400,
+html[data-theme='dark-violet'] .text-emerald-300,
+html[data-theme='dark-violet'] .text-cyan-400 {
+  color: #c084fc !important;
+}
+html[data-theme='dark-violet'] .bg-teal-500,
+html[data-theme='dark-violet'] .bg-teal-400,
+html[data-theme='dark-violet'] .bg-emerald-500,
+html[data-theme='dark-violet'] .bg-emerald-400,
+html[data-theme='dark-violet'] .bg-cyan-500,
+html[data-theme='dark-violet'] .bg-teal-400\/75,
+html[data-theme='dark-violet'] .bg-teal-400\/50 {
+  background-color: #a855f7 !important;
+}
+html[data-theme='dark-violet'] .bg-teal-950,
+html[data-theme='dark-violet'] .bg-teal-900,
+html[data-theme='dark-violet'] .bg-emerald-950,
+html[data-theme='dark-violet'] .bg-teal-950\/60,
+html[data-theme='dark-violet'] .bg-teal-900\/60,
+html[data-theme='dark-violet'] .bg-teal-500\/20,
+html[data-theme='dark-violet'] .bg-teal-500\/30,
+html[data-theme='dark-violet'] .bg-teal-500\/10,
+html[data-theme='dark-violet'] .bg-teal-500\/15 {
+  background-color: rgba(168, 85, 247, 0.2) !important;
+}
+html[data-theme='dark-violet'] .border-teal-500,
+html[data-theme='dark-violet'] .border-teal-400,
+html[data-theme='dark-violet'] .border-teal-700,
+html[data-theme='dark-violet'] .border-teal-800,
+html[data-theme='dark-violet'] .border-teal-500\/40,
+html[data-theme='dark-violet'] .border-teal-800\/80 {
+  border-color: rgba(168, 85, 247, 0.45) !important;
+}
+html[data-theme='dark-violet'] .from-teal-500 {
+  --tw-gradient-from: #a855f7 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(168, 85, 247, 0)) !important;
+}
+html[data-theme='dark-violet'] .to-cyan-500,
+html[data-theme='dark-violet'] .to-cyan-400,
+html[data-theme='dark-violet'] .to-teal-500\/10 {
+  --tw-gradient-to: #d8b4fe !important;
+}
+
+
+/* Theme 3: Nordic Ocean (Dark) */
+html[data-theme='dark-nordic'] {
+  --bg-main: #06152d;
+  --bg-panel: rgba(15, 34, 64, 0.82);
+  --bg-card: rgba(10, 25, 47, 0.75);
+  --text-main: #f0f9ff;
+  --text-muted: #7dd3fc;
+  --text-dim: #0284c7;
+  --border-subtle: rgba(14, 116, 144, 0.4);
+  --accent-primary: #38bdf8;
+  --accent-hover: #0284c7;
+  --table-header-bg: #0c2340;
+  --table-row-hover: rgba(14, 116, 144, 0.25);
+}
+
+html[data-theme='dark-nordic'] body {
+  background-color: #06152d !important;
+  color: #f0f9ff !important;
+}
+html[data-theme='dark-nordic'] .glass-panel {
+  background: rgba(15, 34, 64, 0.82) !important;
+  border-color: rgba(56, 189, 248, 0.2) !important;
+}
+html[data-theme='dark-nordic'] .glass-card {
+  background: rgba(10, 25, 47, 0.75) !important;
+  border-color: rgba(56, 189, 248, 0.15) !important;
+}
+html[data-theme='dark-nordic'] .text-teal-400,
+html[data-theme='dark-nordic'] .text-teal-300,
+html[data-theme='dark-nordic'] .text-emerald-400,
+html[data-theme='dark-nordic'] .text-emerald-300,
+html[data-theme='dark-nordic'] .text-cyan-400 {
+  color: #38bdf8 !important;
+}
+html[data-theme='dark-nordic'] .bg-teal-500,
+html[data-theme='dark-nordic'] .bg-teal-400,
+html[data-theme='dark-nordic'] .bg-emerald-500,
+html[data-theme='dark-nordic'] .bg-emerald-400,
+html[data-theme='dark-nordic'] .bg-cyan-500,
+html[data-theme='dark-nordic'] .bg-teal-400\/75,
+html[data-theme='dark-nordic'] .bg-teal-400\/50 {
+  background-color: #0284c7 !important;
+}
+html[data-theme='dark-nordic'] .bg-teal-950,
+html[data-theme='dark-nordic'] .bg-teal-900,
+html[data-theme='dark-nordic'] .bg-emerald-950,
+html[data-theme='dark-nordic'] .bg-teal-950\/60,
+html[data-theme='dark-nordic'] .bg-teal-900\/60,
+html[data-theme='dark-nordic'] .bg-teal-500\/20,
+html[data-theme='dark-nordic'] .bg-teal-500\/30,
+html[data-theme='dark-nordic'] .bg-teal-500\/10,
+html[data-theme='dark-nordic'] .bg-teal-500\/15 {
+  background-color: rgba(56, 189, 248, 0.2) !important;
+}
+html[data-theme='dark-nordic'] .border-teal-500,
+html[data-theme='dark-nordic'] .border-teal-400,
+html[data-theme='dark-nordic'] .border-teal-700,
+html[data-theme='dark-nordic'] .border-teal-800,
+html[data-theme='dark-nordic'] .border-teal-500\/40,
+html[data-theme='dark-nordic'] .border-teal-800\/80 {
+  border-color: rgba(56, 189, 248, 0.45) !important;
+}
+html[data-theme='dark-nordic'] .from-teal-500 {
+  --tw-gradient-from: #0284c7 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(2, 132, 199, 0)) !important;
+}
+html[data-theme='dark-nordic'] .to-cyan-500,
+html[data-theme='dark-nordic'] .to-cyan-400,
+html[data-theme='dark-nordic'] .to-teal-500\/10 {
+  --tw-gradient-to: #38bdf8 !important;
+}
+
+
+/* --- LIGHT THEMES --- */
+
+/* Theme 4: Crimson Red (Light) */
+html[data-theme='light-medical'],
+html[data-theme='light'] {
+  --bg-main: #fff1f2;
+  --bg-panel: rgba(255, 255, 255, 0.92);
+  --bg-card: rgba(255, 241, 242, 0.8);
+  --text-main: #4c0519;
+  --text-muted: #9f1239;
+  --text-dim: #e11d48;
+  --border-subtle: rgba(225, 29, 72, 0.25);
+  --accent-primary: #e11d48;
+  --accent-hover: #be123c;
+  --table-header-bg: #ffe4e6;
+  --table-row-hover: rgba(254, 205, 211, 0.6);
+}
+
+html[data-theme='light-medical'] body,
+html[data-theme='light'] body {
+  background-color: #fff1f2 !important;
+  color: #4c0519 !important;
+}
+html[data-theme='light-medical'] .glass-panel,
+html[data-theme='light'] .glass-panel {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(225, 29, 72, 0.25) !important;
+}
+html[data-theme='light-medical'] .glass-card,
+html[data-theme='light'] .glass-card {
+  background: rgba(255, 241, 242, 0.85) !important;
+  border-color: rgba(225, 29, 72, 0.2) !important;
+}
+html[data-theme='light-medical'] .text-white,
+html[data-theme='light-medical'] .text-slate-100,
+html[data-theme='light-medical'] .text-slate-200,
+html[data-theme='light-medical'] .text-slate-300 {
+  color: #4c0519 !important;
+}
+html[data-theme='light-medical'] .text-slate-400 {
+  color: #9f1239 !important;
+}
+html[data-theme='light-medical'] .bg-slate-950,
+html[data-theme='light-medical'] .bg-slate-900,
+html[data-theme='light-medical'] .bg-slate-900\/60,
+html[data-theme='light-medical'] .bg-slate-900\/80,
+html[data-theme='light-medical'] .bg-slate-900\/90 {
+  background-color: #fff1f2 !important;
+}
+html[data-theme='light-medical'] .text-teal-400,
+html[data-theme='light-medical'] .text-teal-300,
+html[data-theme='light-medical'] .text-emerald-400,
+html[data-theme='light-medical'] .text-emerald-300,
+html[data-theme='light-medical'] .text-cyan-400 {
+  color: #e11d48 !important;
+}
+html[data-theme='light-medical'] .bg-teal-500,
+html[data-theme='light-medical'] .bg-teal-400,
+html[data-theme='light-medical'] .bg-emerald-500,
+html[data-theme='light-medical'] .bg-emerald-400 {
+  background-color: #e11d48 !important;
+}
+html[data-theme='light-medical'] .bg-teal-950,
+html[data-theme='light-medical'] .bg-teal-900,
+html[data-theme='light-medical'] .bg-emerald-950,
+html[data-theme='light-medical'] .bg-teal-500\/20,
+html[data-theme='light-medical'] .bg-teal-500\/30 {
+  background-color: #ffe4e6 !important;
+}
+html[data-theme='light-medical'] .border-teal-500,
+html[data-theme='light-medical'] .border-teal-400,
+html[data-theme='light-medical'] .border-teal-700,
+html[data-theme='light-medical'] .border-teal-800 {
+  border-color: #fda4af !important;
+}
+
+/* Theme 5: Onyx Monochrome (Light Black & White) */
+html[data-theme='light-amber'] {
+  --bg-main: #f8fafc;
+  --bg-panel: rgba(255, 255, 255, 0.95);
+  --bg-card: rgba(241, 245, 249, 0.9);
+  --text-main: #020617;
+  --text-muted: #334155;
+  --text-dim: #64748b;
+  --border-subtle: rgba(15, 23, 42, 0.25);
+  --accent-primary: #0f172a;
+  --accent-hover: #1e293b;
+  --table-header-bg: #e2e8f0;
+  --table-row-hover: rgba(226, 232, 240, 0.8);
+}
+
+html[data-theme='light-amber'] body {
+  background-color: #f8fafc !important;
+  color: #020617 !important;
+}
+html[data-theme='light-amber'] .glass-panel {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(15, 23, 42, 0.25) !important;
+}
+html[data-theme='light-amber'] .glass-card {
+  background: rgba(241, 245, 249, 0.9) !important;
+  border-color: rgba(15, 23, 42, 0.2) !important;
+}
+html[data-theme='light-amber'] .text-white,
+html[data-theme='light-amber'] .text-slate-100,
+html[data-theme='light-amber'] .text-slate-200,
+html[data-theme='light-amber'] .text-slate-300 {
+  color: #020617 !important;
+}
+html[data-theme='light-amber'] .text-slate-400 {
+  color: #334155 !important;
+}
+html[data-theme='light-amber'] .bg-slate-950,
+html[data-theme='light-amber'] .bg-slate-900,
+html[data-theme='light-amber'] .bg-slate-900\/60,
+html[data-theme='light-amber'] .bg-slate-900\/80,
+html[data-theme='light-amber'] .bg-slate-900\/90 {
+  background-color: #f8fafc !important;
+}
+html[data-theme='light-amber'] .text-teal-400,
+html[data-theme='light-amber'] .text-teal-300,
+html[data-theme='light-amber'] .text-emerald-400,
+html[data-theme='light-amber'] .text-emerald-300,
+html[data-theme='light-amber'] .text-cyan-400 {
+  color: #0f172a !important;
+}
+html[data-theme='light-amber'] .bg-teal-500,
+html[data-theme='light-amber'] .bg-teal-400,
+html[data-theme='light-amber'] .bg-emerald-500,
+html[data-theme='light-amber'] .bg-emerald-400 {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+html[data-theme='light-amber'] .bg-teal-950,
+html[data-theme='light-amber'] .bg-teal-900,
+html[data-theme='light-amber'] .bg-emerald-950,
+html[data-theme='light-amber'] .bg-teal-500\/20,
+html[data-theme='light-amber'] .bg-teal-500\/30 {
+  background-color: #e2e8f0 !important;
+}
+html[data-theme='light-amber'] .border-teal-500,
+html[data-theme='light-amber'] .border-teal-400,
+html[data-theme='light-amber'] .border-teal-700,
+html[data-theme='light-amber'] .border-teal-800 {
+  border-color: #475569 !important;
+}
+
+/* Theme 6: Sage Botanical (Light) */
+html[data-theme='light-mint'] {
+  --bg-main: #ecfdf5;
+  --bg-panel: rgba(240, 253, 244, 0.9);
+  --bg-card: rgba(220, 252, 231, 0.75);
+  --text-main: #064e3b;
+  --text-muted: #047857;
+  --text-dim: #059669;
+  --border-subtle: rgba(5, 150, 105, 0.25);
+  --accent-primary: #059669;
+  --accent-hover: #047857;
+  --table-header-bg: #d1fae5;
+  --table-row-hover: rgba(209, 250, 229, 0.6);
+}
+
+html[data-theme='light-mint'] body {
+  background-color: #ecfdf5 !important;
+  color: #064e3b !important;
+}
+html[data-theme='light-mint'] .glass-panel {
+  background: rgba(240, 253, 244, 0.92) !important;
+  border-color: rgba(5, 150, 105, 0.3) !important;
+}
+html[data-theme='light-mint'] .glass-card {
+  background: rgba(220, 252, 231, 0.85) !important;
+  border-color: rgba(5, 150, 105, 0.2) !important;
+}
+html[data-theme='light-mint'] .text-white,
+html[data-theme='light-mint'] .text-slate-100,
+html[data-theme='light-mint'] .text-slate-200,
+html[data-theme='light-mint'] .text-slate-300 {
+  color: #064e3b !important;
+}
+html[data-theme='light-mint'] .text-slate-400 {
+  color: #047857 !important;
+}
+html[data-theme='light-mint'] .bg-slate-950,
+html[data-theme='light-mint'] .bg-slate-900,
+html[data-theme='light-mint'] .bg-slate-900\/60,
+html[data-theme='light-mint'] .bg-slate-900\/80,
+html[data-theme='light-mint'] .bg-slate-900\/90 {
+  background-color: #e6f4ea !important;
+}
+html[data-theme='light-mint'] .text-teal-400,
+html[data-theme='light-mint'] .text-teal-300,
+html[data-theme='light-mint'] .text-emerald-400,
+html[data-theme='light-mint'] .text-emerald-300,
+html[data-theme='light-mint'] .text-cyan-400 {
+  color: #047857 !important;
+}
+html[data-theme='light-mint'] .bg-teal-500,
+html[data-theme='light-mint'] .bg-teal-400,
+html[data-theme='light-mint'] .bg-emerald-500,
+html[data-theme='light-mint'] .bg-emerald-400 {
+  background-color: #059669 !important;
+}
+html[data-theme='light-mint'] .bg-teal-950,
+html[data-theme='light-mint'] .bg-teal-900,
+html[data-theme='light-mint'] .bg-emerald-950,
+html[data-theme='light-mint'] .bg-teal-500\/20,
+html[data-theme='light-mint'] .bg-teal-500\/30 {
+  background-color: #d1fae5 !important;
+}
+html[data-theme='light-mint'] .border-teal-500,
+html[data-theme='light-mint'] .border-teal-400,
+html[data-theme='light-mint'] .border-teal-700,
+html[data-theme='light-mint'] .border-teal-800 {
+  border-color: #6ee7b7 !important;
+}
+
+/* --- UNIVERSAL LIGHT THEME FIXES FOR DARK PANELS, GRADIENTS, INPUTS & DROPDOWNS --- */
+
+/* Convert dark gradients into elegant light theme gradients */
+html[data-theme^='light'] .from-slate-900,
+html[data-theme^='light'] .from-slate-850,
+html[data-theme^='light'] .from-slate-800,
+html[data-theme^='light'] .from-slate-950,
+html[data-theme^='light'] .from-slate-900\/90,
+html[data-theme^='light'] .from-slate-800\/90 {
+  --tw-gradient-from: var(--bg-card) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(255, 255, 255, 0)) !important;
+}
+
+html[data-theme^='light'] .via-slate-800,
+html[data-theme^='light'] .via-slate-900,
+html[data-theme^='light'] .via-slate-900\/95 {
+  --tw-gradient-via: var(--bg-panel) !important;
+}
+
+html[data-theme^='light'] .to-teal-950\/40,
+html[data-theme^='light'] .to-teal-950\/30,
+html[data-theme^='light'] .to-teal-900\/60,
+html[data-theme^='light'] .to-teal-950,
+html[data-theme^='light'] .to-slate-900 {
+  --tw-gradient-to: var(--bg-card) !important;
+}
+
+/* Fix all hardcoded dark backgrounds */
+html[data-theme^='light'] .bg-slate-950,
+html[data-theme^='light'] .bg-slate-900,
+html[data-theme^='light'] .bg-slate-850,
+html[data-theme^='light'] .bg-slate-800,
+html[data-theme^='light'] .bg-slate-950\/90,
+html[data-theme^='light'] .bg-slate-950\/80,
+html[data-theme^='light'] .bg-slate-950\/70,
+html[data-theme^='light'] .bg-slate-950\/60,
+html[data-theme^='light'] .bg-slate-950\/50,
+html[data-theme^='light'] .bg-slate-950\/40,
+html[data-theme^='light'] .bg-slate-900\/90,
+html[data-theme^='light'] .bg-slate-900\/80,
+html[data-theme^='light'] .bg-slate-900\/70,
+html[data-theme^='light'] .bg-slate-900\/60,
+html[data-theme^='light'] .bg-slate-900\/50,
+html[data-theme^='light'] .bg-slate-900\/40,
+html[data-theme^='light'] .bg-slate-900\/30,
+html[data-theme^='light'] .bg-slate-800\/90,
+html[data-theme^='light'] .bg-slate-800\/80,
+html[data-theme^='light'] .bg-slate-800\/70,
+html[data-theme^='light'] .bg-slate-800\/60,
+html[data-theme^='light'] .bg-slate-800\/50,
+html[data-theme^='light'] .bg-slate-800\/40,
+html[data-theme^='light'] .bg-slate-800\/30,
+html[data-theme^='light'] .bg-black,
+html[data-theme^='light'] .bg-black\/80,
+html[data-theme^='light'] .bg-black\/60,
+html[data-theme^='light'] .bg-black\/50,
+html[data-theme^='light'] .bg-black\/40 {
+  background-color: var(--bg-card) !important;
+}
+
+/* --- COMPREHENSIVE TEXT & BACKGROUND CONTRAST FOR LIGHT THEMES --- */
+
+/* 1. Default Light Background Text Override */
+html[data-theme^='light'] .text-white,
+html[data-theme^='light'] .text-slate-100,
+html[data-theme^='light'] .text-slate-200,
+html[data-theme^='light'] .text-slate-300 {
+  color: var(--text-main) !important;
+}
+
+html[data-theme^='light'] .text-slate-400,
+html[data-theme^='light'] .text-slate-500 {
+  color: var(--text-muted) !important;
+}
+
+/* 2. Solid Filled Dark Accent Backgrounds MUST have White Text */
+html[data-theme^='light'] .bg-teal-500,
+html[data-theme^='light'] .bg-teal-600,
+html[data-theme^='light'] .bg-emerald-500,
+html[data-theme^='light'] .bg-emerald-600,
+html[data-theme^='light'] .bg-rose-500,
+html[data-theme^='light'] .bg-rose-600,
+html[data-theme^='light'] .bg-red-600,
+html[data-theme^='light'] .bg-indigo-500,
+html[data-theme^='light'] .bg-indigo-600,
+html[data-theme^='light'] .bg-purple-600,
+html[data-theme^='light'] .bg-blue-600,
+html[data-theme^='light'] .from-rose-500,
+html[data-theme^='light'] .from-rose-600,
+html[data-theme^='light'] .from-indigo-500,
+html[data-theme^='light'] .from-purple-500,
+html[data-theme^='light'] .from-blue-600 {
+  color: #ffffff !important;
+}
+
+html[data-theme^='light'] .bg-teal-500 *,
+html[data-theme^='light'] .bg-teal-600 *,
+html[data-theme^='light'] .bg-emerald-500 *,
+html[data-theme^='light'] .bg-rose-500 *,
+html[data-theme^='light'] .bg-rose-600 *,
+html[data-theme^='light'] .bg-indigo-500 *,
+html[data-theme^='light'] .from-rose-500 *,
+html[data-theme^='light'] .from-rose-600 * {
+  color: #ffffff !important;
+}
+
+/* 3. Bright Amber/Teal Gradient Action Buttons MUST have Dark Text */
+html[data-theme^='light'] .from-amber-500,
+html[data-theme^='light'] .from-teal-500,
+html[data-theme^='light'] .from-teal-400 {
+  color: #020617 !important;
+}
+
+html[data-theme^='light'] .from-amber-500 *,
+html[data-theme^='light'] .from-teal-500 *,
+html[data-theme^='light'] .from-teal-400 * {
+  color: #020617 !important;
+}
+
+/* 4. Modal / Dialog Header & Icon Badges in Light Mode */
+html[data-theme^='light'] .bg-rose-950\/80,
+html[data-theme^='light'] .bg-rose-950,
+html[data-theme^='light'] .bg-rose-900 {
+  background-color: #ffe4e6 !important;
+  color: #be123c !important;
+  border-color: #fda4af !important;
+}
+
+html[data-theme^='light'] .bg-amber-950\/80,
+html[data-theme^='light'] .bg-amber-950,
+html[data-theme^='light'] .bg-amber-900 {
+  background-color: #fef3c7 !important;
+  color: #b45309 !important;
+  border-color: #fcd34d !important;
+}
+
+html[data-theme^='light'] .bg-teal-950\/80,
+html[data-theme^='light'] .bg-teal-950,
+html[data-theme^='light'] .bg-teal-900 {
+  background-color: var(--table-header-bg) !important;
+  color: var(--accent-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* Form Controls & Dropdown Suggestions */
+html[data-theme^='light'] input,
+html[data-theme^='light'] select,
+html[data-theme^='light'] textarea {
+  background-color: #ffffff !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+html[data-theme^='light'] input::placeholder,
+html[data-theme^='light'] textarea::placeholder {
+  color: var(--text-dim) !important;
+  opacity: 0.8;
+}
+
+html[data-theme^='light'] option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html[data-theme^='light'] .hover\:text-white:hover,
+html[data-theme^='light'] .hover\:text-slate-100:hover,
+html[data-theme^='light'] .hover\:text-slate-200:hover {
+  color: var(--accent-primary) !important;
+}
+
+/* Borders in light mode */
+html[data-theme^='light'] .border-slate-800,
+html[data-theme^='light'] .border-slate-700,
+html[data-theme^='light'] .border-slate-900,
+html[data-theme^='light'] .border-slate-800\/90,
+html[data-theme^='light'] .border-slate-800\/80,
+html[data-theme^='light'] .border-slate-800\/60,
+html[data-theme^='light'] .border-slate-800\/50,
+html[data-theme^='light'] .border-slate-700\/80,
+html[data-theme^='light'] .border-slate-700\/50 {
+  border-color: var(--border-subtle) !important;
+}
+
+/* Modal backdrops in light mode */
+html[data-theme^='light'] .bg-slate-950\/80,
+html[data-theme^='light'] .bg-black\/80,
+html[data-theme^='light'] .bg-black\/50 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+/* Hover states for rows and list items */
+html[data-theme^='light'] .hover\:bg-slate-800:hover,
+html[data-theme^='light'] .hover\:bg-slate-800\/60:hover,
+html[data-theme^='light'] .hover\:bg-slate-900:hover {
+  background-color: var(--table-row-hover) !important;
+}
+
+/* Secondary / Neutral buttons in Light Themes */
+html[data-theme^='light'] button.bg-slate-900,
+html[data-theme^='light'] button.bg-slate-850,
+html[data-theme^='light'] button.bg-slate-800,
+html[data-theme^='light'] button.bg-slate-700,
+html[data-theme^='light'] button.bg-slate-800\/60,
+html[data-theme^='light'] button.bg-slate-800\/80,
+html[data-theme^='light'] button.bg-slate-900\/80,
+html[data-theme^='light'] button.bg-slate-900\/90 {
+  background-color: #ffffff !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+html[data-theme^='light'] button.bg-slate-900:hover,
+html[data-theme^='light'] button.bg-slate-850:hover,
+html[data-theme^='light'] button.bg-slate-800:hover,
+html[data-theme^='light'] button.bg-slate-700:hover,
+html[data-theme^='light'] button.hover\:bg-slate-800:hover,
+html[data-theme^='light'] button.hover\:bg-slate-700:hover {
+  background-color: var(--table-row-hover) !important;
+  color: var(--accent-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* Light theme action badges & table action buttons */
+html[data-theme^='light'] .bg-sky-500\/15,
+html[data-theme^='light'] .bg-sky-500\/20,
+html[data-theme^='light'] .bg-sky-950 {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #7dd3fc !important;
+  font-weight: 700 !important;
+}
+
+html[data-theme^='light'] .bg-amber-500\/15,
+html[data-theme^='light'] .bg-amber-500\/20,
+html[data-theme^='light'] .bg-amber-950,
+html[data-theme^='light'] .bg-amber-950\/60 {
+  background-color: #fef3c7 !important;
+  color: #b45309 !important;
+  border-color: #fcd34d !important;
+  font-weight: 700 !important;
+}
+
+html[data-theme^='light'] .bg-rose-500\/15,
+html[data-theme^='light'] .bg-rose-500\/20,
+html[data-theme^='light'] .bg-red-500\/15,
+html[data-theme^='light'] .bg-rose-950,
+html[data-theme^='light'] .bg-rose-950\/60 {
+  background-color: #ffe4e6 !important;
+  color: #be123c !important;
+  border-color: #fda4af !important;
+  font-weight: 700 !important;
+}
+
+html[data-theme^='light'] .bg-teal-500\/15,
+html[data-theme^='light'] .bg-teal-500\/20,
+html[data-theme^='light'] .bg-emerald-500\/15,
+html[data-theme^='light'] .bg-emerald-950,
+html[data-theme^='light'] .bg-emerald-950\/80,
+html[data-theme^='light'] .bg-emerald-950\/60 {
+  background-color: var(--table-header-bg) !important;
+  color: var(--accent-primary) !important;
+  border-color: var(--border-subtle) !important;
+  font-weight: 700 !important;
+}
+
+html[data-theme^='light'] .bg-cyan-950,
+html[data-theme^='light'] .bg-cyan-950\/60 {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #7dd3fc !important;
+  font-weight: 700 !important;
+}
+
+/* Light Tables & Lists Backgrounds & Typography */
+html[data-theme^='light'] table {
+  background-color: #ffffff !important;
+  color: var(--text-main) !important;
+}
+
+html[data-theme^='light'] thead,
+html[data-theme^='light'] thead tr,
+html[data-theme^='light'] th {
+  background-color: var(--table-header-bg) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-subtle) !important;
+  font-weight: 700 !important;
+}
+
+html[data-theme^='light'] tbody tr {
+  background-color: #ffffff !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+html[data-theme^='light'] tbody tr:hover {
+  background-color: var(--table-row-hover) !important;
+}
+
+html[data-theme^='light'] td {
+  color: var(--text-main) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* Working time inputs */
+html[data-theme^='light'] .working-time-input {
+  color-scheme: light !important;
+}

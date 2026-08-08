@@ -1,21 +1,21 @@
 /**
  * Prescription Print Template Dispatcher
  * Imports dedicated template renderers for each model layout.
+ * This file also contains the render function for modele12.
  */
 
-import { renderModele1Html } from './prescriptionTemplates/modele1';
-import { renderModele2Html } from './prescriptionTemplates/modele2';
-import { renderModele3Html } from './prescriptionTemplates/modele3';
-import { renderModele4Html } from './prescriptionTemplates/modele4';
-import { renderModele5Html } from './prescriptionTemplates/modele5';
-import { renderModele6Html } from './prescriptionTemplates/modele6';
-import { renderModele7Html } from './prescriptionTemplates/modele7';
-import { renderModele8Html } from './prescriptionTemplates/modele8';
-import { renderModele9Html } from './prescriptionTemplates/modele9';
-import { renderModele10Html } from './prescriptionTemplates/modele10';
-import { renderModele11Html } from './prescriptionTemplates/modele11';
-import { renderModele12Html } from './prescriptionTemplates/modele12';
-import { renderDocumentBody } from './prescriptionTemplates/documentBodies';
+import { renderModele1Html } from "./prescriptionTemplates/modele1";
+import { renderModele2Html } from "./prescriptionTemplates/modele2";
+import { renderModele3Html } from "./prescriptionTemplates/modele3";
+import { renderModele4Html } from "./prescriptionTemplates/modele4";
+import { renderModele5Html } from "./prescriptionTemplates/modele5";
+import { renderModele6Html } from "./prescriptionTemplates/modele6";
+import { renderModele7Html } from "./prescriptionTemplates/modele7";
+import { renderModele8Html } from "./prescriptionTemplates/modele8";
+import { renderModele9Html } from "./prescriptionTemplates/modele9"; // Assuming this file exists
+import { renderModele10Html } from "./prescriptionTemplates/modele10"; // Assuming this file exists
+import { renderModele11Html } from "./prescriptionTemplates/modele11"; // Assuming this file exists
+import { renderDocumentBody } from "./prescriptionTemplates/documentBodies";
 
 export function generatePrescriptionHtml(params) {
   const {
@@ -26,32 +26,118 @@ export function generatePrescriptionHtml(params) {
     addressFr,
     phoneFixe,
     msgJaune,
-    msgOrd
+    msgOrd,
   } = params;
 
-  const rawBarcodeSetting = clinicInfo?.Affiche_CodeBarre ?? clinicInfo?.raw?.Affiche_CodeBarre ?? clinicInfo?.raw?.AFFICHE_CODEBARRE ?? clinicInfo?.AFFICHE_CODEBARRE;
-  const showBarcode = rawBarcodeSetting === undefined || rawBarcodeSetting === null ? true : Number(rawBarcodeSetting) === 1;
-  const barcodeSvg = showBarcode ? (params.barcodeSvg || '') : '';
-  const isBilanPrint = !!(params.isBilan || params.docType === 'bilan');
+  const isArretTravail = params.docType === "arret_travail";
+  const rawBarcodeSetting =
+    clinicInfo?.Affiche_CodeBarre ??
+    clinicInfo?.raw?.Affiche_CodeBarre ??
+    clinicInfo?.raw?.AFFICHE_CODEBARRE ??
+    clinicInfo?.AFFICHE_CODEBARRE;
+  const showBarcode =
+    rawBarcodeSetting === undefined || rawBarcodeSetting === null
+      ? true
+      : Number(rawBarcodeSetting) === 1;
+  const barcodeSvg = showBarcode ? params.barcodeSvg || "" : "";
+  const isBilanPrint = !!(params.isBilan || params.docType === "bilan");
   const paramsWithBarcode = {
     ...params,
     barcodeSvg,
-    documentTitle: params.documentTitle || (isBilanPrint ? 'BILAN' : 'ORDONNANCE')
+    documentTitle:
+      params.documentTitle || (isBilanPrint ? "BILAN" : "ORDONNANCE"),
   };
   if (!paramsWithBarcode.rxHtml) {
     paramsWithBarcode.rxHtml = renderDocumentBody(paramsWithBarcode);
   }
 
   const rawImpr = isBilanPrint
-    ? (clinicInfo?.IMPR_BILAN ?? clinicInfo?.imprBilan ?? clinicInfo?.raw?.IMPR_BILAN ?? 1)
-    : (clinicInfo?.IMPR_ORD ?? clinicInfo?.imprOrd ?? clinicInfo?.raw?.IMPR_ORD ?? 1);
+    ? (clinicInfo?.IMPR_BILAN ??
+      clinicInfo?.imprBilan ??
+      clinicInfo?.raw?.IMPR_BILAN ??
+      1)
+    : isArretTravail
+    ? (clinicInfo?.IMPR_ARRET ?? clinicInfo?.raw?.IMPR_ARRET ?? 1)
+    : (clinicInfo?.IMPR_ORD ??
+      clinicInfo?.imprOrd ??
+      clinicInfo?.raw?.IMPR_ORD ??
+      1);
 
   const rawModele = isBilanPrint
-    ? (clinicInfo?.MODELE_BILAN ?? clinicInfo?.modeleBilan ?? clinicInfo?.raw?.MODELE_BILAN ?? clinicInfo?.MODELE_ORD ?? clinicInfo?.raw?.MODELE_ORD ?? 1)
-    : (clinicInfo?.MODELE_ORD ?? clinicInfo?.modeleOrd ?? clinicInfo?.raw?.MODELE_ORD ?? 1);
+    ? (clinicInfo?.MODELE_BILAN ??
+      clinicInfo?.modeleBilan ??
+      clinicInfo?.raw?.MODELE_BILAN ??
+      clinicInfo?.MODELE_ORD ??
+      clinicInfo?.raw?.MODELE_ORD ??
+      1)
+    : (clinicInfo?.MODELE_ORD ??
+      clinicInfo?.modeleOrd ??
+      clinicInfo?.raw?.MODELE_ORD ??
+      1);
 
   const imprOrd = Number(rawImpr);
   const modeleOrd = Number(rawModele);
+
+  // Modèle 12 is defined here for direct modification
+  const renderModele12Html = ({
+    doctorNameAr,
+    specialtyFr,
+    specialtyAr,
+    addressFr,
+    phoneFixe,
+    ordre,
+    dateToPrint,
+    assureName,
+    assureAge,
+    assureTypeAge,
+    rxHtml,
+    clinicHeader,
+    clinicLogo,
+    doctor,
+    clinicInfo,
+    documentTitle,
+  }) => {
+    const doctorName = (
+      clinicInfo?.doctorNameFr ||
+      doctor ||
+      "DOCTEUR"
+    ).toUpperCase();
+    const divider =
+      '<div style="text-align: center; color: #555; font-size: 11px; margin: 3px 0; font-weight: bold;">- o -</div>';
+    return `
+      <div style="text-align: center; font-size: 16px; font-weight: 900; color: #000; font-family: 'Segoe UI', Arial, sans-serif; margin-bottom: 6px; letter-spacing: 1px;">
+        ${(clinicInfo?.clinicName || clinicInfo?.NOM_CABINET || `Cabinet Dr ${doctorName}`).toUpperCase()}
+      </div>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
+        <tr>
+          <td style="vertical-align: top; width: 38%; text-align: left;">
+            <div style="font-size: 15px; font-weight: bold; color: #000; font-family: 'Segoe UI', Arial, sans-serif;">${doctorName}</div>
+            ${divider}
+            <div style="font-size: 12px; font-weight: bold; color: #111; line-height: 1.35; font-family: 'Segoe UI', Arial, sans-serif;">${specialtyFr || "Spécialité du docteur"}</div>
+            ${divider}
+            <div style="font-size: 11.5px; color: #222; font-family: 'Segoe UI', Arial, sans-serif;">N° d'ordre : ${ordre || "N/A"}</div>
+          </td>
+          <td style="vertical-align: middle; width: 24%; text-align: center; padding: 0 4px;">${clinicLogo ? `<img src="${clinicLogo}" style="max-height: 75px; max-width: 110px; object-fit: contain;" />` : ""}</td>
+          <td style="vertical-align: top; width: 38%; text-align: right;">
+            <div style="font-size: 18px; font-weight: bold; font-family: 'Amiri', 'Traditional Arabic', sans-serif; color: #000; line-height: 1.2;">${doctorNameAr || "اسم الطبيب"}</div>
+            ${divider}
+            <div style="font-size: 13px; font-weight: bold; font-family: 'Amiri', 'Traditional Arabic', sans-serif; color: #000; line-height: 1.35;">${specialtyAr || "تخصص الطبيب"}</div>
+            ${divider}
+            <div style="font-size: 12.5px; color: #111; font-family: 'Segoe UI', Arial, sans-serif;">📞 ${phoneFixe || "N/A"}</div>
+          </td>
+        </tr>
+      </table>
+      <div style="text-align: right; font-size: 14px; color: #000; font-family: 'Segoe UI', Arial, sans-serif; margin-bottom: 6px;">Ville, le : <strong>${dateToPrint}</strong></div>
+      <div style="display: block; text-align: center; margin-bottom: 8px;">
+        <span style="font-size: 21px; font-weight: 900; letter-spacing: 3px; font-family: 'Segoe UI', Arial, sans-serif; color: #000;">${documentTitle}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; font-family: 'Segoe UI', Arial, sans-serif; color: #000; margin-bottom: 6px;">
+        <div>Nom et Prénom : <strong style="font-size: 15px; text-transform: uppercase;">${assureName}</strong></div>
+        <div>âgé(e) de <strong>${assureAge} ${assureTypeAge}</strong></div>
+      </div>
+      <div style="position: relative; min-height: 200px; padding: 5px 0;">${rxHtml}</div>
+    `;
+  };
 
   // Exact Rules:
   // 1. IMPR_ORD = 2 and MODELE_ORD = 10 -> DESIGN 12 (A5 3-Column Header with "-o-" Dividers + Watermark + Bottom Barcode Footer)
@@ -65,22 +151,40 @@ export function generatePrescriptionHtml(params) {
   // 9. IMPR_ORD = 2 and MODELE_ORD = 2 -> DESIGN 4 (A5 3-Column Top Cabinet Title + Bottom Barcode Design)
   // 10. IMPR_ORD = 2 and MODELE_ORD = 1 -> DESIGN 3 (A5 Centered French Dr Header Design)
   const forceDesign3 = !!(params.forceDesign3 || params.forceModele === 3);
-  const useDesign12 = !forceDesign3 && (imprOrd === 2 && modeleOrd === 10);
-  const useDesign11 = !forceDesign3 && (imprOrd === 2 && modeleOrd === 9);
-  const useDesign10 = !forceDesign3 && (imprOrd === 2 && modeleOrd === 8);
-  const useDesign9 = !forceDesign3 && (imprOrd === 2 && modeleOrd === 7);
-  const useDesign8 = !forceDesign3 && (imprOrd === 2 && modeleOrd === 6);
-  const useDesign7 = !forceDesign3 && (imprOrd === 2 && modeleOrd === 5);
-  const useDesign6 = !forceDesign3 && (imprOrd === 2 && modeleOrd === 4);
-  const useDesign5 = !forceDesign3 && (imprOrd === 2 && modeleOrd === 3);
-  const useDesign4 = !forceDesign3 && (imprOrd === 2 && modeleOrd === 2);
-  const useDesign3 = forceDesign3 || (imprOrd === 2 && modeleOrd === 1);
-  const useDesign2 = !forceDesign3 && (imprOrd === 1 && modeleOrd === 2);
-  const useDesign1 = (!useDesign12 && !useDesign11 && !useDesign10 && !useDesign9 && !useDesign8 && !useDesign7 && !useDesign6 && !useDesign5 && !useDesign4 && !useDesign3 && !useDesign2);
 
-  const pageSizeCss = (forceDesign3 || imprOrd === 2) ? 'A5 portrait' : 'A4 portrait';
+  const useA5 = isArretTravail
+    ? imprOrd === 1 // IMPR_ARRET: 1=A5, 2=A4
+    : isBilanPrint
+      ? imprOrd === 1 // IMPR_BILAN: 1=A5, 2=A4
+      : (forceDesign3 || imprOrd === 2); // IMPR_ORD: 1=A4, 2=A5
+  const pageSizeCss = useA5 ? "A5 portrait" : "A4 portrait";
+  const pageDimCss = useA5 ? "148mm 210mm" : "210mm 297mm";
 
-  let bodyContentHtml = '';
+  const useDesign12 = !forceDesign3 && useA5 && modeleOrd === 10;
+  const useDesign11 = !forceDesign3 && useA5 && modeleOrd === 9;
+  const useDesign10 = !forceDesign3 && useA5 && modeleOrd === 8;
+  const useDesign9 = !forceDesign3 && useA5 && modeleOrd === 7;
+  const useDesign8 = !forceDesign3 && useA5 && modeleOrd === 6;
+  const useDesign7 = !forceDesign3 && useA5 && modeleOrd === 5;
+  const useDesign6 = !forceDesign3 && useA5 && modeleOrd === 4;
+  const useDesign5 = !forceDesign3 && useA5 && modeleOrd === 3;
+  const useDesign4 = !forceDesign3 && useA5 && modeleOrd === 2;
+  const useDesign3 = forceDesign3 || (useA5 && modeleOrd === 1);
+  const useDesign2 = !forceDesign3 && !useA5 && modeleOrd === 2;
+  const useDesign1 =
+    !useDesign12 &&
+    !useDesign11 &&
+    !useDesign10 &&
+    !useDesign9 &&
+    !useDesign8 &&
+    !useDesign7 &&
+    !useDesign6 &&
+    !useDesign5 &&
+    !useDesign4 &&
+    !useDesign3 &&
+    !useDesign2;
+
+  let bodyContentHtml = "";
   if (useDesign12) {
     bodyContentHtml = renderModele12Html(paramsWithBarcode);
   } else if (useDesign11) {
@@ -107,7 +211,9 @@ export function generatePrescriptionHtml(params) {
     bodyContentHtml = renderModele1Html(paramsWithBarcode);
   }
 
-  const pageTitle = params.documentTitle || (isBilanPrint ? 'Demande de Bilan' : 'Ordonnance Médicale');
+  const pageTitle =
+    params.documentTitle ||
+    (isBilanPrint ? "Demande de Bilan" : "Ordonnance Médicale");
 
   return `
     <!DOCTYPE html>
@@ -116,7 +222,12 @@ export function generatePrescriptionHtml(params) {
         <meta charset="utf-8" />
         <title>${pageTitle} - ${assureName}</title>
         <style>
-          @page { size: ${pageSizeCss}; margin: 10mm 5mm 5mm 5mm; }
+          @page {
+            size: A5;
+            size: ${pageSizeCss};
+            size: ${pageDimCss};
+            margin: 10mm 5mm 5mm 5mm;
+          }
           * { box-sizing: border-box; }
           body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -135,7 +246,7 @@ export function generatePrescriptionHtml(params) {
           }
           .footer-wrapper {
             flex-shrink: 0;
-            margin-top: ${imprOrd === 2 ? '10px' : '30px'};
+            margin-top: ${useA5 ? "10px" : "30px"};
           }
           .yellow-banner {
             background-color: #ffff00 !important;
@@ -166,8 +277,17 @@ export function generatePrescriptionHtml(params) {
             margin-top: 6px;
           }
           @media print {
-            @page { size: ${pageSizeCss}; margin: 10mm 5mm 5mm 5mm; }
-            body { margin: 0; padding: 0; }
+            @page {
+              size: A5;
+              size: ${pageSizeCss};
+              size: ${pageDimCss};
+              margin: 10mm 5mm 5mm 5mm;
+            }
+            html, body {
+              width: ${useA5 ? "148mm" : "210mm"};
+              margin: 0;
+              padding: 0;
+            }
             .yellow-banner { background-color: #ffff00 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .slogan-blue { color: #0000ff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           }
@@ -180,7 +300,9 @@ export function generatePrescriptionHtml(params) {
 
         <!-- Footer Area -->
         <div class="footer-wrapper">
-          ${useDesign12 ? `
+          ${
+            useDesign12
+              ? `
             <div style="border-bottom: 2px solid #000; width: 100%; margin-bottom: 10px;"></div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div style="flex: 1; text-align: center; font-size: 15px; font-weight: bold; color: #000; font-family: 'Segoe UI', Arial, sans-serif; padding-right: 15px;">
@@ -190,23 +312,31 @@ export function generatePrescriptionHtml(params) {
                 ${barcodeSvg}
               </div>
             </div>
-          ` : useDesign11 ? `
+          `
+              : useDesign11
+                ? `
             <div style="text-align: center; font-size: 14.5px; font-weight: bold; color: #000; font-family: 'Segoe UI', Arial, sans-serif; margin-bottom: 5px;">
               ${msgOrd || "Message pour cloturer l'ordonnance"}
             </div>
             <div style="text-align: center; font-size: 12.5px; color: #222; font-family: 'Segoe UI', Arial, sans-serif; display: flex; justify-content: center; align-items: center; gap: 15px;">
-              <span>${addressFr || 'Adresse du cabinet du docteur'}</span>
-              <span>📞 ${phoneFixe || '0558 413 240'}</span>
-              <span>✉️ ${clinicInfo?.email || 'adel.slougui@yahoo.fr'}</span>
+              <span>${addressFr || "Adresse du cabinet du docteur"}</span>
+              <span>📞 ${phoneFixe || "0558 413 240"}</span>
+              <span>✉️ ${clinicInfo?.email || "adel.slougui@yahoo.fr"}</span>
             </div>
-          ` : useDesign9 ? `
-            ${msgOrd ? `<div style="text-align: center; font-size: 14px; font-weight: bold; color: #000; font-family: 'Segoe UI', Arial, sans-serif;">${msgOrd}</div>` : ''}
-          ` : useDesign8 ? `
+          `
+                : useDesign9
+                  ? `
+            ${msgOrd ? `<div style="text-align: center; font-size: 14px; font-weight: bold; color: #000; font-family: 'Segoe UI', Arial, sans-serif;">${msgOrd}</div>` : ""}
+          `
+                  : useDesign8
+                    ? `
             <div style="border: 1px solid #777; padding: 6px 15px; font-size: 13.5px; color: #111; font-family: 'Segoe UI', Arial, sans-serif; display: flex; justify-content: space-between; align-items: center;">
-              <div>${addressFr || 'Adresse du cabinet du docteur'}</div>
-              <div>${phoneFixe || '0558 413 240'}</div>
+              <div>${addressFr || "Adresse du cabinet du docteur"}</div>
+              <div>${phoneFixe || "0558 413 240"}</div>
             </div>
-          ` : useDesign7 ? `
+          `
+                    : useDesign7
+                      ? `
             <div style="background: #00008b; color: #fff; text-align: center; padding: 7px 10px; font-size: 15px; font-weight: bold; font-family: 'Segoe UI', Arial, sans-serif; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
               ${msgOrd || "Message pour cloturer l'ordonnance"}
             </div>
@@ -214,23 +344,27 @@ export function generatePrescriptionHtml(params) {
             <div style="display: flex; justify-content: space-between; align-items: flex-end; font-size: 12px; color: #111; font-family: 'Segoe UI', Arial, sans-serif;">
               <div style="flex: 1;"></div>
               <div style="text-align: center; line-height: 1.35;">
-                ${addressFr || 'Adreese du cabinet du docteur'}<br/>
-                ${clinicInfo?.email || 'adel.slougui@yahoo.fr'}
+                ${addressFr || "Adreese du cabinet du docteur"}<br/>
+                ${clinicInfo?.email || "adel.slougui@yahoo.fr"}
               </div>
               <div style="flex: 1; text-align: right;">
                 Page 1/1
               </div>
             </div>
-          ` : useDesign6 ? `
+          `
+                      : useDesign6
+                        ? `
             <div style="border-bottom: 1.5px solid #000; width: 100%; margin-bottom: 6px;"></div>
             <div style="text-align: center; font-style: italic; font-size: 13px; color: #111; font-family: 'Segoe UI', Arial, sans-serif;">
-              ${addressFr || 'Adreese du cabinet du docteur'}
+              ${addressFr || "Adreese du cabinet du docteur"}
             </div>
             <div style="display: flex; justify-content: space-between; font-style: italic; font-size: 12.5px; color: #111; font-family: 'Segoe UI', Arial, sans-serif; margin-top: 3px;">
-              <div>Mobile : ${phoneFixe || '0558 413 240'}</div>
-              <div>Émail : ${clinicInfo?.email || 'adel.slougui@yahoo.fr'}</div>
+              <div>Mobile : ${phoneFixe || "0558 413 240"}</div>
+              <div>Émail : ${clinicInfo?.email || "adel.slougui@yahoo.fr"}</div>
             </div>
-          ` : useDesign4 ? `
+          `
+                        : useDesign4
+                          ? `
             <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 10px;">
               <div style="font-size: 15px; font-weight: bold; color: #000; font-family: 'Segoe UI', Arial, sans-serif;">
                 ${msgOrd || "Message pour cloturer l'ordonnance"}
@@ -239,18 +373,24 @@ export function generatePrescriptionHtml(params) {
                 ${barcodeSvg}
               </div>
             </div>
-          ` : (useDesign3 || useDesign5 || useDesign10) ? `
+          `
+                          : useDesign3 || useDesign5 || useDesign10
+                            ? `
             <div style="border-bottom: 2px solid #000; width: 100%; margin-bottom: 4px;"></div>
             <div style="text-align: center; font-size: 15px; font-weight: bold; color: #000; font-family: 'Segoe UI', Arial, sans-serif;">
               ${msgOrd || "Message pour cloturer l'ordonnance"}
             </div>
-          ` : `
+          `
+                            : `
             <div style="display: flex; justify-content: space-between; align-items: flex-end;">
               <div class="yellow-banner">
                 ${msgJaune}
               </div>
               <div style="text-align: right;">
-                ${clinicLogo ? `<img src="${clinicLogo}" style="max-height: 65px; max-width: 180px; object-fit: contain;" />` : `
+                ${
+                  clinicLogo
+                    ? `<img src="${clinicLogo}" style="max-height: 65px; max-width: 180px; object-fit: contain;" />`
+                    : `
                   <div style="display: flex; align-items: center; gap: 6px;">
                     <svg width="45" height="45" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <circle cx="50" cy="50" r="45" stroke="#0d9488" stroke-width="4" fill="none"/>
@@ -258,11 +398,12 @@ export function generatePrescriptionHtml(params) {
                       <text x="35" y="65" font-family="Arial, sans-serif" font-size="26" font-weight="900" fill="#0f766e">ORL</text>
                     </svg>
                     <div style="text-align: left;">
-                      <div style="font-size: 13px; font-weight: 900; color: #0f766e; letter-spacing: -0.5px;">${(clinicInfo?.doctorNameFr || doctor || '').toUpperCase()}</div>
+                      <div style="font-size: 13px; font-weight: 900; color: #0f766e; letter-spacing: -0.5px;">${(clinicInfo?.doctorNameFr || doctor || "").toUpperCase()}</div>
                       <div style="font-size: 9px; font-weight: bold; color: #0d9488; text-transform: uppercase; letter-spacing: 0.3px;">Spécialiste en ORL</div>
                     </div>
                   </div>
-                `}
+                `
+                }
               </div>
             </div>
 
@@ -273,7 +414,8 @@ export function generatePrescriptionHtml(params) {
             <div class="software-credit">
               Logiciel réalisé par Bouledroua Amor TEL : 0778.750.333
             </div>
-          `}
+          `
+          }
         </div>
 
         <script>
