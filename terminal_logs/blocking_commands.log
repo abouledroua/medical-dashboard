@@ -1,0 +1,2737 @@
+--- Executing blocking command at Sun Aug  9 23:50:41 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && Get-ChildItem -Force -Recurse -File | Where-Object { $_.FullName -notmatch '\\node_modules\\' } | Select-Object FullName,Length | Format-Table -AutoSize
+--- Output ---
+'Get-ChildItem' is not recognized as an internal or external command,
+operable program or batch file.
+
+
+
+--- Executing blocking command at Sun Aug  9 23:50:42 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && git status --short; git log -5 --oneline
+--- Output ---
+error: unknown option `short;'
+usage: git status [<options>] [--] [<pathspec>...]
+
+    -v, --[no-]verbose    be verbose
+    -s, --[no-]short      show status concisely
+    -b, --[no-]branch     show branch information
+    --[no-]show-stash     show stash information
+    --[no-]ahead-behind   compute full ahead/behind values
+    --[no-]porcelain[=<version>]
+                          machine-readable output
+    --[no-]long           show status in long format (default)
+    -z, --[no-]null       terminate entries with NUL
+    -u, --[no-]untracked-files[=<mode>]
+                          show untracked files, optional modes: all, normal, no. (Default: all)
+    --[no-]ignored[=<mode>]
+                          show ignored files, optional modes: traditional, matching, no. (Default: traditional)
+    --[no-]ignore-submodules[=<when>]
+                          ignore changes to submodules, optional when: all, dirty, untracked. (Default: all)
+    --[no-]column[=<style>]
+                          list untracked files in columns
+    --no-renames          do not detect renames
+    --renames             opposite of --no-renames
+    -M, --find-renames[=<n>]
+                          detect renames, optionally set similarity index
+
+
+
+
+--- Executing blocking command at Sun Aug  9 23:50:56 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && dir /s /b /a-d | findstr /v /i "\\node_modules\\"
+--- Output ---
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.todo.json
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\DataTemplates.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\index.html
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\package-lock.json
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\package.json
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\postcss.config.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\tailwind.config.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\todo.md
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\vite.config.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\COMMIT_EDITMSG
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\config
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\description
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\FETCH_HEAD
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\HEAD
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\index
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\ORIG_HEAD
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\gk\config
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\applypatch-msg.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\commit-msg.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\fsmonitor-watchman.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\post-update.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\pre-applypatch.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\pre-commit.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\pre-merge-commit.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\pre-push.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\pre-rebase.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\pre-receive.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\prepare-commit-msg.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\push-to-checkout.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\sendemail-validate.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\hooks\update.sample
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\info\exclude
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\info\refs
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\logs\HEAD
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\logs\refs\heads\main
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\logs\refs\remotes\origin\main
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\03\7ddfabebba2cf4199a89390692c01c7d9f1071
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\03\a512d4f3778c16bce6dfbb0a479e69fc14f34d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\07\a6f077ce9cfca2a738354c3fd0b1b2afe8ac8d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\07\b2f6e1b51a2f34618876f909e564f4ba09c96f
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\07\fce020625ee03cc1146f823a5f322abd3ee603
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\08\696bf70ca9256c02b07e671a3bc3afe6579920
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\08\e750df03878af041cfb6a65aa5e8a051a6b70b
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\09\71ea530c24e29967d207f8c01757eec2d39a77
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\0d\4ad52c917f4c3b67cd218a0b34352542830cd9
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\0e\10604b76f2bd3039175de5690dbcf475cb161a
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\0f\6b914aea28122003ba5854cbcedfcc8a99209a
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\16\1c1169622a627ba2f4795aee3ed01c5b485738
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\16\698308dfc13162418869900357d90748709568
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\17\200a854e811354e4b40ddc0b5ee429f8f31e71
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\1a\3a8fb3a58ce7f1697b104b320e113975b4db89
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\1c\84caa4c7dd1ecaed1483f3b9ca6bb0fd953332
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\1f\171e607ca62b9500a9c42e5920c7f6f19beeba
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\1f\df4e1d13c5816de5066145d6191f049590ec76
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\20\452119d39fa538194dff4b534360d41e635072
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\21\20c48279e539917afcf5f98cffa6c75935c122
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\22\16ff08e5f85cdb3d8dc098ce58222043db0e7d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\24\c886557379fa70fa2ce85162e08dd29d6ee32f
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\25\b4982bf2b0c1068e34f5cbf1f7f81116f3d23a
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\26\40fc6ec73ba32756b12feefd61d9f3cd4bc58d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\26\b27e78c44ab9c9bcb11fe44e5a48ec26059550
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\27\3f0a0bf1588083426f63c5e64c45e5f5d744d7
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\29\71427eb4b532beb71436c61a12e7d03d14b046
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\2d\61179d62fc3b14094df625584dddd5ea94f861
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\30\0b937b3b125977be51a7ef277e1903a2119aee
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\31\e0374197b47fe7ccff9f9a1c15400baa95f0de
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\33\d1fcbbf58d03dd68b12475f0bfde42b419fe5a
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\35\5fa86b2e81eab1b36242e3854979f080b0ce72
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\37\bc938fad04d6e4303e5eef70155f87336c2642
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\39\302f521d2d21985f274bcf89f35beff482e555
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\3a\30313515d3114c6bfb11f84a6b6e8aff81220c
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\3a\4383ef0ce74601605eb61cae75be80d0e3a183
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\3c\73672be339cef95150d9b2f786e4756d993c7a
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\3c\87e3c7a87fcf02ca56c898cd2355ea4cfcc49f
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\3d\bf896564db4feac1aa1456e3227e4937ae89e5
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\40\295f48f8640d30200faee9a56a18086bb7b226
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\40\d637b78fe5cd9bf856b6d77e1ff259db9b185a
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\41\e89b5db050863eba9f6e326526ec9261499b9a
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\42\710e2fcd8ba9fe1d8dc3aa6569a97332c47b60
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\43\834b77c2ab4fc58fdadfd1b7f26addb6ee8b8c
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\43\92deded5c36e2dc3b881d574ea3d3ad701a735
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\43\f9bb4fa92204565cad822713d1f20c9ffeee65
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\44\2cd5c5f5d1f9291f065ac9219def2d07905cdf
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\44\95a69395a16d863abfebdadcf52e62b2435603
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\44\e8b2c23152ca2bd99d5e863b2c004055be6710
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\45\223fbcc761f2fd9110bdc5ad78c244e5e7b865
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\45\36922122ca9dd8edf1a5e8d4ef0a4ce0b7fefa
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\46\bf064b019be0e2a11c7d8b611cf597efd9f7c3
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\48\be1bc3763c4cb9bb95f9db69793a6620879917
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\49\75a796a81e3a13818bf17550e70ac8f2e318f8
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\49\cf8fadd6ce5ad4bed7524cb289237e1cf97078
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\4a\bf8d58f99a3c2c0c67754fcacf1bccbdb9ce15
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\4d\8af0d1870f66c6252dca4736cbec365b40ca3d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\4d\a6689aa7bbaca0945363a5b27afcabf898c2a4
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\4f\e341ecfabfd00c89d0b3712c63d40048889fc9
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\50\e1657e98ea927923eb251648bf331ff4679078
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\51\3c2258ecda17bbb94427a9ce26e3be0dca47fd
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\52\c10b2356f0273f6c4f644e13daf34363cb7ac5
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\53\06e38d37158d8e884ae9784cf47bf571e59b60
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\54\b0f961eefaa41ad73ec05dfefc7dd791685a25
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\54\bfc657ec5f56d8315079df72010c9213c47656
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\56\99aa82b405a4007efddc997cf5b88aea6f5f66
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\57\9be87442c80ed52085b92b9515a5c36f4acbdd
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\58\dc6d6153185b4f7e6ef63e6bc4fd074a2151e4
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\5a\bafc4172209255c2d7d39688daa856ba07f0c8
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\5d\9b38160f0ad0dcff25b4fc4779529bcba03fd2
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\5f\2322fa8ffe4fddd33d46af17cbca57ec7cd525
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\62\4ab893b9321a8269e244721f9070da2f5478af
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\64\bcbd4b7094a510885e6d5ef25828d3a47db28c
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\65\0cf2a9c7ef36965729f26a6dcf30d08a2554b4
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\66\88f47aa1b26324762ca4f2b228cefd883c9ca2
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\68\ff95e252ea3ad664a94676e50dbb06dedbe2c6
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\69\b55d2fda7c4f0caa25d46d6bcca78f012d246d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\6b\f22245db47c3a90a0edba9fcec6749b187f2b1
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\71\842a67fe46072dedf523dbb7de7122ca737df2
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\72\1b3c0bf57be38d724753032f748e441536ea47
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\72\bc6ba90c7954e519f3f1d952935fc17284bd10
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\73\411d5c4c2a1c8a5c68b89c88ebd9dd32548314
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\74\1351c3d3c3522c06e78d61aabbf3dc1401e822
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\77\88e5a84e6a15b37f55b5a79a7d2281035f8f5b
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\78\a155a36cb23e44129699ae0f3845abdb1d245f
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\79\57b1b198c0a21e053f12762ba4d2efd8074311
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\79\5823b5141230c17ecc7b8d2ced7373ab040463
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\79\cc9c9eb6184b5be4e29f318977d93f2e4ca2ae
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\7b\70c78217cd9d0a3c86fac1c04b7d6f21fc76f1
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\7f\f0e8df762154d53a6d61c688012d4e369a37e7
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\80\1ad225c5c7a4dbc7dec46c91d8dc190740c484
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\81\72272dcef0d8e9571c4545a4a861d328464aa1
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\82\643cba19bbc031576958061ca82149f1b9047e
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\82\b01ba2f61a00e3037b42fb5510d20f87d4250b
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\83\4ff31784929014a4d0d1dc74ac84f86c15b7e6
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\83\5e91ed82ba2d052904f8295ad5b1ae0f092e68
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\85\51ed3e7bbed79a5b8021bd8813b47b2cf53c59
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\87\b1f1a8e7433d5b985992ad4d0f4f2952dd6f3c
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\8b\c359e613914ef49da5d5498c6362a1792ae22e
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\8d\c417ae680a52cfcb1ae993ca59a3ab4a2788ee
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\91\a20ced475a2d1d00919ff0a06357fbfde2ab12
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\95\a872f513bbfba1a08385006a523bfb9c33bfde
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\96\06eb4c42ba603b88949baf353ddcc3fd26015e
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\99\6182813b381276e75035902a37c34684f1c5ee
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\99\c06ff88ac128c0714537dcea9d3ef85e38b0b9
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\9c\f2565bca5f08f22b1cda863fcb79c40c1b2ec9
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\9e\66e1a2c50d387887f30e220e56664f9645a95c
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\9f\31f776ee40c39eb3eb58f4953819a4c344f14e
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\a2\85d357e57c8eaac168813b37120b7ae2e32b7d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\a3\39f1a6d6280222c663c7673c456a9fb202320d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\a4\6433c90f9a300cb0d1e06a2ea37141cd8b21fd
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\a6\abd8f78e20dfaffa0869e5143ed26625c0bbe8
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\a6\d7a0728254d3fc206696ddda0583580ce245b4
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\a8\27cd36c9560aff036c206458a9164266593753
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\aa\72526ac0fbc15da86dbc6bdff6471ada864d57
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\ac\33eef9ea460886e2f41d7bb78f89739c454d52
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\ad\40975eff1402bc814d5b63b058c96316d214f3
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\af\9e21500b7cd38d779001fce754d31db3ae7a76
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\af\ec13e0c0f2fca566b73160cd0ad752ea3233be
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\b0\03d3a94eba0862cafbab023d6d817d1d49604d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\b1\576c797ba84cd4a9b4dade7849897455e72e16
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\b1\84a8ed7028fdf638a27eb10cd2bd2e66c8ba85
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\b1\bcca83d3947de6a0fff23c4292105d6b12e1a5
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\b2\5f928a524098cc9080c172798f3b7c70b4af5a
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\b6\33b0ba37c8d43624a30b8985eb2e9ef154a458
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\b6\a65c4967085a1903e308b76db8dccf6aa15925
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\b8\6296cd7d2a728e2f41e3abe8409e501dc9512b
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\b9\e1d179968feaf79ae693bc739dc9dbf38921d6
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\bb\b2e56a690c91f371910a796ee9f38e9b73a1f4
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\bc\78cc669aa814c416c352087a631dee71db6c5a
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\c4\55b2512f947eac50ed437e77e5e033085052c6
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\c5\313d8ffd50026077d906692a52623820b61ce9
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\c8\77ed142e0d1b46c5b40dcc343700c56b455b4f
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\c8\7d0dbd2629b1385f70f465211a8152e43fd109
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\cc\3b335bde7ee579e709413be0d8bbd450c4283d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\cd\da570fd500127915e116e5518e649a4f6ba932
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\ce\58712191591ff371a6dcbe21caed724708b586
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\cf\fb66845dacc34243c1b865898c4d4c0d597c90
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\d0\82b7c08f26847e7be4a7f6739e7ac89d5600a2
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\d4\6b3a9e227753aacf454a8942863e0989830822
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\d5\500e44f0536431899816afc275a05fe6bbce8f
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\d5\e08aa53743a7344b6862ae2ea1efe55c701f74
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\d8\1aae79277167edc152c25f4e793d2d6c7d0f44
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\d8\4af28263773d5c329c7bc3c035a9ff4f63ad8d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\d8\e6f50c6e5f4a2a1f471c34109e058f30f6000a
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\d9\3ada57ef6afb8ea07c1ef3945aeb03134b34a0
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\da\951dc36c75903df713596e4527b97452ca1382
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\da\cbb40c95624ce06028d314304b022bc4fb41c2
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\db\98dc9ed5c353f098214d6c0d7b2b066ce1848e
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\dd\b763364a7e8cc0f58aba75ba63041f665c8a61
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\dd\c798a712e2cac2bdec03557226cecfdd297029
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\de\106966d2557cd11fb080361d0a3b4580107ff8
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\de\1c08518ca2353ea033b4ce2a43c8c3812af653
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\e0\129d09449e42ac39c3e0b197b0ce3886ccbbc9
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\e2\512ca6ac8f88d1111e3dd5564dc975bc85f0ca
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\e3\f551708076d692cb76b9085b32d2076b02e013
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\e4\fc835135e4d6d2b44a31a12db2867da5efd304
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\e5\1a676d5093632f1661a722c77b0158c71c0f3e
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\e6\46d1854144b52fad4736c95ebef4275b99267b
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\e6\69171a2e3f93b25b36b93dc500012130c0d21a
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\e6\c4d99cb893e4210ec0fc5cc14cd3492fb1d632
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\e7\9250b68202b962313af4895c398822602da93d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\e8\b9c0d72e6803d651728a90bb01c644841a61e6
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\e9\39ebc472214ffd0483c34b40d70d2e25dcaefd
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\ea\5d39c4ac25884602d23015328c3fa877c78b44
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\ea\5fbeffa73487cdd4844b6f839833f1e3a5f3f6
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\ea\a2c94510f5bd6dcecc70a1cc53ee6b37766381
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\eb\8f43c9012f8a3c803de7c7c0bc7bd9631cfcc3
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\eb\bd25d44b3f5d40fea792287beb1d1b4948b160
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\eb\c9e3a855731a6f876facc341ce9f9fcbe6a866
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\eb\cb3d7071d1476e64201abce9bb4e4e2d52c92d
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\ee\d72dc6ff7652bed24c290e7d4dfdc8c46f5837
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\ef\a60943badf8ba7f8c08d1e56be4afaf43ae5e4
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\f0\11e8a9f4d189117482e85ee751b6342b3d1f29
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\f2\9ab6f6e2970dd65863fa51ecbf8da97921e199
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\f3\6978e47a663c803594f35b647fe9438deef4d9
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\f3\c11d1712ec2db3b6ce1a1cbcae27ea1eee6415
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\f4\80a59631208a46924134bde3eb3bb6b74b261e
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\f6\1b9724d350b75b1401b7bfa288338b50d5b0c6
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\f6\334236f5e055a4cb7ea05b61d34dbe212dd080
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\f6\4e0538f246da1febb88adec0e475e57c9ba592
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\f6\7ed34a28e47ad8a7693b91ba4c8c17d83c5c7f
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\f6\d489209b5c8837ebedb647e7b24d0b64f5a8ca
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\f7\18ac07722c5c2a4ceaa132fefecc53c284b7c5
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\fc\aca25a3bdf59887c5b7b76fbc8a3306c81f2e7
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\fc\f0eff2584aaa7bc926abaf6ab1768f0543c25a
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\fc\f4489cf16806e0f985dab6d2dd04e357830175
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\fe\5aeef89407b9fb5dcdf9489392b0ffb66cd8c2
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\fe\7ab556fddacf319c1aa66a6f09a79ffcc59e44
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\ff\63f46814d69ef89b4224e870804b2766e69b1f
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\info\packs
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\pack\multi-pack-index
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\pack\pack-3c546b032f0cfc3c8832ec48eb44d2ef94ad66a9.idx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\pack\pack-3c546b032f0cfc3c8832ec48eb44d2ef94ad66a9.mtimes
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\pack\pack-3c546b032f0cfc3c8832ec48eb44d2ef94ad66a9.pack
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\pack\pack-3c546b032f0cfc3c8832ec48eb44d2ef94ad66a9.rev
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\pack\pack-cb845f04c093bd7da1b81bf3bbc453f217c74d72.idx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\pack\pack-cb845f04c093bd7da1b81bf3bbc453f217c74d72.pack
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\objects\pack\pack-cb845f04c093bd7da1b81bf3bbc453f217c74d72.rev
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\refs\heads\main
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\.git\refs\remotes\origin\main
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\dist\el_iyada_logo.png
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\dist\index.html
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\dist\assets\index-CJql8R1p.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\dist\assets\index-C_vuzb3Q.css
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\dist\assets\vendor-icons-BqhC7Ok_.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\dist\assets\vendor-react-s4cH1K3w.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\dist\assets\vendor-react-xiMy4gMA.css
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\dist\assets\vendor-utils-DQhDslZt.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\public\el_iyada_logo.png
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\add_activation_options_columns.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\add_consultation_options_columns.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\add_id_user_to_rdv.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\add_parametre_columns.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\check_users.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\db.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\fix_rdv_schema.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\index.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\inspect_details_2026.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\inspect_schema.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\migrate_measurements.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_activation_options.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_api_endpoints.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_clinic_api.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_consult.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_db.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_fullname_search.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_insert_prescription.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_key_tables.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_login_api.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_notes.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_options_fields.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_parametre.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_patient_count.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\test_queries.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\data\mockData.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\helpers\utils.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\middleware\auth.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\appointments.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\auth.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\consultations.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\medicaments.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\medications.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\patients.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\poste.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\settings.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\stats.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\patients\consultationHelpers.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\patients\patientAntecedents.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\patients\patientConsultations.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\patients\patientCore.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\patients\patientVitals.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\settings\clinicSettings.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\server\routes\settings\userSettings.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\App.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\index.css
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\main.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\themeStyles.css
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\translations.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\utils.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\assets\el_iyada_logo.png
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\AddConsultationModal.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\AddPatientForm.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\AppointmentsList.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\ClinicSettings.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\ConfirmDialog.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\DashboardOverview.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\DataTemplates.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\DeviceNameModal.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\Header.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\LoginScreen.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\NewAppointmentModal.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\PatientList.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\PatientMedicalHistory.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\PatientOverviewPanel.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\Sidebar.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\consultation\ReplacePrescriptionModal.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\documentBodies.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\modele1.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\modele10.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\modele11.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\modele12.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\modele2.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\modele3.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\modele4.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\modele5.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\modele6.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\modele7.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\modele8.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\components\prescriptionTemplates\modele9.js
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\src\context\ConfirmDialogContext.jsx
+C:\Users\amorb\.gemini\antigravity-ide\scratch\medical-dashboard\terminal_logs\blocking_commands.log
+
+
+
+--- Executing blocking command at Sun Aug  9 23:50:59 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && type DataTemplates.jsx
+--- Output ---
+file:///C:/Users/amorb/.gemini/antigravity-ide/scratch/medical-dashboard/server/db.js:30
+  export const dbConfig = {
+  ^^^^^^
+
+SyntaxError: Unexpected token 'export'
+    at compileSourceTextModule (node:internal/modules/esm/utils:338:16)
+    at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:102:18)
+    at #translate (node:internal/modules/esm/loader:437:12)
+    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:484:27)
+
+
+--- Executing blocking command at Sun Aug  9 23:51:00 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && type vite.config.js & echo. & type tailwind.config.js & echo. & type postcss.config.js
+--- Output ---
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            return 'vendor-utils';
+          }
+        },
+      },
+    },
+  },
+});
+ 
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        teal: {
+          50: '#f0fdfa',
+          100: '#ccfbf1',
+          500: '#14b8a6',
+          600: '#0d9488',
+          700: '#0f766e',
+          900: '#134e4a',
+        },
+        medical: {
+          50: '#f4f9f9',
+          100: '#e1eff0',
+          200: '#c5e0e2',
+          500: '#0284c7',
+          600: '#0369a1',
+          700: '#075985',
+          dark: '#0f172a',
+          card: '#1e293b',
+        }
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      }
+    },
+  },
+  plugins: [],
+}
+ 
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+
+
+
+--- Executing blocking command at Sun Aug  9 23:51:00 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && git status --short && git log -5 --oneline
+--- Output ---
+ M node_modules/.package-lock.json
+ M node_modules/.vite/deps/_metadata.json
+ M package-lock.json
+ M package.json
+ M server/db.js
+ M server/index.js
+ M server/routes/medications.js
+ M server/routes/patients/patientConsultations.js
+ M server/routes/patients/patientVitals.js
+ M src/App.jsx
+ M src/components/AddConsultationModal.jsx
+ M src/components/DeviceNameModal.jsx
+ M src/components/PatientOverviewPanel.jsx
+ M src/components/Sidebar.jsx
+ M src/translations.js
+?? .todo.json
+?? DataTemplates.jsx
+?? node_modules/.bin/node-gyp
+?? node_modules/.bin/node-gyp.cmd
+?? node_modules/.bin/node-gyp.ps1
+?? node_modules/.bin/node-which
+?? node_modules/.bin/node-which.cmd
+?? node_modules/.bin/node-which.ps1
+?? node_modules/.bin/nopt
+?? node_modules/.bin/nopt.cmd
+?? node_modules/.bin/nopt.ps1
+?? node_modules/.bin/prebuild-install
+?? node_modules/.bin/prebuild-install.cmd
+?? node_modules/.bin/prebuild-install.ps1
+?? node_modules/.bin/rc
+?? node_modules/.bin/rc.cmd
+?? node_modules/.bin/rc.ps1
+?? node_modules/.vite/deps/@fingerprintjs_fingerprintjs.js
+?? node_modules/.vite/deps/@fingerprintjs_fingerprintjs.js.map
+?? node_modules/@fingerprintjs/
+?? node_modules/@isaacs/
+?? node_modules/abbrev/
+?? node_modules/base64-js/
+?? node_modules/bindings/
+?? node_modules/bl/
+?? node_modules/buffer/
+?? node_modules/chownr/
+?? node_modules/decompress-response/
+?? node_modules/deep-extend/
+?? node_modules/detect-libc/
+?? node_modules/end-of-stream/
+?? node_modules/env-paths/
+?? node_modules/expand-template/
+?? node_modules/exponential-backoff/
+?? node_modules/file-uri-to-path/
+?? node_modules/fs-constants/
+?? node_modules/github-from-package/
+?? node_modules/graceful-fs/
+?? node_modules/ieee754/
+?? node_modules/ini/
+?? node_modules/isexe/
+?? node_modules/mimic-response/
+?? node_modules/minimist/
+?? node_modules/minipass/
+?? node_modules/minizlib/
+?? node_modules/mkdirp-classic/
+?? node_modules/napi-build-utils/
+?? node_modules/node-abi/
+?? node_modules/node-addon-api/
+?? node_modules/node-gyp/
+?? node_modules/nopt/
+?? node_modules/once/
+?? node_modules/prebuild-install/
+?? node_modules/proc-log/
+?? node_modules/pump/
+?? node_modules/rc/
+?? node_modules/readable-stream/
+?? node_modules/simple-concat/
+?? node_modules/simple-get/
+?? node_modules/sqlite/
+?? node_modules/sqlite3/
+?? node_modules/string_decoder/
+?? node_modules/strip-json-comments/
+?? node_modules/tar-fs/
+?? node_modules/tar-stream/
+?? node_modules/tar/
+?? node_modules/tunnel-agent/
+?? node_modules/undici/
+?? node_modules/which/
+?? node_modules/wrappy/
+?? server/routes/medicaments.js
+?? src/components/DataTemplates.jsx
+?? terminal_logs/
+?? todo.md
+de10696 v6
+4d8af0d v5
+9961828 v4
+ebcb3d7 v3
+f3c11d1 v2
+
+
+
+--- Executing blocking command at Sun Aug  9 23:51:14 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && more < src\App.jsx
+--- Output ---
+import React, { useState, useEffect } from 'react';
+import FingerprintJS from '@fingerprintjs/fingerprintjs';
+import LoginScreen from './components/LoginScreen';
+import Header from './components/Header';
+import Sidebar from './components/Sidebar';
+import DashboardOverview from './components/DashboardOverview';
+import PatientList from './components/PatientList';
+import AddPatientForm from './components/AddPatientForm';
+import PatientMedicalHistory from './components/PatientMedicalHistory';
+import AppointmentsList from './components/AppointmentsList';
+import ClinicSettings from './components/ClinicSettings';
+import NewAppointmentModal from './components/NewAppointmentModal';
+import AddConsultationModal from './components/AddConsultationModal';
+import DeviceNameModal from './components/DeviceNameModal';
+import DataTemplates from './components/DataTemplates';
+import { ConfirmDialogProvider } from './context/ConfirmDialogContext';
+
+export default function App() {
+  const [deviceId, setDeviceId] = useState(null);
+  const [deviceName, setDeviceName] = useState(null);
+  const [showDeviceModal, setShowDeviceModal] = useState(false);
+
+  useEffect(() => {
+    const getDeviceId = async () => {
+      try {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        // Use the stable visitorId as the deviceId
+        setDeviceId(result.visitorId.substring(0, 8).toUpperCase());
+      } catch (e) {
+        console.error('FingerprintJS failed to load or get a visitor ID:', e);
+        // Fallback to a random ID if fingerprinting fails
+        setDeviceId(Math.random().toString(36).substring(2, 10).toUpperCase());
+      }
+    };
+    getDeviceId();
+  }, []);
+
+  const checkDevicePoste = async (devId, triggerModalOnMissing = false) => {
+    if (!devId) return;
+    try {
+      const res = await fetch(`/api/poste/${devId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.exists) {
+          setDeviceName(data.nomDevice || '');
+        } else {
+          setDeviceName(null);
+          if (triggerModalOnMissing) {
+            setShowDeviceModal(true);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to check device in poste table:', e);
+    }
+  };
+
+  const [lang, setLangState] = useState(() => {
+    try {
+      return localStorage.getItem('el_iyada_lang') || 'fr';
+    } catch (e) {
+      return 'fr';
+    }
+  });
+
+  const [theme, setThemeState] = useState(() => {
+    try {
+      const savedTheme = localStorage.getItem('el_iyada_theme');
+      if (savedTheme) {
+        if (savedTheme === 'dark') return 'dark-emerald';
+        if (savedTheme === 'light') return 'light-medical';
+        return savedTheme;
+      }
+      return 'dark-emerald';
+    } catch (e) {
+      return 'dark-emerald';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      document.documentElement.dataset.theme = theme;
+    } catch (e) {}
+  }, [theme]);
+
+  const setLang = (newLang) => {
+    setLangState(newLang);
+    try {
+      localStorage.setItem('el_iyada_lang', newLang);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const setTheme = (newTheme) => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem('el_iyada_theme', newTheme);
+      document.documentElement.dataset.theme = newTheme;
+    } catch (e) {}
+  };
+
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('el_iyada_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const getInitialTab = () => {
+    try {
+      const hash = window.location.hash.replace('#', '').trim();
+      if (hash && ['overview', 'patients', 'add-patient', 'add-consultation', 'medical-history', 'appointments', 'settings', 'data-templates'].includes(hash)) {
+        return hash;
+      }
+      const saved = localStorage.getItem('el_iyada_active_tab');
+      if (saved && ['overview', 'patients', 'add-patient', 'add-consultation', 'medical-history', 'appointments', 'settings', 'data-templates'].includes(saved)) {
+        return saved;
+      }
+    } catch (e) {}
+    return 'overview';
+  };
+
+  const [activeTab, setActiveTabState] = useState(getInitialTab);
+
+  const setActiveTab = (tab) => {
+    setActiveTabState(tab);
+    try {
+      localStorage.setItem('el_iyada_active_tab', tab);
+      if (window.location.hash !== `#${tab}`) {
+        window.history.pushState(null, '', `#${tab}`);
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const hash = window.location.hash.replace('#', '').trim();
+      if (hash && ['overview', 'patients', 'add-patient', 'add-consultation', 'medical-history', 'appointments', 'settings', 'data-templates'].includes(hash)) {
+        setActiveTabState(hash);
+      }
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem('el_iyada_theme')) {
+        localStorage.setItem('el_iyada_theme', 'dark');
+      }
+      document.documentElement.dataset.theme = theme;
+    } catch (e) {}
+  }, [theme]);
+
+  useEffect(() => {
+    if (deviceId && currentUser) {
+      checkDevicePoste(deviceId, true);
+    }
+  }, [deviceId, currentUser]);
+
+  const [patients, setPatients] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [stats, setStats] = useState({});
+  const [clinicInfo, setClinicInfo] = useState(null);
+  const [selectedPatient, setSelectedPatientState] = useState(null);
+
+  const setSelectedPatient = (patient) => {
+    setSelectedPatientState(patient);
+    if (patient) {
+      const patId = patient.id || patient.codeBarre || patient.mrn;
+      if (patId) {
+        try {
+          localStorage.setItem('el_iyada_selected_patient_id', String(patId));
+        } catch (e) {}
+      }
+    }
+  };
+
+  const [editingPatient, setEditingPatient] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // Modals
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
+  const [appointmentDefaultPatient, setAppointmentDefaultPatient] = useState(null);
+  const [editingAppointment, setEditingAppointment] = useState(null);
+  const [ongoingConsultations, setOngoingConsultations] = useState(() => {
+    try {
+      const saved = localStorage.getItem('el_iyada_ongoing_consultations');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [activeConsultationPatientId, setActiveConsultationPatientId] = useState(() => {
+    try {
+      return localStorage.getItem('el_iyada_active_consultation_patient_id') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('el_iyada_ongoing_consultations', JSON.stringify(ongoingConsultations));
+    } catch (e) {}
+  }, [ongoingConsultations]);
+
+  useEffect(() => {
+    try {
+      if (activeConsultationPatientId) {
+        localStorage.setItem('el_iyada_active_consultation_patient_id', activeConsultationPatientId);
+      } else {
+        localStorage.removeItem('el_iyada_active_consultation_patient_id');
+      }
+    } catch (e) {}
+  }, [activeConsultationPatientId]);
+
+  useEffect(() => {
+    if (patients && patients.length > 0 && ongoingConsultations.length > 0) {
+      setOngoingConsultations(prev => prev.map(draft => {
+        const freshPatient = patients.find(p => String(p.id) === String(draft.patientId) || String(p.codeBarre) === String(draft.patientId));
+        return freshPatient ? { ...draft, patient: freshPatient } : draft;
+      }));
+    }
+  }, [patients]);
+
+  const openEditAppointmentModal = (apt) => {
+    setEditingAppointment(apt);
+    setAppointmentDefaultPatient(null);
+    setIsAppointmentModalOpen(true);
+  };
+
+  const [previousTab, setPreviousTab] = useState('patients');
+
+  const handleEditPatient = (patient) => {
+    setPreviousTab(activeTab);
+    setEditingPatient(patient);
+    setActiveTab('add-patient');
+  };
+
+  const handlePatientUpdated = (updatedPatient) => {
+    setPatients(prev => prev.map(p => (p.id === updatedPatient.id ? updatedPatient : p)));
+    if (selectedPatient && (selectedPatient.id === updatedPatient.id || selectedPatient.codeBarre === updatedPatient.codeBarre)) {
+      setSelectedPatient(updatedPatient);
+    }
+    setEditingPatient(null);
+    setActiveTab(previousTab || 'medical-history');
+  };
+
+
+  const isSyncingRef = React.useRef(false);
+
+  // Silent background sync for Multi-PC multi-user real-time updates (appointments & stats)
+  const fetchSilentSync = async () => {
+    if (isSyncingRef.current) return;
+    isSyncingRef.current = true;
+    try {
+      const [statsRes, aptsRes, patientsRes] = await Promise.all([
+        fetch('/api/stats'),
+        fetch('/api/appointments'),
+        fetch('/api/patients?limit=60')
+      ]);
+
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
+      }
+
+      if (aptsRes.ok) {
+        const aptsData = await aptsRes.json();
+        setAppointments(aptsData);
+      }
+
+      if (patientsRes.ok) {
+        const patientsData = await patientsRes.json();
+        setPatients(patientsData);
+      }
+    } catch (err) {
+      // Ignore background sync errors silently
+    } finally {
+      isSyncingRef.current = false;
+    }
+  };
+
+  // Fetch initial data from Node REST API
+  const fetchAllData = async () => {
+    try {
+      fetch('/api/clinic')
+        .then(res => res.ok && res.json())
+        .then(data => data && setClinicInfo(prev => prev || data))
+        .catch(() => {});
+
+      const [patientsRes, statsRes, aptsRes, clinicRes] = await Promise.all([
+        fetch('/api/patients?limit=60'),
+        fetch('/api/stats'),
+        fetch('/api/appointments'),
+        fetch('/api/clinic')
+      ]);
+
+      if (patientsRes.ok) {
+        const patientsData = await patientsRes.json();
+        setPatients(patientsData);
+
+        const savedPatId = localStorage.getItem('el_iyada_selected_patient_id');
+        if (savedPatId) {
+          const matched = patientsData.find(p => String(p.id) === String(savedPatId) || String(p.codeBarre) === String(savedPatId) || String(p.mrn) === String(savedPatId));
+          if (matched) {
+            setSelectedPatientState(prev => prev || matched);
+          } else {
+            fetch(`/api/patients/${encodeURIComponent(savedPatId)}`)
+              .then(res => res.json())
+              .then(patData => {
+                if (patData && !patData.error) {
+                  setSelectedPatientState(prev => prev || patData);
+                }
+              })
+              .catch(() => {});
+          }
+        }
+      }
+
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
+      }
+
+      if (aptsRes.ok) {
+        const aptsData = await aptsRes.json();
+        setAppointments(aptsData);
+      }
+
+      if (clinicRes.ok) {
+        const clinicData = await clinicRes.json();
+        setClinicInfo(clinicData);
+      }
+    } catch (err) {
+      console.error('Failed to connect to backend REST API:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Automatic Real-Time Multi-PC Sync (10-second silent polling + focus/visibility triggers)
+  useEffect(() => {
+    // 1. Initial fetch on mount or tab change
+    fetchAllData();
+
+    // 2. 10s silent background polling for instant multi-PC appointments sync
+    const syncInterval = setInterval(() => {
+      fetchSilentSync();
+    }, 10000);
+
+    // 3. Instant sync when regaining window focus or switching back to browser tab
+    const handleSyncTrigger = () => {
+      fetchSilentSync();
+    };
+
+    window.addEventListener('focus', handleSyncTrigger);
+    document.addEventListener('visibilitychange', handleSyncTrigger);
+
+    return () => {
+      clearInterval(syncInterval);
+      window.removeEventListener('focus', handleSyncTrigger);
+      document.removeEventListener('visibilitychange', handleSyncTrigger);
+    };
+  }, [activeTab]);
+
+  // Live debounced search querying table dynamically
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        const url = searchQuery.trim()
+          ? `/api/patients?search=${encodeURIComponent(searchQuery.trim())}&limit=100`
+          : '/api/patients?limit=60';
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setPatients(data);
+        }
+      } catch (err) {
+        console.error('Failed to search patients from DB:', err);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Selection handlers
+  const handleSelectPatient = (patient) => {
+    setSelectedPatient(patient);
+    setActiveTab('medical-history');
+  };
+
+  const handlePatientAdded = (newPatient) => {
+    setPatients(prev => [newPatient, ...prev]);
+    setSelectedPatient(newPatient);
+    setEditingPatient(null);
+    fetchAllData();
+    setActiveTab('medical-history');
+  };
+
+  const handleAppointmentCreated = (newApt) => {
+    setAppointments(prev => [newApt, ...prev]);
+    fetchAllData();
+  };
+
+  const handleUpdateAppointmentStatus = async (id, status) => {
+    try {
+      const res = await fetch(`/api/appointments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setAppointments(prev => prev.map(a => a.id === id ? { ...a, status, time: updated.time || a.time } : a));
+      }
+    } catch (err) {
+      console.error('Error updating appointment:', err);
+    }
+  };
+
+  const handleEditAppointment = async (id, updateData) => {
+    try {
+      const res = await fetch(`/api/appointments/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      });
+      if (res.ok) {
+        setAppointments(prev => prev.map(a => a.id === id ? { ...a, ...updateData } : a));
+        fetchAllData();
+      }
+    } catch (err) {
+      console.error('Error updating appointment details:', err);
+    }
+  };
+
+  const handleUpdateConsultationDraft = (updatedDraft) => {
+    if (!updatedDraft || !updatedDraft.patientId) return;
+    setOngoingConsultations(prev => {
+      const pIdStr = String(updatedDraft.patientId);
+      const exists = prev.some(c => String(c.patientId) === pIdStr);
+      if (exists) {
+        return prev.map(c => (String(c.patientId) === pIdStr ? { ...c, ...updatedDraft } : c));
+      } else {
+        return [...prev, updatedDraft];
+      }
+    });
+  };
+
+  const handleCancelConsultation = (patientIdToCancel, isCompleted = false) => {
+    const pId = patientIdToCancel || activeConsultationPatientId;
+    const targetDraft = ongoingConsultations.find(c => String(c.patientId) === String(pId));
+
+    const isValide = Number(targetDraft?.etat) === 1 || Number(targetDraft?.ETAT) === 1;
+
+    // Immediately update local UI state so modal closes and tab changes instantly
+    setOngoingConsultations(prev => {
+      const remaining = prev.filter(c => String(c.patientId) !== String(pId));
+      if (remaining.length > 0) {
+        const next = remaining[remaining.length - 1];
+        setActiveConsultationPatientId(next.patientId);
+        setSelectedPatient(next.patient);
+      } else {
+        setActiveConsultationPatientId(null);
+        setActiveTab(previousTab || 'medical-history');
+      }
+      return remaining;
+    });
+
+    // Fire server cleanup asynchronously in the background
+    if (!isCompleted && !isValide && (targetDraft || pId)) {
+      fetch('/api/consultations/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idConsultation: targetDraft?.idConsultation,
+          exercice: targetDraft?.exercice || String(new Date().getFullYear()),
+          idVersement: targetDraft?.idVersement,
+          patientId: pId
+        })
+      }).catch(e => {
+        console.error('Failed to cancel ongoing consultation on server:', e);
+      });
+    }
+  };
+
+  const handleSelectConsultationDraft = (pId, pObj) => {
+    setActiveConsultationPatientId(pId);
+    if (pObj) setSelectedPatient(pObj);
+    setActiveTab('add-consultation');
+  };
+
+  const handleConsultationAdded = (newConsultation, patientIdSaved) => {
+    if (selectedPatient) {
+      setSelectedPatient(prev => ({
+        ...prev,
+        consultations: [newConsultation, ...(prev.consultations || [])]
+      }));
+    }
+    fetchAllData();
+    handleCancelConsultation(patientIdSaved || activeConsultationPatientId, true);
+  };
+
+  const openAppointmentForPatient = (patient = null) => {
+    setAppointmentDefaultPatient(patient || null);
+    setIsAppointmentModalOpen(true);
+  };
+
+  const openConsultationForPatient = async (patient = null) => {
+    setPreviousTab(activeTab);
+    const targetPatient = patient || selectedPatient || (patients && patients.length > 0 ? patients[0] : null);
+    if (targetPatient) {
+      const pId = targetPatient.id || targetPatient.codeBarre;
+      setSelectedPatient(targetPatient);
+      setActiveConsultationPatientId(pId);
+
+      const existingDraft = ongoingConsultations.find(c => String(c.patientId) === String(pId));
+      if (!existingDraft) {
+        let dbRef = {};
+        try {
+          const res = await fetch('/api/consultations/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ patientId: pId, deviceId })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            dbRef = {
+              idConsultation: data.idConsultation,
+              idVersement: data.idVersement,
+              exercice: data.exercice,
+              prixConsultation: data.prixConsultation,
+              isExisting: !!data.isExisting
+            };
+          }
+        } catch (e) {
+          console.error('Failed to start ongoing consultation on server:', e);
+        }
+
+        const newDraft = {
+          patientId: pId,
+          patient: targetPatient,
+          chiefComplaint: '',
+          diagnosis: '',
+          clinicalNotes: '',
+          vitalsAtVisit: `BP: ${targetPatient.vitals?.bloodPressure || '120/80'} | HR: ${targetPatient.vitals?.heartRate || '72 bpm'}`,
+          doctor: clinicInfo?.doctorNameFr || '',
+          department: targetPatient.department || 'ORL',
+          prescriptions: [{ name: '', dosage: '', frequency: 'Once daily', duration: '30 days' }],
+          ...dbRef
+        };
+
+        setOngoingConsultations(prev => [...prev, newDraft]);
+      }
+    }
+    setActiveTab('add-consultation');
+  };
+
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+    try {
+      localStorage.setItem('el_iyada_user', JSON.stringify(user));
+    } catch (e) {}
+    checkDevicePoste(deviceId, true);
+  };
+
+  const handleSaveDeviceName = async (enteredName) => {
+    try {
+      const res = await fetch('/api/poste', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId, nomDevice: enteredName })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDeviceName(data.nomDevice || '');
+      } else {
+        setDeviceName(enteredName || '');
+      }
+    } catch (e) {
+      console.error('Failed to save device name:', e);
+      setDeviceName(enteredName || '');
+    } finally {
+      setShowDeviceModal(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setSelectedPatientState(null);
+    setPatients([]);
+    setAppointments([]);
+    setStats({});
+    setEditingPatient(null);
+    setEditingAppointment(null);
+    setAppointmentDefaultPatient(null);
+    setActiveTabState('overview');
+    try {
+      localStorage.removeItem('el_iyada_user');
+      localStorage.removeItem('el_iyada_selected_patient_id');
+      localStorage.removeItem('el_iyada_active_tab');
+      window.history.pushState(null, '', window.location.pathname || '/');
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (input, init = {}) => {
+      const headers = new Headers(init.headers || {});
+      try {
+        if (deviceId) {
+          headers.set('x-device-id', deviceId);
+        }
+        const savedUser = localStorage.getItem('el_iyada_user');
+        if (savedUser) {
+          const parsedUser = JSON.parse(savedUser);
+          if (parsedUser?.id) {
+            headers.set('x-user-id', String(parsedUser.id));
+          }
+        }
+      } catch (e) {}
+
+      const response = await originalFetch(input, { ...init, headers });
+      if (response.status === 401) {
+        handleLogout();
+      }
+      return response;
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [deviceId]);
+
+  // If user is not authenticated, show Login Screen
+  if (!currentUser) {
+    return <LoginScreen onLogin={handleLogin} lang={lang} setLang={setLang} />;
+  }
+
+  return (
+    <ConfirmDialogProvider>
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+        {/* Top Animated Progress Bar */}
+        {loading && (
+          <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-slate-900 overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-teal-500 via-cyan-400 to-emerald-400 animate-pulse w-full"></div>
+          </div>
+        )}
+
+        {/* Top Header */}
+        <Header
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSelectTab={setActiveTab}
+          activeTab={activeTab}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          lang={lang}
+          setLang={setLang}
+          theme={theme}
+          setTheme={setTheme}
+          clinicInfo={clinicInfo}
+          onRefreshData={fetchAllData}
+          deviceId={deviceId}
+          deviceName={deviceName}
+        />
+
+        {/* Main Container */}
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          {/* Navigation Sidebar */}
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            selectedPatient={selectedPatient}
+            ongoingConsultations={ongoingConsultations}
+            activeConsultationPatientId={activeConsultationPatientId}
+            onSelectConsultationDraft={handleSelectConsultationDraft}
+            lang={lang}
+          />
+
+          {/* Dynamic Main Workspace Content */}
+          <main className={`flex-1 p-4 md:p-6 overflow-y-auto w-full ${['add-consultation', 'medical-history'].includes(activeTab) ? 'max-w-none' : 'max-w-7xl mx-auto'}`}>
+            {loading ? (
+              <div className="space-y-6">
+                {/* Progress Bar Header */}
+                <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-teal-400">
+                      <div className="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin"></div>
+                      {lang === 'fr' ? 'Chargement des données en cours...' : 'Loading database records...'}
+                    </div>
+                    <span className="text-xs font-mono text-slate-400">
+                      {clinicInfo?.dbName || stats?.dbName ? `MySQL ${clinicInfo?.dbName || stats?.dbName}` : 'MySQL'}
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-teal-500 to-cyan-400 h-full w-2/3 animate-pulse"></div>
+                  </div>
+                </div>
+
+                {/* Skeleton Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div key={i} className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4 animate-pulse">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-2xl bg-slate-800"></div>
+                        <div className="space-y-2 flex-1">
+                          <div className="h-4 bg-slate-800 rounded w-3/4"></div>
+                          <div className="h-3 bg-slate-800/60 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                      <div className="h-10 bg-slate-900 rounded-xl"></div>
+                      <div className="h-12 bg-slate-900/50 rounded-lg"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                {activeTab === 'overview' && (
+                  <DashboardOverview
+                    stats={stats}
+                    patients={patients}
+                    appointments={appointments}
+                    clinicInfo={clinicInfo}
+                    onSelectPatient={handleSelectPatient}
+                    onOpenNewAppointment={() => openAppointmentForPatient()}
+                    onSelectTab={setActiveTab}
+                    onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
+                    lang={lang}
+                  />
+                )}
+
+                {activeTab === 'patients' && (
+                  <PatientList
+                    patients={patients}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    onSelectPatient={handleSelectPatient}
+                    onOpenNewAppointment={openAppointmentForPatient}
+                    onOpenNewConsultation={openConsultationForPatient}
+                    onEditPatient={handleEditPatient}
+                    onSelectTab={setActiveTab}
+                    lang={lang}
+                  />
+                )}
+
+                {activeTab === 'add-patient' && (
+                  <AddPatientForm
+                    patientToEdit={editingPatient}
+                    onAddPatient={handlePatientAdded}
+                    onUpdatePatient={handlePatientUpdated}
+                    onCancel={() => {
+                      setEditingPatient(null);
+                      setActiveTab(previousTab || 'patients');
+                    }}
+                    lang={lang}
+                  />
+                )}
+
+                {activeTab === 'add-consultation' && (() => {
+                  const activeDraft = ongoingConsultations.find(c => String(c.patientId) === String(activeConsultationPatientId)) || ongoingConsultations[0];
+                  return (
+                    <AddConsultationModal
+                      key={activeDraft ? activeDraft.patientId : 'default-consultation'}
+                      draft={activeDraft}
+                      patient={activeDraft?.patient || selectedPatient}
+                      patients={patients}
+                      clinicInfo={clinicInfo}
+                      onSelectPatient={(p) => {
+                        setSelectedPatient(p);
+                        setActiveConsultationPatientId(p.id || p.codeBarre);
+                      }}
+                      onUpdateDraft={handleUpdateConsultationDraft}
+                      onConsultationAdded={handleConsultationAdded}
+                      onCancel={handleCancelConsultation}
+                      onEditPatient={handleEditPatient}
+                      onOpenNewConsultation={() => openConsultationForPatient()}
+                      lang={lang}
+                    />
+                  );
+                })()}
+
+                {activeTab === 'medical-history' && (
+                  <PatientMedicalHistory
+                    selectedPatient={selectedPatient}
+                    onSelectPatient={setSelectedPatient}
+                    allPatients={patients}
+                    onOpenNewConsultation={() => openConsultationForPatient()}
+                    onOpenNewAppointment={() => openAppointmentForPatient()}
+                    onEditPatient={handleEditPatient}
+                    lang={lang}
+                    clinicInfo={clinicInfo}
+                    onSelectTab={setActiveTab}
+                  />
+                )}
+
+                {activeTab === 'appointments' && (
+                  <AppointmentsList
+                    appointments={appointments}
+                    patients={patients}
+                    onOpenNewAppointment={openAppointmentForPatient}
+                    onOpenEditAppointment={openEditAppointmentModal}
+                    onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
+                    onEditAppointment={handleEditAppointment}
+                    onSelectPatient={handleSelectPatient}
+                    lang={lang}
+                  />
+                )}
+
+                {activeTab === 'settings' && (
+                  <ClinicSettings
+                    clinicInfo={clinicInfo}
+                    onUpdateClinicInfo={setClinicInfo}
+                    currentUser={currentUser}
+                    onLogout={handleLogout}
+                    lang={lang}
+                    currentTheme={theme}
+                    onThemeChange={setTheme}
+                  />
+                )}
+
+                {activeTab === 'data-templates' && (
+                  <DataTemplates
+                    lang={lang}
+                  />
+                )}
+              </>
+            )}
+          </main>
+        </div>
+
+        {/* Global Modals */}
+        <NewAppointmentModal
+          isOpen={isAppointmentModalOpen}
+          onClose={() => {
+            setIsAppointmentModalOpen(false);
+            setEditingAppointment(null);
+          }}
+          patients={patients}
+          defaultPatient={appointmentDefaultPatient}
+          appointmentToEdit={editingAppointment}
+          onAppointmentCreated={handleAppointmentCreated}
+          onAppointmentUpdated={handleEditAppointment}
+          lang={lang}
+          clinicInfo={clinicInfo}
+        />
+
+        <DeviceNameModal
+          isOpen={showDeviceModal}
+          onClose={() => setShowDeviceModal(false)}
+          onSave={handleSaveDeviceName}
+          currentDeviceId={deviceId}
+          lang={lang}
+        />
+      </div>
+    </ConfirmDialogProvider>
+  );
+}
+
+
+
+--- Executing blocking command at Sun Aug  9 23:51:14 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && more < server\index.js
+--- Output ---
+import express from "express";
+import cors from "cors";
+
+import authRouter from "./routes/auth.js";
+import statsRouter from "./routes/stats.js";
+import settingsRouter from "./routes/settings.js";
+import patientsRouter from "./routes/patients.js";
+import appointmentsRouter from "./routes/appointments.js";
+import consultationsRouter from "./routes/consultations.js";
+import posteRouter from "./routes/poste.js";
+import medicationsRouter from "./routes/medications.js";
+import medicamentsRouter from "./routes/medicaments.js"; // Import the new router
+
+import { myDB } from "./db.js";
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+app.set('trust proxy', true);
+
+app.use(cors());
+app.use(express.json());
+
+// Mount Modular API Routers
+app.use("/api", authRouter);
+app.use("/api/stats", statsRouter);
+app.use("/api", settingsRouter);
+app.use("/api/patients", patientsRouter);
+app.use("/api/appointments", appointmentsRouter);
+app.use("/api/consultations", consultationsRouter);
+app.use("/api/poste", posteRouter);
+app.use("/api/medications", medicationsRouter);
+app.use("/api", medicamentsRouter); // Use the new router
+
+app.listen(PORT, () => {
+  console.log(
+    `MediPulse Backend connected to MySQL (${myDB}) running on http://localhost:${PORT}`
+  );
+});
+
+
+
+--- Executing blocking command at Sun Aug  9 23:51:15 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && more < server\routes\auth.js & echo. & more < server\middleware\auth.js
+--- Output ---
+import express from "express";
+import pool from "../db.js";
+
+const router = express.Router();
+
+// POST /api/login - Validate login credentials against users table or master citrus login
+router.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (username === "citrus" && password === "citrus21012013") {
+      let doctorName = "Médecin";
+      try {
+        const [paramRows] = await pool.query("SELECT NOM_FR FROM parametre LIMIT 1");
+        if (paramRows.length > 0 && paramRows[0].NOM_FR) {
+          doctorName = paramRows[0].NOM_FR;
+        }
+      } catch (e) {}
+
+      return res.json({
+        user: {
+          id: 1,
+          name: doctorName,
+          username: "citrus",
+          role: "Doctor",
+          department: "General Practice",
+        },
+        token: "token-citrus-master",
+      });
+    }
+
+    const [rows] = await pool.query("SELECT * FROM users WHERE USERNAME = ?", [
+      username,
+    ]);
+    if (rows.length > 0) {
+      const user = rows[0];
+      if (
+        password === user.PASS_MOB ||
+        password === user.PASSWORD ||
+        password === "citrus21012013"
+      ) {
+        return res.json({
+          user: {
+            id: user.ID_USER,
+            name: user.USERNAME,
+            username: user.USERNAME,
+            role: user.TYPE === 1 ? "Doctor" : "Receptionist",
+            department: "General Practice",
+          },
+          token: `token-${user.ID_USER}`,
+        });
+      }
+    }
+
+    return res.status(401).json({ error: "Invalid username or password" });
+  } catch (err) {
+    console.error("API Login Error:", err);
+    res.status(500).json({ error: "Login service failed" });
+  }
+});
+
+export default router;
+ 
+import pool from "../db.js";
+
+export async function requireExistingUser(req, res, next) {
+  if (req.path === "/login") {
+    return next();
+  }
+
+  try {
+    const userId = Number(req.headers["x-user-id"]);
+    if (!userId) {
+      return res.status(401).json({ error: "Session expired" });
+    }
+
+    const [rows] = await pool.query(
+      "SELECT ID_USER FROM users WHERE ID_USER = ? LIMIT 1",
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ error: "Session expired" });
+    }
+
+    return next();
+  } catch (err) {
+    console.error("Auth guard error:", err);
+    return res.status(500).json({ error: "Authentication check failed" });
+  }
+}
+
+
+
+--- Executing blocking command at Sun Aug  9 23:51:15 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && more < server\db.js
+--- Output ---
+import path from 'path';
+import sqlite3 from 'sqlite3';
+import { open } from 'sqlite';
+import mysql from 'mysql2/promise';
+
+let db;
+export let dbConfig;
+export let myDB;
+
+if (process.env.NODE_ENV === 'development') {
+  // SQLite connection for development
+  const dbPath = path.join(process.cwd(), 'dev.sqlite');
+  open({
+    filename: dbPath,
+    driver: sqlite3.Database
+  }).then((d) => {
+    db = d;
+    console.log('SQLite database connected');
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS medicaments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nom TEXT NOT NULL,
+        dci TEXT,
+        forme TEXT
+      );
+    `);
+  }).catch((err) => {
+    console.error('Error connecting to SQLite:', err);
+  });
+} else {
+  // MySQL connection for production
+  dbConfig = {
+    host: process.env.DB_HOST || '127.0.0.1',
+    user: process.env.DB_USER || 'citrus',
+    password: process.env.DB_PASSWORD || 'citrus21012013',
+    database: process.env.DB_NAME || 'docteur5'
+  };
+
+  myDB = dbConfig.database;
+
+  const pool = mysql.createPool({
+    ...dbConfig,
+    waitForConnections: true,
+    connectionLimit: 30,
+    queueLimit: 0,
+    charset: 'utf8mb4'
+  });
+  db = pool;
+  console.log('MySQL database pool created for production');
+}
+
+export default db;
+
+
+
+--- Executing blocking command at Sun Aug  9 23:51:16 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && more < src\components\DashboardOverview.jsx & echo. & more < src\components\LoginScreen.jsx
+--- Output ---
+import React from 'react';
+import { Users, Calendar, AlertTriangle, Activity, UserPlus, ArrowUpRight, Search, Clock, CheckCircle2, ChevronRight } from 'lucide-react';
+import { translations } from '../translations';
+
+export default function DashboardOverview({
+  stats,
+  patients,
+  appointments,
+  clinicInfo,
+  onSelectPatient,
+  onOpenNewAppointment,
+  onSelectTab,
+  onUpdateAppointmentStatus,
+  lang = 'fr'
+}) {
+  const t = translations[lang] || translations.fr;
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  const recentPatients = patients.slice(0, 5);
+  const todaysAppointments = appointments.filter(a => a.date === todayStr);
+
+  return (
+    <div className="space-y-6">
+      {/* Top Welcome Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-teal-950/40 p-6 border border-slate-800 shadow-xl">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-white tracking-tight">{lang === 'fr' ? "Aperçu des Opérations Cliniques" : "Clinical Operations Overview"}</h2>
+            <p className="text-sm text-slate-400 mt-1 max-w-xl">
+              {lang === 'fr' ? (
+                <>Bienvenue. Vous avez <span className="text-teal-400 font-semibold">{stats.todayAppointments || 0} rendez-vous</span> aujourd'hui.</>
+              ) : (
+                <>Welcome back. You have <span className="text-teal-400 font-semibold">{stats.todayAppointments || 0} appointments</span> scheduled for today.</>
+              )}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => onSelectTab('add-patient')}
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl text-sm font-semibold border border-slate-700 flex items-center gap-2 transition shadow-md"
+            >
+              <UserPlus className="w-4 h-4 text-teal-400" />
+              {t.newPatientBtn}
+            </button>
+            <button
+              onClick={() => onOpenNewAppointment()}
+              className="px-4 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-slate-950 rounded-xl text-sm font-bold flex items-center gap-2 transition shadow-lg shadow-teal-500/20"
+            >
+              <Calendar className="w-4 h-4 stroke-[2.5]" />
+              {t.newApptBtn}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Metrics Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Card 1: Total Patients */}
+        <div className="glass-panel p-5 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase text-slate-400 tracking-wider">{t.metricTotalPatients}</span>
+            <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center border border-teal-500/20">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-baseline justify-between">
+            <span className="text-3xl font-extrabold text-white tracking-tight">{stats.totalPatients || 0}</span>
+            <span className="text-xs font-semibold text-teal-400 bg-teal-950/60 px-2 py-0.5 rounded border border-teal-800/40">
+              {t.statusActive}
+            </span>
+          </div>
+          <div className="mt-2 text-xs text-slate-500 flex items-center gap-1">
+            <span>+{stats.newPatientsThisMonth || 0} {lang === 'fr' ? 'nouveaux dossiers ce mois' : 'new records this month'}</span>
+          </div>
+        </div>
+
+        {/* Card 2: Today's Appointments */}
+        <div className="glass-panel p-5 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase text-slate-400 tracking-wider">{t.metricTodayAppts}</span>
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20">
+              <Calendar className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-baseline justify-between">
+            <span className="text-3xl font-extrabold text-white tracking-tight">{stats.todayAppointments || 0}</span>
+            <span className="text-xs font-semibold text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">
+              {t.todaySchedule}
+            </span>
+          </div>
+          <div className="mt-2 text-xs text-slate-500">
+            {stats.nextAppointment ? (
+              `${lang === 'fr' ? 'Prochain RDV' : 'Next visit'}: ${stats.nextAppointment.time} (${stats.nextAppointment.patientName})`
+            ) : (
+              lang === 'fr' ? 'Aucun RDV prévu pour aujourd\'hui' : 'No appointments scheduled for today'
+            )}
+          </div>
+        </div>
+
+
+
+        {/* Card 4: Active Treatments */}
+        <div className="glass-panel p-5 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase text-slate-400 tracking-wider">{t.metricActiveTreatments}</span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+              <Activity className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-baseline justify-between">
+            <span className="text-3xl font-extrabold text-white tracking-tight">{stats.activeTreatments || 0}</span>
+            <span className="text-xs font-semibold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">
+              Ongoing
+            </span>
+          </div>
+          <div className="mt-2 text-xs text-slate-500">
+            100% EHR compliance rate
+          </div>
+        </div>
+      </div>
+
+      {/* Clinic Parameters Banner */}
+      <div className="glass-panel p-5 rounded-2xl border border-teal-500/30 bg-gradient-to-r from-slate-900/90 via-slate-900/95 to-teal-950/30 shadow-lg relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/40 rounded-full">
+                {lang === 'fr' ? 'Configuration Cabinet' : 'Cabinet Configuration'}
+              </span>
+              {clinicInfo?.ordre && (
+                <span className="text-[11px] font-mono text-slate-400">
+                  Ordre: <strong className="text-slate-200">{clinicInfo.ordre}</strong>
+                </span>
+              )}
+            </div>
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              {clinicInfo?.doctorNameFr || ''}
+              {clinicInfo?.doctorNameAr && (
+                <span className="text-sm font-semibold text-teal-400 font-serif mr-2" dir="rtl">
+                  ({clinicInfo.doctorNameAr})
+                </span>
+              )}
+            </h3>
+            {clinicInfo?.specialtyFr && (
+              <p className="text-xs text-slate-300 font-medium leading-relaxed max-w-3xl">
+                {clinicInfo.specialtyFr}
+              </p>
+            )}
+            {clinicInfo?.msgOrd && (
+              <div className="mt-2 text-xs italic text-teal-300 bg-teal-950/40 border border-teal-800/50 px-3 py-1.5 rounded-xl inline-block">
+                💬 "{clinicInfo.msgOrd}"
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row md:flex-col items-start md:items-end gap-1.5 text-xs text-slate-400 shrink-0">
+            {clinicInfo?.addressFr && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-500">📍</span>
+                <span className="text-slate-200 font-semibold">{clinicInfo.addressFr}</span>
+              </div>
+            )}
+            {clinicInfo?.phone && (
+              <div className="flex items-center gap-1.5 font-mono">
+                <span className="text-slate-500">📞</span>
+                <span className="text-teal-400 font-bold">{clinicInfo.phone}</span>
+              </div>
+            )}
+            {clinicInfo?.email && (
+              <div className="flex items-center gap-1.5 text-[11px]">
+                <span className="text-slate-500">✉️</span>
+                <span className="text-slate-300">{clinicInfo.email}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Grid: Recent Patients & Upcoming Schedule */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column (2 cols): Patient Registry Table */}
+        <div className="lg:col-span-2 glass-panel rounded-2xl border border-slate-800 p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Users className="w-4 h-4 text-teal-400" /> Recent Patient Directory
+              </h3>
+              <p className="text-xs text-slate-400">Quick access to patient charts & medical history</p>
+            </div>
+            <button
+              onClick={() => onSelectTab('patients')}
+              className="text-xs font-semibold text-teal-400 hover:text-teal-300 flex items-center gap-1 transition"
+            >
+              View All Patients ({patients.length}) <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-300">
+              <thead className="text-xs uppercase bg-slate-900/80 text-slate-400 rounded-lg">
+                <tr>
+                  <th className="py-2.5 px-3">Patient</th>
+                  <th className="py-2.5 px-3">MRN / Age</th>
+                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3">Primary Condition</th>
+                  <th className="py-2.5 px-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {recentPatients.map((patient) => {
+                  let statusColor = 'bg-teal-950 text-teal-400 border-teal-800';
+                  if (patient.status === 'Critical') statusColor = 'bg-rose-950 text-rose-400 border-rose-800';
+                  if (patient.status === 'Inpatient') statusColor = 'bg-amber-950 text-amber-400 border-amber-800';
+
+                  return (
+                    <tr key={patient.id} className="hover:bg-slate-800/40 transition">
+                      <td className="py-3 px-3">
+                        <div className="font-semibold text-white">{patient.lastName} {patient.firstName}</div>
+                        <div className="text-xs text-slate-400">{patient.phone}</div>
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="font-mono text-xs text-slate-300">{patient.mrn}</div>
+                        <div className="text-xs text-slate-400">{patient.age} yrs • {patient.gender} • <span className="text-teal-300 font-bold">{patient.bloodGroup}</span></div>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusColor}`}>
+                          {patient.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="text-xs text-slate-300 block truncate max-w-[140px]">
+                          {patient.chronicConditions.length > 0 ? patient.chronicConditions[0] : 'None recorded'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        <button
+                          onClick={() => onSelectPatient(patient)}
+                          className="px-3 py-1.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded-lg text-xs font-medium border border-teal-500/30 transition inline-flex items-center gap-1"
+                        >
+                          View History <ArrowUpRight className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Right Column: Upcoming Schedule & Critical Alerts */}
+        <div className="space-y-6">
+
+
+          {/* Today's Schedule */}
+          <div className="glass-panel rounded-2xl border border-slate-800 p-5 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Clock className="w-4 h-4 text-cyan-400" /> Today's Appointments
+              </h3>
+              <button
+                onClick={() => onSelectTab('appointments')}
+                className="text-xs text-cyan-400 hover:underline"
+              >
+                Full Calendar
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {todaysAppointments.map((apt, index) => (
+                <div key={apt.id || index} className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 hover:border-slate-700 transition space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 bg-teal-500/20 text-teal-300 font-mono font-black border border-teal-500/40 rounded-lg text-xs shadow-sm">
+                        N° {apt.num_rdv || (index + 1)}
+                      </span>
+                      {apt.time ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-amber-500/15 text-amber-300 font-mono font-black border border-amber-400/40 rounded-lg text-xs shadow-sm">
+                          <Clock className="w-3 h-3 text-amber-400 shrink-0" />
+                          {apt.time}
+                        </span>
+                      ) : null}
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                      apt.status === 'Completed'
+                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                        : apt.status === 'In Progress'
+                        ? 'bg-amber-950 text-amber-400 border border-amber-800'
+                        : 'bg-slate-800 text-slate-300'
+                    }`}>
+                      {apt.status}
+                    </span>
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-semibold text-white">{apt.patientName}</div>
+                    <div className="text-xs text-slate-400">{apt.reason} • <span className="text-slate-300">{apt.department}</span></div>
+                  </div>
+
+                  {apt.status !== 'Completed' && (
+                    <div className="pt-1 flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => onUpdateAppointmentStatus(apt.id, 'Completed')}
+                        className="text-[11px] px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-md border border-emerald-500/30 flex items-center gap-1 transition"
+                      >
+                        <CheckCircle2 className="w-3 h-3" /> Mark Completed
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+ 
+import React, { useState, useEffect } from 'react';
+import { Activity, User, Lock, Eye, EyeOff, ShieldCheck, Stethoscope, ArrowRight, AlertCircle, Globe } from 'lucide-react';
+import { translations } from '../translations';
+
+export default function LoginScreen({ onLogin, lang = 'fr', setLang }) {
+  const t = translations[lang] || translations.fr;
+
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const medicalParagraphs = t.medicalParagraphs;
+
+  const [quoteIndex, setQuoteIndex] = useState(0);
+  const [fade, setFade] = useState(true);
+
+  // Increase rotation interval to 12 seconds with smooth fade
+  useEffect(() => {
+    setQuoteIndex(0);
+    setFade(true);
+  }, [lang]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFade(false);
+      setTimeout(() => {
+        setQuoteIndex((prev) => (prev + 1) % medicalParagraphs.length);
+        setFade(true);
+      }, 1000);
+    }, 12000);
+    return () => clearInterval(interval);
+  }, [medicalParagraphs.length]);
+
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!username.trim()) {
+      setError(t.userRequired || 'Veuillez saisir votre nom d\'utilisateur.');
+      return;
+    }
+    if (!password) {
+      setError(t.passRequired || 'Veuillez saisir votre mot de passe.');
+      return;
+    }
+
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim(), password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Nom d\'utilisateur ou mot de passe incorrect.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (data.user) {
+        onLogin(data.user);
+      } else {
+        setError('Réponse invalide du serveur.');
+        setIsSubmitting(false);
+      }
+    } catch (err) {
+      console.error('Login request error:', err);
+      setError('Impossible de se connecter au serveur backend MySQL.');
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
+      {/* Background Glows & Pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-900/30 via-slate-950 to-slate-950 pointer-events-none"></div>
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-10 right-10 w-80 h-80 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none"></div>
+
+
+      <div className="w-full max-w-md z-10 my-auto">
+        {/* Top Bar with Language Selector */}
+        <div className="flex justify-center mb-4">
+            <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 border border-slate-800 rounded-full shadow-lg backdrop-blur-md">
+                <Globe className="w-4 h-4 text-teal-400 ml-2 mr-1" />
+                <button
+                    onClick={() => setLang && setLang('fr')}
+                    className={`px-3 py-1 text-xs font-bold rounded-full transition-all flex items-center gap-1 ${lang === 'fr'
+                        ? 'bg-teal-500 text-slate-950 shadow-md shadow-teal-500/30'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                        }`}
+                >
+                    <span>🇫🇷</span> FR
+                </button>
+                <button
+                    onClick={() => setLang && setLang('en')}
+                    className={`px-3 py-1 text-xs font-bold rounded-full transition-all flex items-center gap-1 ${lang === 'en'
+                        ? 'bg-teal-500 text-slate-950 shadow-md shadow-teal-500/30'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                        }`}
+                >
+                    <span>🇬🇧</span> EN
+                </button>
+            </div>
+        </div>
+        {/* Brand Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl overflow-hidden border border-teal-500/40 shadow-xl shadow-teal-500/25 mb-4 p-0.5 bg-slate-900">
+            <img src="/el_iyada_logo.png" alt="EL IYADA Icon" className="w-full h-full object-cover rounded-[14px]" />
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white font-sans">
+            EL <span className="text-teal-400">IYADA</span>
+          </h1>
+
+          {/* Slow Animated Medical Paragraph (12s rotation) */}
+          <div className="min-h-[56px] flex items-center justify-center mt-2.5 px-3">
+            <p className={`text-xs sm:text-sm text-teal-200/90 font-medium max-w-sm mx-auto leading-relaxed italic transition-all duration-1000 ease-in-out ${fade ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-2 scale-95'}`}>
+              "{medicalParagraphs[quoteIndex]}"
+            </p>
+          </div>
+          <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-teal-500/50 to-transparent mx-auto mt-3 rounded-full animate-pulse"></div>
+        </div>
+
+        {/* Login Card */}
+        <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-7 shadow-2xl shadow-slate-950/80">
+          <div className="flex items-center justify-between pb-5 border-b border-slate-800/80 mb-6">
+            <div>
+              <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-teal-400" />
+                {t.staffSignIn}
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">{t.signInSubtitle}</p>
+            </div>
+            <span className="px-2.5 py-1 text-[11px] font-semibold text-teal-300 bg-teal-950/80 border border-teal-800/60 rounded-full">
+              {t.secureNotice}
+            </span>
+          </div>
+
+          {error && (
+            <div className="mb-5 p-3.5 rounded-xl bg-rose-950/60 border border-rose-800/60 text-rose-300 text-xs flex items-start gap-2.5 animate-shake">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold block">{t.authWarningTitle}</span>
+                {error}
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username Input */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                {t.usernameLabel}
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <User className="w-4 h-4" />
+                </div>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder={t.usernamePlaceholder}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+
+            {/* Password Input */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300">
+                  {t.passwordLabel}
+                </label>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t.passwordPlaceholder}
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
+                  disabled={isSubmitting}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200 transition"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Remember Me */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded bg-slate-950 border-slate-700 text-teal-500 focus:ring-teal-500/20 focus:ring-offset-0"
+                />
+                <span>{t.rememberSession}</span>
+              </label>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-teal-500/25 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-70"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
+                  <span>{t.authenticating}</span>
+                </>
+              ) : (
+                <>
+                  <span>{t.signInBtn}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Footer info */}
+        <div className="mt-6 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+          <Stethoscope className="w-3.5 h-3.5 text-teal-500/70" />
+          <span>{t.hipaaNotice}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+--- Executing blocking command at Sun Aug  9 23:51:28 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && npm run build
+--- Output ---
+
+> medical-dashboard@1.0.0 build
+> vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 2472 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                          1.62 kB │ gzip:   0.72 kB
+dist/assets/vendor-react-xiMy4gMA.css    8.16 kB │ gzip:   1.68 kB
+dist/assets/index-Cm9uZ4aX.css          89.29 kB │ gzip:  13.73 kB
+dist/assets/vendor-icons-Do_BSMWi.js    27.58 kB │ gzip:   5.32 kB
+dist/assets/vendor-utils-Cq2ZjpmG.js    68.73 kB │ gzip:  25.27 kB
+dist/assets/vendor-react-FLhuSGI9.js   181.15 kB │ gzip:  56.97 kB
+dist/assets/index-bRqp0zj0.js          517.21 kB │ gzip: 104.93 kB
+✓ built in 38.13s
+npm notice
+npm notice New major version of npm available! 11.12.1 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice
+
+
+
+--- Executing blocking command at Sun Aug  9 23:52:29 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && npm audit --omit=dev
+--- Output ---
+found 0 vulnerabilities
+
+
+
+--- Executing blocking command at Sun Aug  9 23:52:35 2026 ---
+> call "C:\Users\amorb\.eigent\user_43204\spaces\space_20e6460486344c3fa032ff56b0c8d005\projects\1786315732996-7437\runs\1786315733214-8256\single_agent\.venv\Scripts\activate.bat" && git ls-files | findstr /v /i "node_modules" | find /c /v "" & git ls-files | findstr /i "README .gitignore test spec"
+--- Output ---
+95
+node_modules/@alloc/quick-lru/readme.md
+node_modules/@babel/code-frame/README.md
+node_modules/@babel/compat-data/README.md
+node_modules/@babel/core/README.md
+node_modules/@babel/generator/README.md
+node_modules/@babel/helper-compilation-targets/README.md
+node_modules/@babel/helper-globals/README.md
+node_modules/@babel/helper-module-imports/README.md
+node_modules/@babel/helper-module-transforms/README.md
+node_modules/@babel/helper-plugin-utils/README.md
+node_modules/@babel/helper-string-parser/README.md
+node_modules/@babel/helper-validator-identifier/README.md
+node_modules/@babel/helper-validator-option/README.md
+node_modules/@babel/helpers/README.md
+node_modules/@babel/helpers/lib/helpers/classCheckPrivateStaticAccess.js
+node_modules/@babel/helpers/lib/helpers/classCheckPrivateStaticAccess.js.map
+node_modules/@babel/helpers/lib/helpers/classCheckPrivateStaticFieldDescriptor.js
+node_modules/@babel/helpers/lib/helpers/classCheckPrivateStaticFieldDescriptor.js.map
+node_modules/@babel/helpers/lib/helpers/classPrivateFieldInitSpec.js
+node_modules/@babel/helpers/lib/helpers/classPrivateFieldInitSpec.js.map
+node_modules/@babel/helpers/lib/helpers/classPrivateMethodInitSpec.js
+node_modules/@babel/helpers/lib/helpers/classPrivateMethodInitSpec.js.map
+node_modules/@babel/helpers/lib/helpers/classStaticPrivateFieldSpecGet.js
+node_modules/@babel/helpers/lib/helpers/classStaticPrivateFieldSpecGet.js.map
+node_modules/@babel/helpers/lib/helpers/classStaticPrivateFieldSpecSet.js
+node_modules/@babel/helpers/lib/helpers/classStaticPrivateFieldSpecSet.js.map
+node_modules/@babel/parser/README.md
+node_modules/@babel/plugin-transform-react-jsx-self/README.md
+node_modules/@babel/plugin-transform-react-jsx-source/README.md
+node_modules/@babel/template/README.md
+node_modules/@babel/traverse/README.md
+node_modules/@babel/traverse/lib/path/introspection.js
+node_modules/@babel/traverse/lib/path/introspection.js.map
+node_modules/@babel/types/README.md
+node_modules/@babel/types/lib/validators/isSpecifierDefault.js
+node_modules/@babel/types/lib/validators/isSpecifierDefault.js.map
+node_modules/@date-fns/tz/README.md
+node_modules/@esbuild/win32-x64/README.md
+node_modules/@jridgewell/gen-mapping/README.md
+node_modules/@jridgewell/remapping/README.md
+node_modules/@jridgewell/resolve-uri/README.md
+node_modules/@jridgewell/sourcemap-codec/README.md
+node_modules/@jridgewell/trace-mapping/README.md
+node_modules/@nodelib/fs.scandir/README.md
+node_modules/@nodelib/fs.stat/README.md
+node_modules/@nodelib/fs.walk/README.md
+node_modules/@rollup/rollup-win32-x64-gnu/README.md
+node_modules/@rollup/rollup-win32-x64-msvc/README.md
+node_modules/@types/babel__core/README.md
+node_modules/@types/babel__generator/README.md
+node_modules/@types/babel__template/README.md
+node_modules/@types/babel__traverse/README.md
+node_modules/@types/estree/README.md
+node_modules/@types/node/README.md
+node_modules/@types/node/inspector.d.ts
+node_modules/@types/node/inspector.generated.d.ts
+node_modules/@types/node/inspector/promises.d.ts
+node_modules/@types/node/test.d.ts
+node_modules/@types/node/test/reporters.d.ts
+node_modules/@types/prop-types/README.md
+node_modules/@types/react-dom/README.md
+node_modules/@types/react-dom/test-utils/index.d.ts
+node_modules/@types/react/README.md
+node_modules/@vitejs/plugin-react/README.md
+node_modules/accepts/README.md
+node_modules/any-promise/README.md
+node_modules/anymatch/README.md
+node_modules/arg/README.md
+node_modules/array-flatten/README.md
+node_modules/autoprefixer/README.md
+node_modules/autoprefixer/lib/hacks/flex-spec.js
+node_modules/aws-ssl-profiles/README.md
+node_modules/baseline-browser-mapping/README.md
+node_modules/binary-extensions/readme.md
+node_modules/body-parser/README.md
+node_modules/body-parser/node_modules/debug/README.md
+node_modules/body-parser/node_modules/debug/src/inspector-log.js
+node_modules/body-parser/node_modules/ms/readme.md
+node_modules/braces/README.md
+node_modules/browserslist/README.md
+node_modules/bytes/Readme.md
+node_modules/call-bind-apply-helpers/README.md
+node_modules/call-bind-apply-helpers/test/index.js
+node_modules/call-bound/README.md
+node_modules/call-bound/test/index.js
+node_modules/camelcase-css/README.md
+node_modules/caniuse-lite/README.md
+node_modules/caniuse-lite/data/features/date-tolocaledatestring.js
+node_modules/caniuse-lite/data/features/testfeat.js
+node_modules/chokidar/README.md
+node_modules/chokidar/node_modules/glob-parent/README.md
+node_modules/commander/Readme.md
+node_modules/content-disposition/README.md
+node_modules/content-type/README.md
+node_modules/convert-source-map/README.md
+node_modules/cookie-signature/Readme.md
+node_modules/cookie/README.md
+node_modules/cors/README.md
+node_modules/cssesc/README.md
+node_modules/csstype/README.md
+node_modules/date-fns/README.md
+node_modules/date-fns/_lib/test.cjs
+node_modules/date-fns/_lib/test.d.cts
+node_modules/date-fns/_lib/test.d.ts
+node_modules/date-fns/_lib/test.js
+node_modules/date-fns/_lib/test/tzOffsetTransitions.cjs
+node_modules/date-fns/_lib/test/tzOffsetTransitions.d.cts
+node_modules/date-fns/_lib/test/tzOffsetTransitions.d.ts
+node_modules/date-fns/_lib/test/tzOffsetTransitions.js
+node_modules/date-fns/fp/minutesToHours.cjs
+node_modules/date-fns/fp/minutesToHours.d.cts
+node_modules/date-fns/fp/minutesToHours.d.ts
+node_modules/date-fns/fp/minutesToHours.js
+node_modules/date-fns/fp/minutesToMilliseconds.cjs
+node_modules/date-fns/fp/minutesToMilliseconds.d.cts
+node_modules/date-fns/fp/minutesToMilliseconds.d.ts
+node_modules/date-fns/fp/minutesToMilliseconds.js
+node_modules/date-fns/fp/minutesToSeconds.cjs
+node_modules/date-fns/fp/minutesToSeconds.d.cts
+node_modules/date-fns/fp/minutesToSeconds.d.ts
+node_modules/date-fns/fp/minutesToSeconds.js
+node_modules/date-fns/minutesToHours.cjs
+node_modules/date-fns/minutesToHours.d.cts
+node_modules/date-fns/minutesToHours.d.ts
+node_modules/date-fns/minutesToHours.js
+node_modules/date-fns/minutesToMilliseconds.cjs
+node_modules/date-fns/minutesToMilliseconds.d.cts
+node_modules/date-fns/minutesToMilliseconds.d.ts
+node_modules/date-fns/minutesToMilliseconds.js
+node_modules/date-fns/minutesToSeconds.cjs
+node_modules/date-fns/minutesToSeconds.d.cts
+node_modules/date-fns/minutesToSeconds.d.ts
+node_modules/date-fns/minutesToSeconds.js
+node_modules/debug/README.md
+node_modules/denque/README.md
+node_modules/depd/Readme.md
+node_modules/destroy/README.md
+node_modules/didyoumean/README.md
+node_modules/dlv/README.md
+node_modules/dunder-proto/README.md
+node_modules/dunder-proto/test/get.js
+node_modules/dunder-proto/test/index.js
+node_modules/dunder-proto/test/set.js
+node_modules/ee-first/README.md
+node_modules/electron-to-chromium/README.md
+node_modules/encodeurl/README.md
+node_modules/es-define-property/README.md
+node_modules/es-define-property/test/index.js
+node_modules/es-errors/README.md
+node_modules/es-errors/test/index.js
+node_modules/es-object-atoms/README.md
+node_modules/es-object-atoms/test/index.js
+node_modules/esbuild/README.md
+node_modules/escalade/readme.md
+node_modules/escape-html/Readme.md
+node_modules/etag/README.md
+node_modules/express/Readme.md
+node_modules/express/node_modules/debug/README.md
+node_modules/express/node_modules/debug/src/inspector-log.js
+node_modules/express/node_modules/ms/readme.md
+node_modules/fast-glob/README.md
+node_modules/fast-glob/node_modules/glob-parent/README.md
+node_modules/fastq/README.md
+node_modules/fastq/test/example.ts
+node_modules/fastq/test/promise.js
+node_modules/fastq/test/test.js
+node_modules/fastq/test/tsconfig.json
+node_modules/fill-range/README.md
+node_modules/finalhandler/README.md
+node_modules/finalhandler/node_modules/debug/README.md
+node_modules/finalhandler/node_modules/debug/src/inspector-log.js
+node_modules/finalhandler/node_modules/ms/readme.md
+node_modules/forwarded/README.md
+node_modules/fraction.js/README.md
+node_modules/fraction.js/tests/fraction.test.js
+node_modules/fresh/README.md
+node_modules/function-bind/README.md
+node_modules/function-bind/test/.eslintrc
+node_modules/function-bind/test/index.js
+node_modules/generate-function/README.md
+node_modules/generate-function/test.js
+node_modules/gensync/README.md
+node_modules/gensync/test/.babelrc
+node_modules/gensync/test/index.test.js
+node_modules/get-intrinsic/README.md
+node_modules/get-intrinsic/test/GetIntrinsic.js
+node_modules/get-proto/README.md
+node_modules/get-proto/test/index.js
+node_modules/glob-parent/README.md
+node_modules/gopd/README.md
+node_modules/gopd/test/index.js
+node_modules/has-symbols/README.md
+node_modules/has-symbols/test/index.js
+node_modules/has-symbols/test/shams/core-js.js
+node_modules/has-symbols/test/shams/get-own-property-symbols.js
+node_modules/has-symbols/test/tests.js
+node_modules/hasown/README.md
+node_modules/http-errors/README.md
+node_modules/iconv-lite/README.md
+node_modules/inherits/README.md
+node_modules/ipaddr.js/README.md
+node_modules/is-binary-path/readme.md
+node_modules/is-core-module/README.md
+node_modules/is-core-module/test/index.js
+node_modules/is-extglob/README.md
+node_modules/is-glob/README.md
+node_modules/is-number/README.md
+node_modules/is-property/README.md
+node_modules/jiti/README.md
+node_modules/js-tokens/README.md
+node_modules/jsesc/README.md
+node_modules/json5/README.md
+node_modules/lilconfig/readme.md
+node_modules/lines-and-columns/README.md
+node_modules/long/README.md
+node_modules/loose-envify/README.md
+node_modules/lru-cache/README.md
+node_modules/lru.min/README.md
+node_modules/lucide-react/README.md
+node_modules/lucide-react/dist/esm/icons/inspect.js
+node_modules/lucide-react/dist/esm/icons/inspect.js.map
+node_modules/lucide-react/dist/esm/icons/inspection-panel.js
+node_modules/lucide-react/dist/esm/icons/inspection-panel.js.map
+node_modules/lucide-react/dist/esm/icons/test-tube-2.js
+node_modules/lucide-react/dist/esm/icons/test-tube-2.js.map
+node_modules/lucide-react/dist/esm/icons/test-tube-diagonal.js
+node_modules/lucide-react/dist/esm/icons/test-tube-diagonal.js.map
+node_modules/lucide-react/dist/esm/icons/test-tube.js
+node_modules/lucide-react/dist/esm/icons/test-tube.js.map
+node_modules/lucide-react/dist/esm/icons/test-tubes.js
+node_modules/lucide-react/dist/esm/icons/test-tubes.js.map
+node_modules/math-intrinsics/README.md
+node_modules/math-intrinsics/test/index.js
+node_modules/media-typer/README.md
+node_modules/merge-descriptors/README.md
+node_modules/merge2/README.md
+node_modules/methods/README.md
+node_modules/micromatch/README.md
+node_modules/mime-db/README.md
+node_modules/mime-types/README.md
+node_modules/mime/README.md
+node_modules/mime/src/test.js
+node_modules/ms/readme.md
+node_modules/mysql2/README.md
+node_modules/mysql2/node_modules/iconv-lite/README.md
+node_modules/mz/README.md
+node_modules/named-placeholders/README.md
+node_modules/nanoid/README.md
+node_modules/negotiator/README.md
+node_modules/node-releases/README.md
+node_modules/normalize-path/README.md
+node_modules/object-assign/readme.md
+node_modules/object-hash/readme.markdown
+node_modules/object-inspect/.eslintrc
+node_modules/object-inspect/.github/FUNDING.yml
+node_modules/object-inspect/.nycrc
+node_modules/object-inspect/CHANGELOG.md
+node_modules/object-inspect/LICENSE
+node_modules/object-inspect/example/all.js
+node_modules/object-inspect/example/circular.js
+node_modules/object-inspect/example/fn.js
+node_modules/object-inspect/example/inspect.js
+node_modules/object-inspect/index.js
+node_modules/object-inspect/package-support.json
+node_modules/object-inspect/package.json
+node_modules/object-inspect/readme.markdown
+node_modules/object-inspect/test-core-js.js
+node_modules/object-inspect/test/bigint.js
+node_modules/object-inspect/test/browser/dom.js
+node_modules/object-inspect/test/circular.js
+node_modules/object-inspect/test/deep.js
+node_modules/object-inspect/test/element.js
+node_modules/object-inspect/test/err.js
+node_modules/object-inspect/test/fakes.js
+node_modules/object-inspect/test/fn.js
+node_modules/object-inspect/test/global.js
+node_modules/object-inspect/test/has.js
+node_modules/object-inspect/test/holes.js
+node_modules/object-inspect/test/indent-option.js
+node_modules/object-inspect/test/inspect.js
+node_modules/object-inspect/test/lowbyte.js
+node_modules/object-inspect/test/number.js
+node_modules/object-inspect/test/quoteStyle.js
+node_modules/object-inspect/test/toStringTag.js
+node_modules/object-inspect/test/undef.js
+node_modules/object-inspect/test/values.js
+node_modules/object-inspect/util.inspect.js
+node_modules/on-finished/README.md
+node_modules/parseurl/README.md
+node_modules/path-parse/README.md
+node_modules/path-to-regexp/Readme.md
+node_modules/picocolors/README.md
+node_modules/picomatch/README.md
+node_modules/pify/readme.md
+node_modules/pirates/README.md
+node_modules/postcss-import/README.md
+node_modules/postcss-js/README.md
+node_modules/postcss-load-config/README.md
+node_modules/postcss-nested/README.md
+node_modules/postcss-selector-parser/README.md
+node_modules/postcss-value-parser/README.md
+node_modules/postcss/README.md
+node_modules/proxy-addr/README.md
+node_modules/qs/README.md
+node_modules/qs/test/empty-keys-cases.js
+node_modules/qs/test/parse.js
+node_modules/qs/test/stringify.js
+node_modules/qs/test/utils.js
+node_modules/queue-microtask/README.md
+node_modules/range-parser/README.md
+node_modules/raw-body/README.md
+node_modules/react-day-picker/README.md
+node_modules/react-dom/README.md
+node_modules/react-dom/cjs/react-dom-test-utils.development.js
+node_modules/react-dom/cjs/react-dom-test-utils.production.min.js
+node_modules/react-dom/test-utils.js
+node_modules/react-dom/umd/react-dom-test-utils.development.js
+node_modules/react-dom/umd/react-dom-test-utils.production.min.js
+node_modules/react-refresh/README.md
+node_modules/react/README.md
+node_modules/read-cache/README.md
+node_modules/readdirp/README.md
+node_modules/resolve/readme.markdown
+node_modules/resolve/test/core.js
+node_modules/resolve/test/default_paths.js
+node_modules/resolve/test/dotdot.js
+node_modules/resolve/test/dotdot/abc/index.js
+node_modules/resolve/test/dotdot/index.js
+node_modules/resolve/test/faulty_basedir.js
+node_modules/resolve/test/filter.js
+node_modules/resolve/test/filter_sync.js
+node_modules/resolve/test/home_paths.js
+node_modules/resolve/test/home_paths_sync.js
+node_modules/resolve/test/homedir.js
+node_modules/resolve/test/mock.js
+node_modules/resolve/test/mock_sync.js
+node_modules/resolve/test/module_dir.js
+node_modules/resolve/test/module_dir/xmodules/aaa/index.js
+node_modules/resolve/test/module_dir/ymodules/aaa/index.js
+node_modules/resolve/test/module_dir/zmodules/bbb/main.js
+node_modules/resolve/test/module_dir/zmodules/bbb/package.json
+node_modules/resolve/test/node-modules-paths.js
+node_modules/resolve/test/node_path.js
+node_modules/resolve/test/node_path/x/aaa/index.js
+node_modules/resolve/test/node_path/x/ccc/index.js
+node_modules/resolve/test/node_path/y/bbb/index.js
+node_modules/resolve/test/node_path/y/ccc/index.js
+node_modules/resolve/test/nonstring.js
+node_modules/resolve/test/pathfilter.js
+node_modules/resolve/test/pathfilter/deep_ref/main.js
+node_modules/resolve/test/pathfilter_sync.js
+node_modules/resolve/test/precedence.js
+node_modules/resolve/test/precedence/aaa.js
+node_modules/resolve/test/precedence/aaa/index.js
+node_modules/resolve/test/precedence/aaa/main.js
+node_modules/resolve/test/precedence/bbb.js
+node_modules/resolve/test/precedence/bbb/main.js
+node_modules/resolve/test/resolver.js
+node_modules/resolve/test/resolver/baz/doom.js
+node_modules/resolve/test/resolver/baz/package.json
+node_modules/resolve/test/resolver/baz/quux.js
+node_modules/resolve/test/resolver/browser_field/a.js
+node_modules/resolve/test/resolver/browser_field/b.js
+node_modules/resolve/test/resolver/browser_field/package.json
+node_modules/resolve/test/resolver/cup.coffee
+node_modules/resolve/test/resolver/dot_main/index.js
+node_modules/resolve/test/resolver/dot_main/package.json
+node_modules/resolve/test/resolver/dot_slash_main/index.js
+node_modules/resolve/test/resolver/dot_slash_main/package.json
+node_modules/resolve/test/resolver/false_main/index.js
+node_modules/resolve/test/resolver/false_main/package.json
+node_modules/resolve/test/resolver/foo.js
+node_modules/resolve/test/resolver/incorrect_main/index.js
+node_modules/resolve/test/resolver/incorrect_main/package.json
+node_modules/resolve/test/resolver/invalid_main/package.json
+node_modules/resolve/test/resolver/mug.coffee
+node_modules/resolve/test/resolver/mug.js
+node_modules/resolve/test/resolver/multirepo/lerna.json
+node_modules/resolve/test/resolver/multirepo/package.json
+node_modules/resolve/test/resolver/multirepo/packages/package-a/index.js
+node_modules/resolve/test/resolver/multirepo/packages/package-a/package.json
+node_modules/resolve/test/resolver/multirepo/packages/package-b/index.js
+node_modules/resolve/test/resolver/multirepo/packages/package-b/package.json
+node_modules/resolve/test/resolver/nested_symlinks/mylib/async.js
+node_modules/resolve/test/resolver/nested_symlinks/mylib/package.json
+node_modules/resolve/test/resolver/nested_symlinks/mylib/sync.js
+node_modules/resolve/test/resolver/other_path/lib/other-lib.js
+node_modules/resolve/test/resolver/other_path/root.js
+node_modules/resolve/test/resolver/quux/foo/index.js
+node_modules/resolve/test/resolver/same_names/foo.js
+node_modules/resolve/test/resolver/same_names/foo/index.js
+node_modules/resolve/test/resolver/symlinked/_/node_modules/foo.js
+node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep
+node_modules/resolve/test/resolver/symlinked/package/bar.js
+node_modules/resolve/test/resolver/symlinked/package/package.json
+node_modules/resolve/test/resolver/without_basedir/main.js
+node_modules/resolve/test/resolver_sync.js
+node_modules/resolve/test/shadowed_core.js
+node_modules/resolve/test/shadowed_core/node_modules/util/index.js
+node_modules/resolve/test/subdirs.js
+node_modules/resolve/test/symlinks.js
+node_modules/reusify/README.md
+node_modules/reusify/test.js
+node_modules/rollup/README.md
+node_modules/run-parallel/README.md
+node_modules/safe-buffer/README.md
+node_modules/safer-buffer/Readme.md
+node_modules/safer-buffer/tests.js
+node_modules/scheduler/README.md
+node_modules/semver/README.md
+node_modules/send/README.md
+node_modules/send/node_modules/debug/README.md
+node_modules/send/node_modules/debug/node_modules/ms/readme.md
+node_modules/send/node_modules/debug/src/inspector-log.js
+node_modules/serve-static/README.md
+node_modules/setprototypeof/README.md
+node_modules/setprototypeof/test/index.js
+node_modules/side-channel-list/README.md
+node_modules/side-channel-list/test/index.js
+node_modules/side-channel-map/README.md
+node_modules/side-channel-map/test/index.js
+node_modules/side-channel-weakmap/README.md
+node_modules/side-channel-weakmap/test/index.js
+node_modules/side-channel/README.md
+node_modules/side-channel/test/index.js
+node_modules/source-map-js/README.md
+node_modules/sql-escaper/README.md
+node_modules/statuses/README.md
+node_modules/sucrase/README.md
+node_modules/sucrase/dist/esm/util/getImportExportSpecifierInfo.js
+node_modules/sucrase/dist/types/util/getImportExportSpecifierInfo.d.ts
+node_modules/sucrase/dist/util/getImportExportSpecifierInfo.js
+node_modules/supports-preserve-symlinks-flag/README.md
+node_modules/supports-preserve-symlinks-flag/test/index.js
+node_modules/tailwindcss/README.md
+node_modules/tailwindcss/lib/postcss-plugins/nesting/README.md
+node_modules/tailwindcss/lib/value-parser/README.md
+node_modules/tailwindcss/src/postcss-plugins/nesting/README.md
+node_modules/tailwindcss/src/value-parser/README.md
+node_modules/thenify-all/README.md
+node_modules/thenify/README.md
+node_modules/tinyglobby/README.md
+node_modules/tinyglobby/node_modules/fdir/README.md
+node_modules/tinyglobby/node_modules/picomatch/README.md
+node_modules/to-regex-range/README.md
+node_modules/toidentifier/README.md
+node_modules/ts-interface-checker/README.md
+node_modules/type-is/README.md
+node_modules/undici-types/README.md
+node_modules/unpipe/README.md
+node_modules/update-browserslist-db/README.md
+node_modules/util-deprecate/README.md
+node_modules/utils-merge/README.md
+node_modules/vary/README.md
+node_modules/vite/README.md
+node_modules/yallist/README.md
+server/inspect_details_2026.js
+server/inspect_schema.js
+server/test_activation_options.js
+server/test_api_endpoints.js
+server/test_clinic_api.js
+server/test_consult.js
+server/test_db.js
+server/test_fullname_search.js
+server/test_insert_prescription.js
+server/test_key_tables.js
+server/test_login_api.js
+server/test_notes.js
+server/test_options_fields.js
+server/test_parametre.js
+server/test_patient_count.js
+server/test_queries.js
+
+
+

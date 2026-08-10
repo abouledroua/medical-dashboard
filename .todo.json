@@ -1,0 +1,22 @@
+[
+  {
+    "content": "Inspect project structure and documentation",
+    "active_form": "Inspecting project structure and documentation",
+    "status": "completed"
+  },
+  {
+    "content": "Review key implementation and UX",
+    "active_form": "Reviewing key implementation and UX",
+    "status": "completed"
+  },
+  {
+    "content": "Run available checks",
+    "active_form": "Running available checks",
+    "status": "completed"
+  },
+  {
+    "content": "Summarize strengths and recommendations",
+    "active_form": "Summarizing strengths and recommendations",
+    "status": "in_progress"
+  }
+]

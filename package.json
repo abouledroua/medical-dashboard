@@ -13,6 +13,7 @@
     "migrate": "node server/migrate_measurements.js"
   },
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^5.2.0",
     "cors": "^2.8.5",
     "date-fns": "^4.4.0",
     "express": "^4.19.2",
@@ -20,7 +21,9 @@
     "mysql2": "^3.23.1",
     "react": "^18.3.1",
     "react-day-picker": "^10.0.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

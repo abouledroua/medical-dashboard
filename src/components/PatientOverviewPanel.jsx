@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Activity, ShieldAlert, AlertTriangle, Edit3, Plus, Stethoscope, Save, X, CheckCircle2, Heart, Layers, User, Users, Sparkles, Calendar, TestTube, Trash2 } from 'lucide-react';
+import { translations } from '../translations';
 import { useConfirm } from '../context/ConfirmDialogContext';
 
 function normalizeList(val) {
@@ -26,6 +27,7 @@ export default function PatientOverviewPanel({
   title,
   clinicInfo
 }) {
+  const t = translations[lang] || translations.fr;
   const confirm = useConfirm();
   const [fullPatientData, setFullPatientData] = useState(patient);
   const [isEditingVitalsModal, setIsEditingVitalsModal] = useState(false);
@@ -366,9 +368,9 @@ export default function PatientOverviewPanel({
 
   const handleDeleteHeight = async (heightId) => {
     const isConfirmed = await confirm({
-      title: lang === 'fr' ? 'Supprimer la mesure' : 'Delete Height',
-      message: lang === 'fr' ? 'Voulez-vous vraiment supprimer cette mesure de taille ?' : 'Are you sure you want to delete this height record?',
-      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      title: t('deleteHeightTitle'),
+      message: t('deleteHeightMessage'),
+      confirmText: t('deleteConfirm'),
       variant: 'danger'
     });
     if (!isConfirmed) return;
@@ -384,9 +386,9 @@ export default function PatientOverviewPanel({
 
   const handleDeleteWeight = async (weightId) => {
     const isConfirmed = await confirm({
-      title: lang === 'fr' ? 'Supprimer la mesure' : 'Delete Weight',
-      message: lang === 'fr' ? 'Voulez-vous vraiment supprimer cette mesure de poids ?' : 'Are you sure you want to delete this weight record?',
-      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      title: t('deleteWeightTitle'),
+      message: t('deleteWeightMessage'),
+      confirmText: t('deleteConfirm'),
       variant: 'danger'
     });
     if (!isConfirmed) return;
@@ -402,9 +404,9 @@ export default function PatientOverviewPanel({
 
   const handleDeleteHeadCirc = async (id) => {
     const isConfirmed = await confirm({
-      title: lang === 'fr' ? 'Supprimer la mesure' : 'Delete Record',
-      message: lang === 'fr' ? 'Voulez-vous vraiment supprimer cette mesure de périmètre crânien ?' : 'Are you sure you want to delete this head circumference record?',
-      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      title: t('deleteHeadCircTitle'),
+      message: t('deleteHeadCircMessage'),
+      confirmText: t('deleteConfirm'),
       variant: 'danger'
     });
     if (!isConfirmed) return;
@@ -1945,7 +1947,7 @@ export default function PatientOverviewPanel({
                     rows={3}
                     value={editAlimentation}
                     onChange={(e) => setEditAlimentation(e.target.value)}
-                    placeholder={t.exDiet || (lang === 'fr' ? 'ex: Allaitement maternel / Régime hyposodé...' : 'e.g. Breastfeeding / Low sodium diet...')}
+                    placeholder={t.exDiet}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 text-xs focus:outline-none focus:border-amber-500 resize-y"
                   />
                   <div className="flex justify-end pt-1">
@@ -2109,6 +2111,48 @@ export default function PatientOverviewPanel({
                       <Save className="w-4 h-4" />
                       {isSaving ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Enregistrer' : 'Save')}
                     </button>
+                  </div>
+
+                  {/* List of Nutrition records for this Patient */}
+                  <div className="pt-3 border-t border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold uppercase text-slate-300 tracking-wider flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                        {lang === 'fr' ? 'Historique de l\'Alimentation' : 'Nutrition History'}
+                      </h4>
+                      {loadingNutritions && (
+                        <span className="text-[10px] text-amber-400 animate-pulse">{lang === 'fr' ? 'Chargement...' : 'Loading...'}</span>
+                      )}
+                    </div>
+
+                    {patientNutritions.length > 0 ? (
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                        {patientNutritions.map((nutr) => (
+                          <div
+                            key={nutr.id}
+                            className="p-3 bg-slate-900/90 border border-slate-800/90 rounded-xl flex items-start justify-between gap-6 hover:border-slate-700 transition"
+                          >
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-center gap-2 text-[11px] font-bold text-amber-400">
+                                <Calendar className="w-3 h-3 text-amber-400 shrink-0" />
+                                <span>{nutr.date}</span>
+                              </div>
+                              <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">{nutr.nutrition}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteNutrition(nutr.id)}
+                              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-lg transition shrink-0"
+                              title={lang === 'fr' ? 'Supprimer cet enregistrement' : 'Delete this record'}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-400" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl text-center text-slate-400 text-xs italic">{lang === 'fr' ? 'Aucun historique d’alimentation.' : 'No nutrition history.'}</div>
+                    )}
                   </div>
                 </div>
               )}

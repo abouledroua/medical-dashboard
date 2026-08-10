@@ -8,12 +8,26 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-CJql8R1p.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/vendor-utils-DQhDslZt.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-react-s4cH1K3w.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-icons-BqhC7Ok_.js">
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('el_iyada_theme');
+          if (saved) {
+            if (saved === 'dark') saved = 'dark-emerald';
+            if (saved === 'light') saved = 'light-medical';
+            document.documentElement.dataset.theme = saved;
+          } else {
+            document.documentElement.dataset.theme = 'dark-emerald';
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-bRqp0zj0.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-utils-Cq2ZjpmG.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-FLhuSGI9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-icons-Do_BSMWi.js">
     <link rel="stylesheet" crossorigin href="/assets/vendor-react-xiMy4gMA.css">
-    <link rel="stylesheet" crossorigin href="/assets/index-C_vuzb3Q.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-Cm9uZ4aX.css">
   </head>
   <body class="bg-slate-900 text-slate-100 font-sans antialiased min-h-screen">
     <div id="root"></div>

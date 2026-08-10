@@ -6,24 +6,35 @@ import {
   getOrCreateMedicamentPId,
   getOrCreateFormeId,
   getOrCreateDosageId,
-  getOrCreateFrequenceId
+  getOrCreateFrequenceId,
 } from "./consultationHelpers.js";
 
 const router = express.Router();
 
 // Helper 5: Ensure row in ordonnance_consult_YYYY header table when prescription is non-empty
-async function ensureOrdonnanceConsultHeader(idConsultation, patientId, exercice, assureInfo = null) {
+async function ensureOrdonnanceConsultHeader(
+  idConsultation,
+  patientId,
+  exercice,
+  assureInfo = null,
+) {
   const year = exercice || String(new Date().getFullYear());
   let targetTable = `ordonnance_consult_${year}`;
 
   const [tCheck] = await pool.query("SHOW TABLES LIKE ?", [targetTable]);
   if (tCheck.length === 0) {
-    const [allOrdTables] = await pool.query("SHOW TABLES LIKE 'ordonnance_consult_%'");
+    const [allOrdTables] = await pool.query(
+      "SHOW TABLES LIKE 'ordonnance_consult_%'",
+    );
     if (allOrdTables.length > 0) {
       const templateTable = Object.values(allOrdTables[0])[0];
-      await pool.query(`CREATE TABLE IF NOT EXISTS \`${targetTable}\` LIKE \`${templateTable}\``);
+      await pool.query(
+        `CREATE TABLE IF NOT EXISTS \`${targetTable}\` LIKE \`${templateTable}\``,
+      );
     } else {
-      const [singleCheck] = await pool.query("SHOW TABLES LIKE 'ordonnance_consult'");
+      const [singleCheck] = await pool.query(
+        "SHOW TABLES LIKE 'ordonnance_consult'",
+      );
       if (singleCheck.length > 0) {
         targetTable = "ordonnance_consult";
       } else {
@@ -40,18 +51,18 @@ async function ensureOrdonnanceConsultHeader(idConsultation, patientId, exercice
 
   try {
     const [cols] = await pool.query(`SHOW COLUMNS FROM \`${targetTable}\``);
-    const hasExCol = cols.some(c => c.Field.toUpperCase() === 'EXERCICE');
-    
+    const hasExCol = cols.some((c) => c.Field.toUpperCase() === "EXERCICE");
+
     let existing;
     if (hasExCol) {
       [existing] = await pool.query(
         `SELECT ID_CONSULTATION FROM \`${targetTable}\` WHERE ID_CONSULTATION = ? AND EXERCICE = ? LIMIT 1`,
-        [idConsultation, String(year)]
+        [idConsultation, String(year)],
       );
     } else {
       [existing] = await pool.query(
         `SELECT ID_CONSULTATION FROM \`${targetTable}\` WHERE ID_CONSULTATION = ? LIMIT 1`,
-        [idConsultation]
+        [idConsultation],
       );
     }
 
@@ -60,18 +71,35 @@ async function ensureOrdonnanceConsultHeader(idConsultation, patientId, exercice
     if (!assureInfo || !assureInfo.fullname) {
       const [pRows] = await pool.query(
         "SELECT NOM, PRENOM, AGE, SEXE, DATE_NAISSANCE, CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ? LIMIT 1",
-        [patientId, patientId]
+        [patientId, patientId],
       );
       if (pRows.length > 0) {
         patientInfo = pRows[0];
       }
     }
 
-    const fullnameVal = assureInfo?.fullname || [patientInfo.NOM || patientInfo.nom, patientInfo.PRENOM || patientInfo.prenom].filter(Boolean).join(' ') || '';
-    const ageVal = assureInfo?.age !== undefined && assureInfo?.age !== '' ? assureInfo.age : (patientInfo.AGE !== undefined ? patientInfo.AGE : 0);
-    const typeAgeVal = assureInfo?.typeAge || 'ans';
-    const sexeVal = assureInfo?.sexe || patientInfo.SEXE || 'M';
-    const infoSuppVal = assureInfo?.infoSupp || assureInfo?.info_sup || assureInfo?.INFO_SUP || '';
+    const fullnameVal =
+      assureInfo?.fullname ||
+      [
+        patientInfo.NOM || patientInfo.nom,
+        patientInfo.PRENOM || patientInfo.prenom,
+      ]
+        .filter(Boolean)
+        .join(" ") ||
+      "";
+    const ageVal =
+      assureInfo?.age !== undefined && assureInfo?.age !== ""
+        ? assureInfo.age
+        : patientInfo.AGE !== undefined
+          ? patientInfo.AGE
+          : 0;
+    const typeAgeVal = assureInfo?.typeAge || "ans";
+    const sexeVal = assureInfo?.sexe || patientInfo.SEXE || "M";
+    const infoSuppVal =
+      assureInfo?.infoSupp ||
+      assureInfo?.info_sup ||
+      assureInfo?.INFO_SUP ||
+      "";
 
     const rowData = {
       ID_CONSULTATION: idConsultation,
@@ -104,7 +132,7 @@ async function ensureOrdonnanceConsultHeader(idConsultation, patientId, exercice
 
       INFO_SUP: infoSuppVal,
       INFO_SUPP: infoSuppVal,
-      INFORMATION_SUPPLEMENTAIRE: infoSuppVal
+      INFORMATION_SUPPLEMENTAIRE: infoSuppVal,
     };
 
     if (existing.length === 0) {
@@ -119,20 +147,44 @@ async function ensureOrdonnanceConsultHeader(idConsultation, patientId, exercice
           fields.push(`\`${colName}\``);
           let val = rowData[colName];
           const colUpper = colName.toUpperCase();
-          const isNumType = c.Type.includes("int") || c.Type.includes("decimal") || c.Type.includes("float");
+          const isNumType =
+            c.Type.includes("int") ||
+            c.Type.includes("decimal") ||
+            c.Type.includes("float");
 
-          if ((colUpper.includes('SEXE') || colUpper.includes('GENDER')) && isNumType) {
-            if (typeof val === 'string') {
-              val = val.toUpperCase().startsWith('F') ? 2 : (val.toUpperCase().startsWith('M') ? 1 : 0);
+          if (
+            (colUpper.includes("SEXE") || colUpper.includes("GENDER")) &&
+            isNumType
+          ) {
+            if (typeof val === "string") {
+              val = val.toUpperCase().startsWith("F")
+                ? 2
+                : val.toUpperCase().startsWith("M")
+                  ? 1
+                  : 0;
             }
-          } else if (colUpper === 'TYPE' && isNumType) {
-            if (typeof val === 'string') {
+          } else if (colUpper === "TYPE" && isNumType) {
+            if (typeof val === "string") {
               const vLower = val.toLowerCase();
-              if (vLower === 'ans' || vLower === 'an' || vLower === 'years' || vLower === 'year') {
+              if (
+                vLower === "ans" ||
+                vLower === "an" ||
+                vLower === "years" ||
+                vLower === "year"
+              ) {
                 val = 1;
-              } else if (vLower === 'mois' || vLower === 'months' || vLower === 'month') {
+              } else if (
+                vLower === "mois" ||
+                vLower === "months" ||
+                vLower === "month"
+              ) {
                 val = 2;
-              } else if (vLower === 'jours' || vLower === 'jour' || vLower === 'days' || vLower === 'day') {
+              } else if (
+                vLower === "jours" ||
+                vLower === "jour" ||
+                vLower === "days" ||
+                vLower === "day"
+              ) {
                 val = 3;
               } else {
                 val = parseInt(val, 10) || 1;
@@ -140,7 +192,11 @@ async function ensureOrdonnanceConsultHeader(idConsultation, patientId, exercice
             } else {
               val = Number(val) || 1;
             }
-          } else if (colUpper.includes('AGE') && !colUpper.includes('TYPE') && isNumType) {
+          } else if (
+            colUpper.includes("AGE") &&
+            !colUpper.includes("TYPE") &&
+            isNumType
+          ) {
             val = parseInt(val, 10) || 0;
           }
 
@@ -149,7 +205,12 @@ async function ensureOrdonnanceConsultHeader(idConsultation, patientId, exercice
           fields.push(`\`${colName}\``);
           if (colName.toUpperCase().includes("ORDONNANCE")) {
             values.push(1);
-          } else if (colName.toUpperCase().startsWith("ID_") || c.Type.includes("int") || c.Type.includes("decimal") || c.Type.includes("float")) {
+          } else if (
+            colName.toUpperCase().startsWith("ID_") ||
+            c.Type.includes("int") ||
+            c.Type.includes("decimal") ||
+            c.Type.includes("float")
+          ) {
             values.push(0);
           } else {
             values.push("");
@@ -159,7 +220,10 @@ async function ensureOrdonnanceConsultHeader(idConsultation, patientId, exercice
 
       const fieldSql = fields.join(", ");
       const placeholderSql = fields.map(() => "?").join(", ");
-      await pool.query(`INSERT INTO \`${targetTable}\` (${fieldSql}) VALUES (${placeholderSql})`, values);
+      await pool.query(
+        `INSERT INTO \`${targetTable}\` (${fieldSql}) VALUES (${placeholderSql})`,
+        values,
+      );
     } else {
       // Update Assuré columns on existing header row
       const updateFields = [];
@@ -168,25 +232,54 @@ async function ensureOrdonnanceConsultHeader(idConsultation, patientId, exercice
       for (const c of cols) {
         const colName = c.Field;
         if (c.Extra.includes("auto_increment")) continue;
-        if (['ID_CONSULTATION', 'EXERCICE', 'DATE_ORDONNANCE'].includes(colName.toUpperCase())) continue;
+        if (
+          ["ID_CONSULTATION", "EXERCICE", "DATE_ORDONNANCE"].includes(
+            colName.toUpperCase(),
+          )
+        )
+          continue;
 
         if (rowData[colName] !== undefined) {
           let val = rowData[colName];
           const colUpper = colName.toUpperCase();
-          const isNumType = c.Type.includes("int") || c.Type.includes("decimal") || c.Type.includes("float");
+          const isNumType =
+            c.Type.includes("int") ||
+            c.Type.includes("decimal") ||
+            c.Type.includes("float");
 
-          if ((colUpper.includes('SEXE') || colUpper.includes('GENDER')) && isNumType) {
-            if (typeof val === 'string') {
-              val = val.toUpperCase().startsWith('F') ? 2 : (val.toUpperCase().startsWith('M') ? 1 : 0);
+          if (
+            (colUpper.includes("SEXE") || colUpper.includes("GENDER")) &&
+            isNumType
+          ) {
+            if (typeof val === "string") {
+              val = val.toUpperCase().startsWith("F")
+                ? 2
+                : val.toUpperCase().startsWith("M")
+                  ? 1
+                  : 0;
             }
-          } else if (colUpper === 'TYPE' && isNumType) {
-            if (typeof val === 'string') {
+          } else if (colUpper === "TYPE" && isNumType) {
+            if (typeof val === "string") {
               const vLower = val.toLowerCase();
-              if (vLower === 'ans' || vLower === 'an' || vLower === 'years' || vLower === 'year') {
+              if (
+                vLower === "ans" ||
+                vLower === "an" ||
+                vLower === "years" ||
+                vLower === "year"
+              ) {
                 val = 1;
-              } else if (vLower === 'mois' || vLower === 'months' || vLower === 'month') {
+              } else if (
+                vLower === "mois" ||
+                vLower === "months" ||
+                vLower === "month"
+              ) {
                 val = 2;
-              } else if (vLower === 'jours' || vLower === 'jour' || vLower === 'days' || vLower === 'day') {
+              } else if (
+                vLower === "jours" ||
+                vLower === "jour" ||
+                vLower === "days" ||
+                vLower === "day"
+              ) {
                 val = 3;
               } else {
                 val = parseInt(val, 10) || 1;
@@ -194,7 +287,11 @@ async function ensureOrdonnanceConsultHeader(idConsultation, patientId, exercice
             } else {
               val = Number(val) || 1;
             }
-          } else if (colUpper.includes('AGE') && !colUpper.includes('TYPE') && isNumType) {
+          } else if (
+            colUpper.includes("AGE") &&
+            !colUpper.includes("TYPE") &&
+            isNumType
+          ) {
             val = parseInt(val, 10) || 0;
           }
 
@@ -209,12 +306,12 @@ async function ensureOrdonnanceConsultHeader(idConsultation, patientId, exercice
           updateValues.push(String(year));
           await pool.query(
             `UPDATE \`${targetTable}\` SET ${updateFields.join(", ")} WHERE ID_CONSULTATION = ? AND EXERCICE = ?`,
-            updateValues
+            updateValues,
           );
         } else {
           await pool.query(
             `UPDATE \`${targetTable}\` SET ${updateFields.join(", ")} WHERE ID_CONSULTATION = ?`,
-            updateValues
+            updateValues,
           );
         }
       }
@@ -231,16 +328,24 @@ async function removeOrdonnanceConsultHeader(idConsultation, exercice) {
 
   const [tCheck] = await pool.query("SHOW TABLES LIKE ?", [targetTable]);
   if (tCheck.length === 0) {
-    const [allOrdTables] = await pool.query("SHOW TABLES LIKE 'ordonnance_consult_%'");
+    const [allOrdTables] = await pool.query(
+      "SHOW TABLES LIKE 'ordonnance_consult_%'",
+    );
     if (allOrdTables.length > 0) {
       targetTable = Object.values(allOrdTables[0])[0];
     }
   }
 
   try {
-    await pool.query(`DELETE FROM \`${targetTable}\` WHERE ID_CONSULTATION = ? AND EXERCICE = ?`, [idConsultation, year]);
+    await pool.query(
+      `DELETE FROM \`${targetTable}\` WHERE ID_CONSULTATION = ? AND EXERCICE = ?`,
+      [idConsultation, year],
+    );
   } catch (err) {
-    console.error(`Error deleting header row from ${targetTable}:`, err.message);
+    console.error(
+      `Error deleting header row from ${targetTable}:`,
+      err.message,
+    );
   }
 }
 
@@ -248,10 +353,14 @@ async function removeOrdonnanceConsultHeader(idConsultation, exercice) {
 async function ensureDetailsOrdonnanceTable(tableName) {
   const [tCheck] = await pool.query("SHOW TABLES LIKE ?", [tableName]);
   if (tCheck.length === 0) {
-    const [allDetailsTables] = await pool.query("SHOW TABLES LIKE 'details_ordonnance_%'");
+    const [allDetailsTables] = await pool.query(
+      "SHOW TABLES LIKE 'details_ordonnance_%'",
+    );
     if (allDetailsTables.length > 0) {
       const templateTable = Object.values(allDetailsTables[0])[0];
-      await pool.query(`CREATE TABLE IF NOT EXISTS \`${tableName}\` LIKE \`${templateTable}\``);
+      await pool.query(
+        `CREATE TABLE IF NOT EXISTS \`${tableName}\` LIKE \`${templateTable}\``,
+      );
     } else {
       await pool.query(`CREATE TABLE IF NOT EXISTS \`${tableName}\` (
         ID_CONSULTATION int NOT NULL,
@@ -274,26 +383,33 @@ router.get("/:id/consultations", async (req, res) => {
       [patId],
     );
 
-    const consultations = await Promise.all(obsRows.map(async (o) => {
-      const dateStr = o.date
-        ? new Date(o.date).toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0];
-      const assureInfo = await getAssureInfoForConsultation(o.id, dateStr, patId, o.clinicalNotes);
+    const consultations = await Promise.all(
+      obsRows.map(async (o) => {
+        const dateStr = o.date
+          ? new Date(o.date).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0];
+        const assureInfo = await getAssureInfoForConsultation(
+          o.id,
+          dateStr,
+          patId,
+          o.clinicalNotes,
+        );
 
-      return {
-        id: `c-${o.id}`,
-        date: dateStr,
-        time: "10:00 AM",
-        doctor: "Médecin",
-        department: "ORL",
-        chiefComplaint: "Medical Follow-up",
-        diagnosis: o.clinicalNotes || "Observation",
-        clinicalNotes: o.clinicalNotes || "Routine consultation completed.",
-        prescriptions: [],
-        assureInfo,
-        vitalsAtVisit: "BP: 120/80 | HR: 72 | SpO2: 98%",
-      };
-    }));
+        return {
+          id: `c-${o.id}`,
+          date: dateStr,
+          time: "10:00 AM",
+          doctor: "Médecin",
+          department: "ORL",
+          chiefComplaint: "Medical Follow-up",
+          diagnosis: o.clinicalNotes || "Observation",
+          clinicalNotes: o.clinicalNotes || "Routine consultation completed.",
+          prescriptions: [],
+          assureInfo,
+          vitalsAtVisit: "BP: 120/80 | HR: 72 | SpO2: 98%",
+        };
+      }),
+    );
 
     res.json(consultations);
   } catch (err) {
@@ -306,10 +422,12 @@ router.get("/:id/consultations", async (req, res) => {
 router.get("/:id/bilan-coche", async (req, res) => {
   try {
     const patId = req.params.id;
-    const [patRows] = await pool.query(
-      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
-    ).catch(() => [[]]);
+    const [patRows] = await pool
+      .query(
+        "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+        [patId, patId],
+      )
+      .catch(() => [[]]);
 
     const ids = [];
     if (patRows.length > 0) {
@@ -430,10 +548,12 @@ router.post("/:id/bilan-coche", async (req, res) => {
       return res.status(400).json({ error: "No bilans selected" });
     }
 
-    const [patRows] = await pool.query(
-      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
-    ).catch(() => [[]]);
+    const [patRows] = await pool
+      .query(
+        "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+        [patId, patId],
+      )
+      .catch(() => [[]]);
 
     const ids = [];
     if (patRows.length > 0) {
@@ -446,35 +566,47 @@ router.post("/:id/bilan-coche", async (req, res) => {
     const obsDate = new Date().toISOString().split("T")[0];
     const year = String(new Date().getFullYear());
 
-    let [cRows] = await pool.query(
-      "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
-      [ids]
-    ).catch(() => [[]]);
+    let [cRows] = await pool
+      .query(
+        "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
+        [ids],
+      )
+      .catch(() => [[]]);
 
     let idConsult, exYear;
     if (cRows.length > 0) {
       idConsult = cRows[0].ID_CONSULTATION;
       exYear = cRows[0].EXERCICE || year;
     } else {
-      const [cMax] = await pool.query(
-        "SELECT COALESCE(MAX(ID_CONSULTATION), 0) + 1 AS nextId FROM consultation WHERE EXERCICE = ?",
-        [year]
-      ).catch(() => [[{ nextId: 1 }]]);
+      const [cMax] = await pool
+        .query(
+          "SELECT COALESCE(MAX(ID_CONSULTATION), 0) + 1 AS nextId FROM consultation WHERE EXERCICE = ?",
+          [year],
+        )
+        .catch(() => [[{ nextId: 1 }]]);
       idConsult = cMax[0].nextId;
       exYear = year;
 
-      await pool.query(
-        "INSERT INTO consultation (ID_CONSULTATION, ID_MALADE, DATE_CONSULTATION, EXERCICE, TOTAL, ETAT, ID_USER, ID_VERSEMENT, ID_POSTE, FOCUS, INT_CONSULTATION, INT_LASER, INT_SCLERO) VALUES (?, ?, CURRENT_DATE(), ?, 0, 1, 1, 0, '', 0, 1, 0, 0)",
-        [idConsult, String(patientIdForInsert), year]
-      ).catch(err => console.error("Error creating consultation for bilan:", err));
+      await pool
+        .query(
+          "INSERT INTO consultation (ID_CONSULTATION, ID_MALADE, DATE_CONSULTATION, EXERCICE, TOTAL, ETAT, ID_USER, ID_VERSEMENT, ID_POSTE, FOCUS, INT_CONSULTATION, INT_LASER, INT_SCLERO) VALUES (?, ?, CURRENT_DATE(), ?, 0, 1, 1, 0, '', 0, 1, 0, 0)",
+          [idConsult, String(patientIdForInsert), year],
+        )
+        .catch((err) =>
+          console.error("Error creating consultation for bilan:", err),
+        );
     }
 
-    const [cols] = await pool.query("SHOW COLUMNS FROM bilan_consult_coche").catch(() => [[]]);
+    const [cols] = await pool
+      .query("SHOW COLUMNS FROM bilan_consult_coche")
+      .catch(() => [[]]);
     if (cols && cols.length > 0) {
-      const [existB] = await pool.query(
-        "SELECT * FROM bilan_consult_coche WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
-        [idConsult, String(exYear)]
-      ).catch(() => [[]]);
+      const [existB] = await pool
+        .query(
+          "SELECT * FROM bilan_consult_coche WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
+          [idConsult, String(exYear)],
+        )
+        .catch(() => [[]]);
 
       const bData = existB.length > 0 ? { ...existB[0] } : {};
       bData.ID_CONSULTATION = idConsult;
@@ -483,8 +615,8 @@ router.post("/:id/bilan-coche", async (req, res) => {
 
       if (selectedBilans) {
         for (const k in selectedBilans) {
-          if (k === 'AUTRE') {
-            bData.AUTRE = selectedBilans.AUTRE || '';
+          if (k === "AUTRE") {
+            bData.AUTRE = selectedBilans.AUTRE || "";
           } else if (selectedBilans[k]) {
             bData[k] = 1;
           } else {
@@ -494,7 +626,12 @@ router.post("/:id/bilan-coche", async (req, res) => {
       }
 
       if (existB.length > 0) {
-        await pool.query("DELETE FROM bilan_consult_coche WHERE ID_CONSULTATION = ? AND EXERCICE = ?", [idConsult, String(exYear)]).catch(() => {});
+        await pool
+          .query(
+            "DELETE FROM bilan_consult_coche WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
+            [idConsult, String(exYear)],
+          )
+          .catch(() => {});
       }
 
       const fields = [];
@@ -507,7 +644,12 @@ router.post("/:id/bilan-coche", async (req, res) => {
           values.push(bData[colName]);
         } else if (c.Null === "NO" && c.Default === null) {
           fields.push(`\`${colName}\``);
-          if (colName.toUpperCase().startsWith("ID_") || c.Type.includes("int") || c.Type.includes("decimal") || c.Type.includes("float")) {
+          if (
+            colName.toUpperCase().startsWith("ID_") ||
+            c.Type.includes("int") ||
+            c.Type.includes("decimal") ||
+            c.Type.includes("float")
+          ) {
             values.push(0);
           } else {
             values.push("");
@@ -517,7 +659,10 @@ router.post("/:id/bilan-coche", async (req, res) => {
 
       const fieldSql = fields.join(", ");
       const placeholderSql = fields.map(() => "?").join(", ");
-      await pool.query(`INSERT INTO bilan_consult_coche (${fieldSql}) VALUES (${placeholderSql})`, values);
+      await pool.query(
+        `INSERT INTO bilan_consult_coche (${fieldSql}) VALUES (${placeholderSql})`,
+        values,
+      );
     }
 
     res.status(200).json({ success: true, idConsultation: idConsult });
@@ -537,10 +682,12 @@ router.post("/:id/bilan-saisie", async (req, res) => {
       return res.status(400).json({ error: "Bilan text cannot be empty" });
     }
 
-    const [patRows] = await pool.query(
-      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
-    ).catch(() => [[]]);
+    const [patRows] = await pool
+      .query(
+        "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+        [patId, patId],
+      )
+      .catch(() => [[]]);
 
     const ids = [];
     if (patRows.length > 0) {
@@ -552,85 +699,143 @@ router.post("/:id/bilan-saisie", async (req, res) => {
 
     const year = String(new Date().getFullYear());
 
-    let [cRows] = await pool.query(
-      "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
-      [ids]
-    ).catch(() => [[]]);
+    let [cRows] = await pool
+      .query(
+        "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
+        [ids],
+      )
+      .catch(() => [[]]);
 
     let idConsult, exYear;
     if (cRows.length > 0) {
       idConsult = cRows[0].ID_CONSULTATION;
       exYear = cRows[0].EXERCICE || year;
     } else {
-      const [cMax] = await pool.query(
-        "SELECT COALESCE(MAX(ID_CONSULTATION), 0) + 1 AS nextId FROM consultation WHERE EXERCICE = ?",
-        [year]
-      ).catch(() => [[{ nextId: 1 }]]);
+      const [cMax] = await pool
+        .query(
+          "SELECT COALESCE(MAX(ID_CONSULTATION), 0) + 1 AS nextId FROM consultation WHERE EXERCICE = ?",
+          [year],
+        )
+        .catch(() => [[{ nextId: 1 }]]);
       idConsult = cMax[0].nextId;
       exYear = year;
 
-      await pool.query(
-        "INSERT INTO consultation (ID_CONSULTATION, ID_MALADE, DATE_CONSULTATION, EXERCICE, TOTAL, ETAT, ID_USER, ID_VERSEMENT, ID_POSTE, FOCUS, INT_CONSULTATION, INT_LASER, INT_SCLERO) VALUES (?, ?, CURRENT_DATE(), ?, 0, 1, 1, 0, '', 0, 1, 0, 0)",
-        [idConsult, String(patientIdForInsert), year]
-      ).catch(err => console.error("Error creating consultation for bilan saisie:", err));
+      await pool
+        .query(
+          "INSERT INTO consultation (ID_CONSULTATION, ID_MALADE, DATE_CONSULTATION, EXERCICE, TOTAL, ETAT, ID_USER, ID_VERSEMENT, ID_POSTE, FOCUS, INT_CONSULTATION, INT_LASER, INT_SCLERO) VALUES (?, ?, CURRENT_DATE(), ?, 0, 1, 1, 0, '', 0, 1, 0, 0)",
+          [idConsult, String(patientIdForInsert), year],
+        )
+        .catch((err) =>
+          console.error("Error creating consultation for bilan saisie:", err),
+        );
     }
 
     // Split text by : , ; or newline
-    const rawItems = text.trim().split(/[:,;\n]/).map(s => s.trim()).filter(Boolean);
+    const rawItems = text
+      .trim()
+      .split(/[:,;\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
     const savedBilanIds = [];
 
     for (const itemStr of rawItems) {
       // Find in bilan table
-      const [bCheck] = await pool.query(
-        "SELECT ID_BILAN FROM bilan WHERE LOWER(TRIM(DESIGNATION)) = LOWER(TRIM(?)) LIMIT 1",
-        [itemStr]
-      ).catch(() => [[]]);
+      const [bCheck] = await pool
+        .query(
+          "SELECT ID_BILAN FROM bilan WHERE LOWER(TRIM(DESIGNATION)) = LOWER(TRIM(?)) LIMIT 1",
+          [itemStr],
+        )
+        .catch(() => [[]]);
 
       let idBilan;
       if (bCheck.length > 0) {
         idBilan = bCheck[0].ID_BILAN;
       } else {
-        const [bMax] = await pool.query("SELECT COALESCE(MAX(ID_BILAN), 0) + 1 AS nextId FROM bilan").catch(() => [[{ nextId: 1 }]]);
+        const [bMax] = await pool
+          .query("SELECT COALESCE(MAX(ID_BILAN), 0) + 1 AS nextId FROM bilan")
+          .catch(() => [[{ nextId: 1 }]]);
         idBilan = bMax[0].nextId;
-        await pool.query(
-          "INSERT INTO bilan (ID_BILAN, DESIGNATION, ETAT) VALUES (?, ?, 1)",
-          [idBilan, itemStr]
-        ).catch(err => console.error("Error inserting new bilan item:", err));
+        await pool
+          .query(
+            "INSERT INTO bilan (ID_BILAN, DESIGNATION, ETAT) VALUES (?, ?, 1)",
+            [idBilan, itemStr],
+          )
+          .catch((err) =>
+            console.error("Error inserting new bilan item:", err),
+          );
       }
 
       // Insert into bilans_consult
-      const [bcCheck] = await pool.query(
-        "SELECT ID_BILAN FROM bilans_consult WHERE ID_CONSULTATION = ? AND ID_BILAN = ? AND EXERCICE = ?",
-        [idConsult, idBilan, String(exYear)]
-      ).catch(() => [[]]);
+      const [bcCheck] = await pool
+        .query(
+          "SELECT ID_BILAN FROM bilans_consult WHERE ID_CONSULTATION = ? AND ID_BILAN = ? AND EXERCICE = ?",
+          [idConsult, idBilan, String(exYear)],
+        )
+        .catch(() => [[]]);
 
       if (bcCheck.length === 0) {
-        await pool.query(
-          "INSERT INTO bilans_consult (ID_CONSULTATION, ID_BILAN, EXERCICE, RESULTAT) VALUES (?, ?, ?, '')",
-          [idConsult, idBilan, String(exYear)]
-        ).catch(err => console.error("Error inserting into bilans_consult:", err));
+        await pool
+          .query(
+            "INSERT INTO bilans_consult (ID_CONSULTATION, ID_BILAN, EXERCICE, RESULTAT) VALUES (?, ?, ?, '')",
+            [idConsult, idBilan, String(exYear)],
+          )
+          .catch((err) =>
+            console.error("Error inserting into bilans_consult:", err),
+          );
       }
 
       savedBilanIds.push(idBilan);
     }
 
-    res.json({ success: true, count: savedBilanIds.length, bilanIds: savedBilanIds });
+    res.json({
+      success: true,
+      count: savedBilanIds.length,
+      bilanIds: savedBilanIds,
+    });
   } catch (err) {
     console.error("POST /api/patients/:id/bilan-saisie error:", err);
     res.status(500).json({ error: "Failed to save free-text lab reports" });
   }
 });
 
+// DELETE /api/patients/:id/bilan-coche/:idConsultation/:exercice - Delete a bilan record from bilan_consult_coche and bilans_consult
+router.delete(
+  "/:id/bilan-coche/:idConsultation/:exercice",
+  async (req, res) => {
+    try {
+      const { idConsultation, exercice } = req.params;
+      const exYear = String(exercice || new Date().getFullYear());
+
+      // Delete from both possible bilan tables
+      await pool.query(
+        "DELETE FROM bilan_consult_coche WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
+        [idConsultation, exYear],
+      );
+      await pool.query(
+        "DELETE FROM bilans_consult WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
+        [idConsultation, exYear],
+      );
+      res.json({ success: true, message: "Bilan record deleted successfully" });
+    } catch (err) {
+      console.error("API DELETE /api/patients/:id/bilan-coche error:", err);
+      res.status(500).json({ error: "Failed to delete bilan record" });
+    }
+  },
+);
+
 // POST /api/patients/:id/arret - Save or update sick leave record in arret_consult
 router.post("/:id/arret", async (req, res) => {
   try {
     const patId = req.params.id;
-    const { days, startDate, endDate, reason, type, idConsultation, exercice } = req.body;
+    const { days, startDate, endDate, reason, type, idConsultation, exercice } =
+      req.body;
 
-    const [patRows] = await pool.query(
-      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
-    ).catch(() => [[]]);
+    const [patRows] = await pool
+      .query(
+        "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+        [patId, patId],
+      )
+      .catch(() => [[]]);
 
     const ids = [];
     if (patRows.length > 0) {
@@ -646,40 +851,58 @@ router.post("/:id/arret", async (req, res) => {
     let exYear = exercice;
 
     if (!idConsult) {
-      let [cRows] = await pool.query(
-        "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
-        [ids]
-      ).catch(() => [[]]);
+      let [cRows] = await pool
+        .query(
+          "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
+          [ids],
+        )
+        .catch(() => [[]]);
 
       if (cRows.length > 0) {
         idConsult = cRows[0].ID_CONSULTATION;
         exYear = cRows[0].EXERCICE || year;
       } else {
-        const [cMax] = await pool.query(
-          "SELECT COALESCE(MAX(ID_CONSULTATION), 0) + 1 AS nextId FROM consultation WHERE EXERCICE = ?",
-          [year]
-        ).catch(() => [[{ nextId: 1 }]]);
+        const [cMax] = await pool
+          .query(
+            "SELECT COALESCE(MAX(ID_CONSULTATION), 0) + 1 AS nextId FROM consultation WHERE EXERCICE = ?",
+            [year],
+          )
+          .catch(() => [[{ nextId: 1 }]]);
         idConsult = cMax[0].nextId;
         exYear = year;
 
-        await pool.query(
-          "INSERT INTO consultation (ID_CONSULTATION, ID_MALADE, DATE_CONSULTATION, EXERCICE, TOTAL, ETAT, ID_USER, ID_VERSEMENT, ID_POSTE, FOCUS, INT_CONSULTATION, INT_LASER, INT_SCLERO) VALUES (?, ?, CURRENT_DATE(), ?, 0, 1, 1, 0, '', 0, 1, 0, 0)",
-          [idConsult, String(patientIdForInsert), year]
-        ).catch(err => console.error("Error creating consultation for arret:", err));
+        await pool
+          .query(
+            "INSERT INTO consultation (ID_CONSULTATION, ID_MALADE, DATE_CONSULTATION, EXERCICE, TOTAL, ETAT, ID_USER, ID_VERSEMENT, ID_POSTE, FOCUS, INT_CONSULTATION, INT_LASER, INT_SCLERO) VALUES (?, ?, CURRENT_DATE(), ?, 0, 1, 1, 0, '', 0, 1, 0, 0)",
+            [idConsult, String(patientIdForInsert), year],
+          )
+          .catch((err) =>
+            console.error("Error creating consultation for arret:", err),
+          );
       }
     }
 
     const nbDays = parseInt(days, 10) || 1;
-    const typeVal = type === 'prolongation' ? 2 : type === 'reprise' ? 3 : 1;
+    const typeVal = type === "prolongation" ? 2 : type === "reprise" ? 3 : 1;
 
-    await pool.query(
-      "DELETE FROM arret_consult WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
-      [idConsult, String(exYear)]
-    ).catch(() => {});
+    await pool
+      .query(
+        "DELETE FROM arret_consult WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
+        [idConsult, String(exYear)],
+      )
+      .catch(() => {});
 
     await pool.query(
       "INSERT INTO arret_consult (ID_CONSULTATION, EXERCICE, DATE_ARRET, DATE_DEBUT, DATE_FIN, NB_JOUR, TYPE, OBS) VALUES (?, ?, CURRENT_DATE(), ?, ?, ?, ?, ?)",
-      [idConsult, String(exYear), startDate || new Date(), endDate || startDate, nbDays, typeVal, reason || '']
+      [
+        idConsult,
+        String(exYear),
+        startDate || new Date(),
+        endDate || startDate,
+        nbDays,
+        typeVal,
+        reason || "",
+      ],
     );
 
     res.json({ success: true, idConsultation: idConsult });
@@ -693,10 +916,12 @@ router.post("/:id/arret", async (req, res) => {
 router.get("/:id/arret-history", async (req, res) => {
   try {
     const patId = req.params.id;
-    const [patRows] = await pool.query(
-      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
-    ).catch(() => [[]]);
+    const [patRows] = await pool
+      .query(
+        "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+        [patId, patId],
+      )
+      .catch(() => [[]]);
 
     const ids = [];
     if (patRows.length > 0) {
@@ -705,7 +930,8 @@ router.get("/:id/arret-history", async (req, res) => {
     }
     if (ids.length === 0) ids.push(patId);
 
-    const [rows] = await pool.query(`
+    const [rows] = await pool.query(
+      `
       SELECT 
         AC.ID_CONSULTATION,
         AC.EXERCICE,
@@ -720,7 +946,9 @@ router.get("/:id/arret-history", async (req, res) => {
       INNER JOIN consultation C ON C.ID_CONSULTATION = AC.ID_CONSULTATION AND C.EXERCICE = AC.EXERCICE
       WHERE C.ID_MALADE IN (?) AND C.ETAT != 2
       ORDER BY AC.DATE_DEBUT DESC, AC.ID_CONSULTATION DESC
-    `, [ids]);
+    `,
+      [ids],
+    );
 
     res.json(rows);
   } catch (err) {
@@ -735,11 +963,32 @@ router.delete("/:id/arret/:idConsultation/:exercice", async (req, res) => {
     const { idConsultation, exercice } = req.params;
     await pool.query(
       "DELETE FROM arret_consult WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
-      [idConsultation, String(exercice)]
+      [idConsultation, String(exercice)],
     );
-    res.json({ success: true, message: "Sick leave record deleted successfully" });
+    res.json({
+      success: true,
+      message: "Sick leave record deleted successfully",
+    });
   } catch (err) {
     console.error("DELETE /api/patients/:id/arret error:", err);
+    res.status(500).json({ error: "Failed to delete sick leave" });
+  }
+});
+
+// DELETE /api/patients/:id/arret/:idConsultation/:exercice - Delete a sick leave record from arret_consult
+router.delete("/:id/arret/:idConsultation/:exercice", async (req, res) => {
+  try {
+    const { idConsultation, exercice } = req.params;
+    await pool.query(
+      "DELETE FROM arret_consult WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
+      [idConsultation, String(exercice)],
+    );
+    res.json({
+      success: true,
+      message: "Sick leave record deleted successfully",
+    });
+  } catch (err) {
+    console.error("API DELETE /api/patients/:id/arret error:", err);
     res.status(500).json({ error: "Failed to delete sick leave" });
   }
 });
@@ -753,7 +1002,7 @@ router.post("/:id/consultations", async (req, res) => {
 
     const [patRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
 
     const ids = [];
@@ -767,9 +1016,17 @@ router.post("/:id/consultations", async (req, res) => {
     // Only insert/update obs_malade if actual explicit observation text is provided by doctor (not raw JSON string)
     const { observation } = req.body;
     let cleanObs = null;
-    if (observation && typeof observation === 'string' && !observation.trim().startsWith('{')) {
+    if (
+      observation &&
+      typeof observation === "string" &&
+      !observation.trim().startsWith("{")
+    ) {
       cleanObs = observation.trim();
-    } else if (req.body.observationText && typeof req.body.observationText === 'string' && !req.body.observationText.trim().startsWith('{')) {
+    } else if (
+      req.body.observationText &&
+      typeof req.body.observationText === "string" &&
+      !req.body.observationText.trim().startsWith("{")
+    ) {
       cleanObs = req.body.observationText.trim();
     }
 
@@ -777,20 +1034,22 @@ router.post("/:id/consultations", async (req, res) => {
     if (cleanObs) {
       const [existingObs] = await pool.query(
         "SELECT ID FROM obs_malade WHERE ID_MALADE IN (?) AND DATE_OBS = ?",
-        [ids, obsDate]
+        [ids, obsDate],
       );
 
       if (existingObs.length === 0) {
         const [cols] = await pool.query("SHOW COLUMNS FROM obs_malade");
-        const idCol = cols.find(c => c.Field === 'ID');
-        const isAuto = idCol && idCol.Extra.includes('auto_increment');
+        const idCol = cols.find((c) => c.Field === "ID");
+        const isAuto = idCol && idCol.Extra.includes("auto_increment");
 
         let sql, params;
         if (isAuto) {
-          sql = "INSERT INTO obs_malade (ID_MALADE, DATE_OBS, OBS) VALUES (?, ?, ?)";
+          sql =
+            "INSERT INTO obs_malade (ID_MALADE, DATE_OBS, OBS) VALUES (?, ?, ?)";
           params = [patientIdForInsert, obsDate, cleanObs];
         } else {
-          sql = "INSERT INTO obs_malade (ID, ID_MALADE, DATE_OBS, OBS) VALUES ((SELECT COALESCE(MAX(t.ID), 0) + 1 FROM obs_malade t), ?, ?, ?)";
+          sql =
+            "INSERT INTO obs_malade (ID, ID_MALADE, DATE_OBS, OBS) VALUES ((SELECT COALESCE(MAX(t.ID), 0) + 1 FROM obs_malade t), ?, ?, ?)";
           params = [patientIdForInsert, obsDate, cleanObs];
         }
 
@@ -798,15 +1057,21 @@ router.post("/:id/consultations", async (req, res) => {
         newId = isAuto ? result.insertId : null;
       } else {
         newId = existingObs[0].ID;
-        await pool.query("UPDATE obs_malade SET OBS = ? WHERE ID = ?", [cleanObs, newId]);
+        await pool.query("UPDATE obs_malade SET OBS = ? WHERE ID = ?", [
+          cleanObs,
+          newId,
+        ]);
       }
     }
 
     // Update ETAT column to 1 in table consultation ONLY when user explicitly saves full consultation
-    if (ids.length > 0 && (req.body.isFullSave === true || req.body.validateConsultation === true)) {
+    if (
+      ids.length > 0 &&
+      (req.body.isFullSave === true || req.body.validateConsultation === true)
+    ) {
       await pool.query(
         "UPDATE consultation SET ETAT = 1 WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2",
-        [ids]
+        [ids],
       );
     }
 
@@ -816,14 +1081,14 @@ router.post("/:id/consultations", async (req, res) => {
       try {
         let [cRows] = await pool.query(
           "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
-          [ids]
+          [ids],
         );
 
         if (cRows.length === 0) {
           const year = String(new Date().getFullYear());
           const [cMax] = await pool.query(
             "SELECT COALESCE(MAX(ID_CONSULTATION), 0) + 1 AS nextId FROM consultation WHERE EXERCICE = ?",
-            [year]
+            [year],
           );
           const nextId = cMax[0].nextId;
 
@@ -834,7 +1099,7 @@ router.post("/:id/consultations", async (req, res) => {
             DATE_CONSULTATION: new Date(),
             EXERCICE: year,
             ETAT: 1,
-            TOTAL: 0
+            TOTAL: 0,
           };
 
           const fields = [];
@@ -849,7 +1114,12 @@ router.post("/:id/consultations", async (req, res) => {
               values.push(rowData[colName]);
             } else if (c.Null === "NO" && c.Default === null) {
               fields.push(`\`${colName}\``);
-              if (colName.toUpperCase().startsWith("ID_") || c.Type.includes("int") || c.Type.includes("decimal") || c.Type.includes("float")) {
+              if (
+                colName.toUpperCase().startsWith("ID_") ||
+                c.Type.includes("int") ||
+                c.Type.includes("decimal") ||
+                c.Type.includes("float")
+              ) {
                 values.push(0);
               } else {
                 values.push("");
@@ -859,7 +1129,10 @@ router.post("/:id/consultations", async (req, res) => {
 
           const fieldSql = fields.join(", ");
           const placeholderSql = fields.map(() => "?").join(", ");
-          await pool.query(`INSERT INTO consultation (${fieldSql}) VALUES (${placeholderSql})`, values);
+          await pool.query(
+            `INSERT INTO consultation (${fieldSql}) VALUES (${placeholderSql})`,
+            values,
+          );
 
           cRows = [{ ID_CONSULTATION: nextId, EXERCICE: year }];
         }
@@ -873,7 +1146,10 @@ router.post("/:id/consultations", async (req, res) => {
             let assureInfoObj = req.body.assureInfo || null;
             if (!assureInfoObj && req.body.clinicalNotes) {
               try {
-                const parsedNotes = typeof req.body.clinicalNotes === 'string' ? JSON.parse(req.body.clinicalNotes) : req.body.clinicalNotes;
+                const parsedNotes =
+                  typeof req.body.clinicalNotes === "string"
+                    ? JSON.parse(req.body.clinicalNotes)
+                    : req.body.clinicalNotes;
                 if (parsedNotes && parsedNotes.assureInfo) {
                   assureInfoObj = parsedNotes.assureInfo;
                 }
@@ -881,32 +1157,51 @@ router.post("/:id/consultations", async (req, res) => {
             }
 
             // Ensure header row exists in ordonnance_consult_YYYY
-            await ensureOrdonnanceConsultHeader(idConsultation, patientIdForInsert, exercice, assureInfoObj);
+            await ensureOrdonnanceConsultHeader(
+              idConsultation,
+              patientIdForInsert,
+              exercice,
+              assureInfoObj,
+            );
 
             // Ensure partition details table exists
             await ensureDetailsOrdonnanceTable(tableName);
 
-            const [tCheck] = await pool.query("SHOW TABLES LIKE ?", [tableName]);
+            const [tCheck] = await pool.query("SHOW TABLES LIKE ?", [
+              tableName,
+            ]);
             if (tCheck.length > 0) {
               // Clear prior prescriptions using BOTH ID_CONSULTATION AND EXERCICE
-              await pool.query(`DELETE FROM \`${tableName}\` WHERE ID_CONSULTATION = ? AND EXERCICE = ?`, [idConsultation, String(exercice)]);
+              await pool.query(
+                `DELETE FROM \`${tableName}\` WHERE ID_CONSULTATION = ? AND EXERCICE = ?`,
+                [idConsultation, String(exercice)],
+              );
 
               // Query columns ONCE before loop for high performance
-              const [dCols] = await pool.query(`SHOW COLUMNS FROM \`${tableName}\``);
+              const [dCols] = await pool.query(
+                `SHOW COLUMNS FROM \`${tableName}\``,
+              );
 
               let rxIndex = 1;
               for (const rx of prescriptions) {
                 if (!rx.name || !rx.name.trim()) continue;
                 const isType2 = Number(rx.type) === 2;
 
-                let medId = isType2 
+                let medId = isType2
                   ? await getOrCreateMedicamentPId(rx.name)
                   : await getOrCreateMedicationId(rx.name);
 
-                const formeId = await getOrCreateFormeId(rx.forme || '', medId);
+                const formeId = await getOrCreateFormeId(rx.forme || "", medId);
 
-                const dosageId = await getOrCreateDosageId(medId, rx.dosage, formeId);
-                const freqId = await getOrCreateFrequenceId(medId, rx.frequency);
+                const dosageId = await getOrCreateDosageId(
+                  medId,
+                  rx.dosage,
+                  formeId,
+                );
+                const freqId = await getOrCreateFrequenceId(
+                  medId,
+                  rx.frequency,
+                );
 
                 const rowData = {
                   ID_CONSULTATION: idConsultation,
@@ -916,7 +1211,7 @@ router.post("/:id/consultations", async (req, res) => {
                   FREQUENCE: rx.frequency || "",
                   QTE: rx.duration || "",
                   EXERCICE: String(exercice),
-                  ID_ORDONNANCE: rxIndex
+                  ID_ORDONNANCE: rxIndex,
                 };
 
                 if (formeId) rowData.ID_FORME = formeId;
@@ -937,7 +1232,12 @@ router.post("/:id/consultations", async (req, res) => {
                     dFields.push(`\`${colName}\``);
                     if (colName.toUpperCase().includes("ORDONNANCE")) {
                       dValues.push(rxIndex);
-                    } else if (colName.toUpperCase().startsWith("ID_") || c.Type.includes("int") || c.Type.includes("decimal") || c.Type.includes("float")) {
+                    } else if (
+                      colName.toUpperCase().startsWith("ID_") ||
+                      c.Type.includes("int") ||
+                      c.Type.includes("decimal") ||
+                      c.Type.includes("float")
+                    ) {
                       dValues.push(0);
                     } else {
                       dValues.push("");
@@ -947,10 +1247,12 @@ router.post("/:id/consultations", async (req, res) => {
 
                 const dFieldSql = dFields.join(", ");
                 const dPlaceholderSql = dFields.map(() => "?").join(", ");
-                const updateAssignments = dFields.map(f => `${f} = VALUES(${f})`).join(", ");
+                const updateAssignments = dFields
+                  .map((f) => `${f} = VALUES(${f})`)
+                  .join(", ");
                 await pool.query(
                   `INSERT INTO \`${tableName}\` (${dFieldSql}) VALUES (${dPlaceholderSql}) ON DUPLICATE KEY UPDATE ${updateAssignments}`,
-                  dValues
+                  dValues,
                 );
 
                 rxIndex++;
@@ -960,14 +1262,22 @@ router.post("/:id/consultations", async (req, res) => {
             // Prescription table is empty (all rows deleted): remove header row and details using BOTH ID_CONSULTATION AND EXERCICE
             await removeOrdonnanceConsultHeader(idConsultation, exercice);
 
-            const [tCheck] = await pool.query("SHOW TABLES LIKE ?", [tableName]);
+            const [tCheck] = await pool.query("SHOW TABLES LIKE ?", [
+              tableName,
+            ]);
             if (tCheck.length > 0) {
-              await pool.query(`DELETE FROM \`${tableName}\` WHERE ID_CONSULTATION = ? AND EXERCICE = ?`, [idConsultation, String(exercice)]);
+              await pool.query(
+                `DELETE FROM \`${tableName}\` WHERE ID_CONSULTATION = ? AND EXERCICE = ?`,
+                [idConsultation, String(exercice)],
+              );
             }
           }
         }
       } catch (errRx) {
-        console.error(`Error saving prescriptions to details_ordonnance:`, errRx);
+        console.error(
+          `Error saving prescriptions to details_ordonnance:`,
+          errRx,
+        );
       }
     }
 
@@ -975,7 +1285,10 @@ router.post("/:id/consultations", async (req, res) => {
     let selBilans = req.body.selectedBilans || null;
     if (!selBilans && req.body.clinicalNotes) {
       try {
-        const parsedNotes = typeof req.body.clinicalNotes === 'string' ? JSON.parse(req.body.clinicalNotes) : req.body.clinicalNotes;
+        const parsedNotes =
+          typeof req.body.clinicalNotes === "string"
+            ? JSON.parse(req.body.clinicalNotes)
+            : req.body.clinicalNotes;
         if (parsedNotes && parsedNotes.selectedBilans) {
           selBilans = parsedNotes.selectedBilans;
         }
@@ -986,13 +1299,15 @@ router.post("/:id/consultations", async (req, res) => {
       try {
         let [cRows] = await pool.query(
           "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
-          [ids]
+          [ids],
         );
         if (cRows.length > 0) {
           const idConsult = cRows[0].ID_CONSULTATION;
           const exYear = cRows[0].EXERCICE || new Date().getFullYear();
 
-          const [cols] = await pool.query("SHOW COLUMNS FROM bilan_consult_coche");
+          const [cols] = await pool.query(
+            "SHOW COLUMNS FROM bilan_consult_coche",
+          );
           if (cols && cols.length > 0) {
             const bData = {
               ID_CONSULTATION: idConsult,
@@ -1051,15 +1366,20 @@ router.post("/:id/consultations", async (req, res) => {
               TELETHORAX: selBilans.TELETHORAX ? 1 : 0,
               COPRO_PARASIT: selBilans.COPRO_PARASIT ? 1 : 0,
               DOSAGE_HORM_CROISS: selBilans.DOSAGE_HORM_CROISS ? 1 : 0,
-              SEROLOGIE_MALADIE_COELIAQUE: selBilans.SEROLOGIE_MALADIE_COELIAQUE ? 1 : 0,
+              SEROLOGIE_MALADIE_COELIAQUE: selBilans.SEROLOGIE_MALADIE_COELIAQUE
+                ? 1
+                : 0,
               ACS: selBilans.ACS ? 1 : 0,
               ANTI_TRANSGLUT: selBilans.ANTI_TRANSGLUT ? 1 : 0,
               ANTIENDOM: selBilans.ANTIENDOM ? 1 : 0,
               ANTI_GLIADINE: selBilans.ANTI_GLIADINE ? 1 : 0,
-              AUTRE: selBilans.AUTRE || ''
+              AUTRE: selBilans.AUTRE || "",
             };
 
-            await pool.query("DELETE FROM bilan_consult_coche WHERE ID_CONSULTATION = ? AND EXERCICE = ?", [idConsult, String(exYear)]);
+            await pool.query(
+              "DELETE FROM bilan_consult_coche WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
+              [idConsult, String(exYear)],
+            );
 
             const fields = [];
             const values = [];
@@ -1071,7 +1391,12 @@ router.post("/:id/consultations", async (req, res) => {
                 values.push(bData[colName]);
               } else if (c.Null === "NO" && c.Default === null) {
                 fields.push(`\`${colName}\``);
-                if (colName.toUpperCase().startsWith("ID_") || c.Type.includes("int") || c.Type.includes("decimal") || c.Type.includes("float")) {
+                if (
+                  colName.toUpperCase().startsWith("ID_") ||
+                  c.Type.includes("int") ||
+                  c.Type.includes("decimal") ||
+                  c.Type.includes("float")
+                ) {
                   values.push(0);
                 } else {
                   values.push("");
@@ -1081,7 +1406,10 @@ router.post("/:id/consultations", async (req, res) => {
 
             const fieldSql = fields.join(", ");
             const placeholderSql = fields.map(() => "?").join(", ");
-            await pool.query(`INSERT INTO bilan_consult_coche (${fieldSql}) VALUES (${placeholderSql})`, values);
+            await pool.query(
+              `INSERT INTO bilan_consult_coche (${fieldSql}) VALUES (${placeholderSql})`,
+              values,
+            );
           }
         }
       } catch (errBilan) {
@@ -1117,7 +1445,7 @@ router.get("/:id/nutrition", async (req, res) => {
     const patId = req.params.id;
     const [patRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
 
     const ids = [];
@@ -1136,13 +1464,15 @@ router.get("/:id/nutrition", async (req, res) => {
        JOIN alimentation a ON am.ID_ALIMENTATION = a.ID_ALIMENTATION
        WHERE am.ID_MALADE IN (?)
        ORDER BY am.DATE_PRISE DESC, am.ID_ALIMENTATION DESC`,
-      [ids]
+      [ids],
     );
 
     res.json(rows);
   } catch (err) {
     console.error("API GET /api/patients/:id/nutrition Error:", err);
-    res.status(500).json({ error: "Failed to fetch patient nutrition records" });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch patient nutrition records" });
   }
 });
 
@@ -1159,7 +1489,7 @@ router.post("/:id/nutrition", async (req, res) => {
 
     const [patRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
 
     const ids = [];
@@ -1175,28 +1505,30 @@ router.post("/:id/nutrition", async (req, res) => {
     let idAlimentation = null;
     const [existingAlim] = await pool.query(
       "SELECT ID_ALIMENTATION FROM alimentation WHERE DESIGNATION = ?",
-      [trimmedNutr]
+      [trimmedNutr],
     );
 
     if (existingAlim.length > 0) {
       idAlimentation = existingAlim[0].ID_ALIMENTATION;
     } else {
-      const [maxAlim] = await pool.query("SELECT COALESCE(MAX(ID_ALIMENTATION), 0) + 1 as nextId FROM alimentation");
+      const [maxAlim] = await pool.query(
+        "SELECT COALESCE(MAX(ID_ALIMENTATION), 0) + 1 as nextId FROM alimentation",
+      );
       idAlimentation = maxAlim[0].nextId;
       await pool.query(
         "INSERT INTO alimentation (ID_ALIMENTATION, DESIGNATION) VALUES (?, ?)",
-        [idAlimentation, trimmedNutr]
+        [idAlimentation, trimmedNutr],
       );
     }
 
     await pool.query(
       "DELETE FROM alimentation_malade WHERE ID_MALADE IN (?) AND DATE_PRISE = ?",
-      [ids, recordDate]
+      [ids, recordDate],
     );
 
     await pool.query(
       "INSERT INTO alimentation_malade (ID_ALIMENTATION, ID_MALADE, DATE_PRISE) VALUES (?, ?, ?)",
-      [idAlimentation, patientIdForInsert, recordDate]
+      [idAlimentation, patientIdForInsert, recordDate],
     );
 
     res.status(201).json({
@@ -1204,7 +1536,7 @@ router.post("/:id/nutrition", async (req, res) => {
       id: idAlimentation,
       patientId: patientIdForInsert,
       date: recordDate,
-      nutrition: trimmedNutr
+      nutrition: trimmedNutr,
     });
   } catch (err) {
     console.error("API POST /api/patients/:id/nutrition Error:", err);
@@ -1216,11 +1548,52 @@ router.post("/:id/nutrition", async (req, res) => {
 router.delete("/nutrition/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    await pool.query("DELETE FROM alimentation_malade WHERE ID_ALIMENTATION = ?", [id]);
+    await pool.query(
+      "DELETE FROM alimentation_malade WHERE ID_ALIMENTATION = ?",
+      [id],
+    );
     res.json({ success: true, deletedId: id });
   } catch (err) {
     console.error("API DELETE /api/patients/nutrition/:id Error:", err);
     res.status(500).json({ error: "Failed to delete nutrition record" });
+  }
+});
+
+// DELETE /api/patients/height/:id - Delete a height record from taille_malade
+router.delete("/height/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query("DELETE FROM taille_malade WHERE ID_TAILLE = ?", [id]);
+    res.json({ success: true, deletedId: id });
+  } catch (err) {
+    console.error("API DELETE /api/patients/height/:id Error:", err);
+    res.status(500).json({ error: "Failed to delete height record" });
+  }
+});
+
+// DELETE /api/patients/weight/:id - Delete a weight record from poids_malade
+router.delete("/weight/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query("DELETE FROM poids_malade WHERE ID_POIDS = ?", [id]);
+    res.json({ success: true, deletedId: id });
+  } catch (err) {
+    console.error("API DELETE /api/patients/weight/:id Error:", err);
+    res.status(500).json({ error: "Failed to delete weight record" });
+  }
+});
+
+// DELETE /api/patients/head-circ/:id - Delete a head circumference record from pc_malade
+router.delete("/head-circ/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query("DELETE FROM pc_malade WHERE ID_PC = ?", [id]);
+    res.json({ success: true, deletedId: id });
+  } catch (err) {
+    console.error("API DELETE /api/patients/head-circ/:id Error:", err);
+    res
+      .status(500)
+      .json({ error: "Failed to delete head circumference record" });
   }
 });
 
@@ -1231,7 +1604,7 @@ router.get("/:id/diag-consult", async (req, res) => {
     const patId = req.params.id;
     const [patRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
 
     const ids = [];
@@ -1250,13 +1623,15 @@ router.get("/:id/diag-consult", async (req, res) => {
        JOIN diagnostique d ON dm.ID_DIAG = d.ID_DIAG
        WHERE dm.ID_MALADE IN (?)
        ORDER BY dm.DATE_PRISE DESC, dm.ID_DIAG DESC`,
-      [ids]
+      [ids],
     );
 
     res.json(rows);
   } catch (err) {
     console.error("API GET /api/patients/:id/diag-consult Error:", err);
-    res.status(500).json({ error: "Failed to fetch patient consult diagnosis records" });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch patient consult diagnosis records" });
   }
 });
 
@@ -1273,7 +1648,7 @@ router.post("/:id/diag-consult", async (req, res) => {
 
     const [patRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
 
     const ids = [];
@@ -1289,28 +1664,30 @@ router.post("/:id/diag-consult", async (req, res) => {
     let idDiag = null;
     const [existingDiag] = await pool.query(
       "SELECT ID_DIAG FROM diagnostique WHERE DESIGNATION = ?",
-      [trimmedDiag]
+      [trimmedDiag],
     );
 
     if (existingDiag.length > 0) {
       idDiag = existingDiag[0].ID_DIAG;
     } else {
-      const [maxDiag] = await pool.query("SELECT COALESCE(MAX(ID_DIAG), 0) + 1 as nextId FROM diagnostique");
+      const [maxDiag] = await pool.query(
+        "SELECT COALESCE(MAX(ID_DIAG), 0) + 1 as nextId FROM diagnostique",
+      );
       idDiag = maxDiag[0].nextId;
       await pool.query(
         "INSERT INTO diagnostique (ID_DIAG, DESIGNATION) VALUES (?, ?)",
-        [idDiag, trimmedDiag]
+        [idDiag, trimmedDiag],
       );
     }
 
     await pool.query(
       "DELETE FROM diag_malade WHERE ID_MALADE IN (?) AND DATE_PRISE = ?",
-      [ids, recordDate]
+      [ids, recordDate],
     );
 
     await pool.query(
       "INSERT INTO diag_malade (ID_DIAG, ID_MALADE, DATE_PRISE) VALUES (?, ?, ?)",
-      [idDiag, patientIdForInsert, recordDate]
+      [idDiag, patientIdForInsert, recordDate],
     );
 
     res.status(201).json({
@@ -1318,7 +1695,7 @@ router.post("/:id/diag-consult", async (req, res) => {
       id: idDiag,
       patientId: patientIdForInsert,
       date: recordDate,
-      diagnosis: trimmedDiag
+      diagnosis: trimmedDiag,
     });
   } catch (err) {
     console.error("API POST /api/patients/:id/diag-consult Error:", err);
@@ -1334,7 +1711,9 @@ router.delete("/diag-consult/:id", async (req, res) => {
     res.json({ success: true, deletedId: id });
   } catch (err) {
     console.error("API DELETE /api/patients/diag-consult/:id Error:", err);
-    res.status(500).json({ error: "Failed to delete consult diagnosis record" });
+    res
+      .status(500)
+      .json({ error: "Failed to delete consult diagnosis record" });
   }
 });
 
@@ -1345,7 +1724,7 @@ router.get("/:id/ddr-dpa", async (req, res) => {
     const patId = req.params.id;
     const [patRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
 
     const ids = [];
@@ -1364,31 +1743,33 @@ router.get("/:id/ddr-dpa", async (req, res) => {
        FROM ddr_malade
        WHERE ID_MALADE IN (?)
        ORDER BY DATE_PRISE DESC, ID_DDR DESC`,
-      [ids]
+      [ids],
     );
 
     const formatDashDate = (val) => {
-      if (!val) return '';
+      if (!val) return "";
       const str = String(val).trim();
       if (str.length === 8) {
-        return `${str.slice(0,4)}-${str.slice(4,6)}-${str.slice(6,8)}`;
+        return `${str.slice(0, 4)}-${str.slice(4, 6)}-${str.slice(6, 8)}`;
       }
-      if (str.includes('T')) return str.split('T')[0];
+      if (str.includes("T")) return str.split("T")[0];
       return str;
     };
 
-    const formatted = rows.map(r => ({
+    const formatted = rows.map((r) => ({
       id: r.id,
       patientId: r.patientId,
       date: formatDashDate(r.datePrise),
       ddr: formatDashDate(r.ddrVal),
-      dpa: formatDashDate(r.dpaVal)
+      dpa: formatDashDate(r.dpaVal),
     }));
 
     res.json(formatted);
   } catch (err) {
     console.error("API GET /api/patients/:id/ddr-dpa Error:", err);
-    res.status(500).json({ error: "Failed to fetch patient DDR & DPA records" });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch patient DDR & DPA records" });
   }
 });
 
@@ -1402,7 +1783,7 @@ router.post("/:id/ddr-dpa", async (req, res) => {
 
     const [patRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
 
     const ids = [];
@@ -1413,7 +1794,8 @@ router.post("/:id/ddr-dpa", async (req, res) => {
     if (ids.length === 0) ids.push(patId);
     const patientIdForInsert = ids[0];
 
-    const toYYYYMMDD = (dStr) => dStr ? parseInt(dStr.replace(/-/g, ''), 10) : 0;
+    const toYYYYMMDD = (dStr) =>
+      dStr ? parseInt(dStr.replace(/-/g, ""), 10) : 0;
 
     const datePriseInt = toYYYYMMDD(recordDateStr);
     const ddrInt = toYYYYMMDD(ddr);
@@ -1421,15 +1803,17 @@ router.post("/:id/ddr-dpa", async (req, res) => {
 
     await pool.query(
       "DELETE FROM ddr_malade WHERE ID_MALADE IN (?) AND DATE_PRISE = ?",
-      [ids, datePriseInt]
+      [ids, datePriseInt],
     );
 
-    const [maxRows] = await pool.query("SELECT COALESCE(MAX(ID_DDR), 0) + 1 as nextId FROM ddr_malade");
+    const [maxRows] = await pool.query(
+      "SELECT COALESCE(MAX(ID_DDR), 0) + 1 as nextId FROM ddr_malade",
+    );
     const nextId = maxRows[0].nextId;
 
     await pool.query(
       "INSERT INTO ddr_malade (ID_DDR, ID_MALADE, DATE_PRISE, DDR, DPA) VALUES (?, ?, ?, ?, ?)",
-      [nextId, patientIdForInsert, datePriseInt, ddrInt, dpaInt]
+      [nextId, patientIdForInsert, datePriseInt, ddrInt, dpaInt],
     );
 
     res.status(201).json({
@@ -1437,8 +1821,8 @@ router.post("/:id/ddr-dpa", async (req, res) => {
       id: nextId,
       patientId: patientIdForInsert,
       date: recordDateStr,
-      ddr: ddr || '',
-      dpa: dpa || ''
+      ddr: ddr || "",
+      dpa: dpa || "",
     });
   } catch (err) {
     console.error("API POST /api/patients/:id/ddr-dpa Error:", err);
@@ -1464,10 +1848,11 @@ router.get("/:id/general-diagnosis", async (req, res) => {
     const patId = req.params.id;
     const [rows] = await pool.query(
       "SELECT DIAGNOSTIQUE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
     res.json({
-      generalDiagnosis: rows.length > 0 && rows[0].DIAGNOSTIQUE ? rows[0].DIAGNOSTIQUE : ""
+      generalDiagnosis:
+        rows.length > 0 && rows[0].DIAGNOSTIQUE ? rows[0].DIAGNOSTIQUE : "",
     });
   } catch (err) {
     console.error("API GET /api/patients/:id/general-diagnosis Error:", err);
@@ -1480,16 +1865,17 @@ router.post("/:id/general-diagnosis", async (req, res) => {
   try {
     const patId = req.params.id;
     const { generalDiagnosis } = req.body;
-    const diagText = generalDiagnosis !== undefined ? String(generalDiagnosis).trim() : "";
+    const diagText =
+      generalDiagnosis !== undefined ? String(generalDiagnosis).trim() : "";
 
     await pool.query(
       "UPDATE malade SET DIAGNOSTIQUE = ? WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [diagText, patId, patId]
+      [diagText, patId, patId],
     );
 
     res.json({
       success: true,
-      generalDiagnosis: diagText
+      generalDiagnosis: diagText,
     });
   } catch (err) {
     console.error("API POST /api/patients/:id/general-diagnosis Error:", err);

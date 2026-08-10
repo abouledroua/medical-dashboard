@@ -9,55 +9,78 @@ router.get("/:id/vitals-history", async (req, res) => {
     const patId = req.params.id;
     const [patientRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
 
     if (patientRows.length === 0) {
       return res.status(404).json({ error: "Patient not found" });
     }
 
-    const patientIds = [patientRows[0].CODE_BARRE, patientRows[0].CODE_MALADE].filter(Boolean);
+    const patientIds = [
+      patientRows[0].CODE_BARRE,
+      patientRows[0].CODE_MALADE,
+    ].filter(Boolean);
 
     const [htaRows] = await pool.query(
       "SELECT DATE_FORMAT(DATE_HTA, '%Y-%m-%d') as date, HTA, BATEMENT FROM hta_malade WHERE ID_MALADE IN (?) ORDER BY DATE_HTA DESC",
-      [patientIds]
+      [patientIds],
     );
 
     const [spo2Rows] = await pool.query(
       "SELECT DATE_FORMAT(DATE_PRISE, '%Y-%m-%d') as date, SPO2 FROM spo2_malade WHERE ID_MALADE IN (?) ORDER BY DATE_PRISE DESC",
-      [patientIds]
+      [patientIds],
     );
 
     const [bgRows] = await pool.query(
       "SELECT DATE_FORMAT(DATE_PRISE, '%Y-%m-%d') as date, BG FROM bg_malade WHERE ID_MALADE IN (?) ORDER BY DATE_PRISE DESC",
-      [patientIds]
+      [patientIds],
     );
 
     const vitalsByDate = {};
 
-    htaRows.forEach(row => {
+    htaRows.forEach((row) => {
       if (!vitalsByDate[row.date]) {
-        vitalsByDate[row.date] = { date: row.date, bp: 'N/A', hr: 'N/A', spo2: 'N/A', bg: 'N/A' };
+        vitalsByDate[row.date] = {
+          date: row.date,
+          bp: "N/A",
+          hr: "N/A",
+          spo2: "N/A",
+          bg: "N/A",
+        };
       }
       vitalsByDate[row.date].bp = row.HTA;
       vitalsByDate[row.date].hr = row.BATEMENT;
     });
 
-    spo2Rows.forEach(row => {
+    spo2Rows.forEach((row) => {
       if (!vitalsByDate[row.date]) {
-        vitalsByDate[row.date] = { date: row.date, bp: 'N/A', hr: 'N/A', spo2: 'N/A', bg: 'N/A' };
+        vitalsByDate[row.date] = {
+          date: row.date,
+          bp: "N/A",
+          hr: "N/A",
+          spo2: "N/A",
+          bg: "N/A",
+        };
       }
       vitalsByDate[row.date].spo2 = row.SPO2;
     });
 
-    bgRows.forEach(row => {
+    bgRows.forEach((row) => {
       if (!vitalsByDate[row.date]) {
-        vitalsByDate[row.date] = { date: row.date, bp: 'N/A', hr: 'N/A', spo2: 'N/A', bg: 'N/A' };
+        vitalsByDate[row.date] = {
+          date: row.date,
+          bp: "N/A",
+          hr: "N/A",
+          spo2: "N/A",
+          bg: "N/A",
+        };
       }
       vitalsByDate[row.date].bg = row.BG;
     });
 
-    const sortedVitals = Object.values(vitalsByDate).sort((a, b) => new Date(b.date) - new Date(a.date));
+    const sortedVitals = Object.values(vitalsByDate).sort(
+      (a, b) => new Date(b.date) - new Date(a.date),
+    );
 
     res.json(sortedVitals);
   } catch (err) {
@@ -74,80 +97,102 @@ router.post("/:id/vitals", async (req, res) => {
 
     const [patientRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
 
     if (patientRows.length === 0) {
       return res.status(404).json({ error: "Patient not found" });
     }
 
-    const patientIds = Array.from(new Set([patientRows[0].CODE_BARRE, patientRows[0].CODE_MALADE].filter(Boolean)));
+    const patientIds = Array.from(
+      new Set(
+        [patientRows[0].CODE_BARRE, patientRows[0].CODE_MALADE].filter(Boolean),
+      ),
+    );
     if (patientIds.length === 0) {
       return res.status(400).json({ error: "Patient has no valid ID" });
     }
     const patientIdForInsert = patientIds[0];
-    const targetDate = date || new Date().toISOString().split('T')[0];
+    const targetDate = date || new Date().toISOString().split("T")[0];
 
     // Sync hta_malade (TA & Battement/Heart Rate)
-    const bpStr = bp !== undefined && bp !== null ? String(bp).trim() : '';
-    const hrStr = hr !== undefined && hr !== null ? String(hr).trim() : '';
+    const bpStr = bp !== undefined && bp !== null ? String(bp).trim() : "";
+    const hrStr = hr !== undefined && hr !== null ? String(hr).trim() : "";
 
-    await pool.query("DELETE FROM hta_malade WHERE ID_MALADE IN (?) AND DATE_HTA = ?", [patientIds, targetDate]);
+    await pool.query(
+      "DELETE FROM hta_malade WHERE ID_MALADE IN (?) AND DATE_HTA = ?",
+      [patientIds, targetDate],
+    );
     if (bpStr || hrStr) {
       let nextHtaId = 1;
       try {
-        const [maxHta] = await pool.query("SELECT COALESCE(MAX(ID), 0) + 1 AS nextId FROM hta_malade");
+        const [maxHta] = await pool.query(
+          "SELECT COALESCE(MAX(ID), 0) + 1 AS nextId FROM hta_malade",
+        );
         nextHtaId = maxHta[0]?.nextId || 1;
         await pool.query(
           "INSERT INTO hta_malade (ID, ID_MALADE, DATE_HTA, HTA, BATEMENT) VALUES (?, ?, ?, ?, ?)",
-          [nextHtaId, patientIdForInsert, targetDate, bpStr, hrStr]
+          [nextHtaId, patientIdForInsert, targetDate, bpStr, hrStr],
         );
       } catch (e1) {
         await pool.query(
           "INSERT INTO hta_malade (ID_MALADE, DATE_HTA, HTA, BATEMENT) VALUES (?, ?, ?, ?)",
-          [patientIdForInsert, targetDate, bpStr, hrStr]
+          [patientIdForInsert, targetDate, bpStr, hrStr],
         );
       }
     }
 
     // Sync spo2_malade
-    const rawSpo2 = spo2 !== undefined && spo2 !== null ? String(spo2).replace('%', '').trim() : '';
+    const rawSpo2 =
+      spo2 !== undefined && spo2 !== null
+        ? String(spo2).replace("%", "").trim()
+        : "";
     const numSpo2 = parseFloat(rawSpo2);
-    await pool.query("DELETE FROM spo2_malade WHERE ID_MALADE IN (?) AND DATE_PRISE = ?", [patientIds, targetDate]);
+    await pool.query(
+      "DELETE FROM spo2_malade WHERE ID_MALADE IN (?) AND DATE_PRISE = ?",
+      [patientIds, targetDate],
+    );
     if (!isNaN(numSpo2)) {
       let nextSpo2Id = 1;
       try {
-        const [maxSpo2] = await pool.query("SELECT COALESCE(MAX(ID), 0) + 1 AS nextId FROM spo2_malade");
+        const [maxSpo2] = await pool.query(
+          "SELECT COALESCE(MAX(ID), 0) + 1 AS nextId FROM spo2_malade",
+        );
         nextSpo2Id = maxSpo2[0]?.nextId || 1;
         await pool.query(
           "INSERT INTO spo2_malade (ID, ID_MALADE, DATE_PRISE, SPO2) VALUES (?, ?, ?, ?)",
-          [nextSpo2Id, patientIdForInsert, targetDate, numSpo2]
+          [nextSpo2Id, patientIdForInsert, targetDate, numSpo2],
         );
       } catch (e2) {
         await pool.query(
           "INSERT INTO spo2_malade (ID_MALADE, DATE_PRISE, SPO2) VALUES (?, ?, ?)",
-          [patientIdForInsert, targetDate, numSpo2]
+          [patientIdForInsert, targetDate, numSpo2],
         );
       }
     }
 
     // Sync bg_malade
-    const rawBg = bg !== undefined && bg !== null ? String(bg).trim() : '';
+    const rawBg = bg !== undefined && bg !== null ? String(bg).trim() : "";
     const numBg = parseFloat(rawBg);
-    await pool.query("DELETE FROM bg_malade WHERE ID_MALADE IN (?) AND DATE_PRISE = ?", [patientIds, targetDate]);
+    await pool.query(
+      "DELETE FROM bg_malade WHERE ID_MALADE IN (?) AND DATE_PRISE = ?",
+      [patientIds, targetDate],
+    );
     if (!isNaN(numBg)) {
       let nextBgId = 1;
       try {
-        const [maxBg] = await pool.query("SELECT COALESCE(MAX(ID), 0) + 1 AS nextId FROM bg_malade");
+        const [maxBg] = await pool.query(
+          "SELECT COALESCE(MAX(ID), 0) + 1 AS nextId FROM bg_malade",
+        );
         nextBgId = maxBg[0]?.nextId || 1;
         await pool.query(
           "INSERT INTO bg_malade (ID, ID_MALADE, DATE_PRISE, BG) VALUES (?, ?, ?, ?)",
-          [nextBgId, patientIdForInsert, targetDate, numBg]
+          [nextBgId, patientIdForInsert, targetDate, numBg],
         );
       } catch (e3) {
         await pool.query(
           "INSERT INTO bg_malade (ID_MALADE, DATE_PRISE, BG) VALUES (?, ?, ?)",
-          [patientIdForInsert, targetDate, numBg]
+          [patientIdForInsert, targetDate, numBg],
         );
       }
     }
@@ -164,22 +209,36 @@ router.delete("/:id/vitals", async (req, res) => {
   try {
     const patId = req.params.id;
     const { date } = req.query;
-    if (!date) return res.status(400).json({ error: "Date parameter is required" });
+    if (!date)
+      return res.status(400).json({ error: "Date parameter is required" });
 
     const [patientRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
 
     if (patientRows.length === 0) {
       return res.status(404).json({ error: "Patient not found" });
     }
 
-    const patientIds = Array.from(new Set([patientRows[0].CODE_BARRE, patientRows[0].CODE_MALADE].filter(Boolean)));
+    const patientIds = Array.from(
+      new Set(
+        [patientRows[0].CODE_BARRE, patientRows[0].CODE_MALADE].filter(Boolean),
+      ),
+    );
 
-    await pool.query("DELETE FROM hta_malade WHERE ID_MALADE IN (?) AND DATE_HTA = ?", [patientIds, date]);
-    await pool.query("DELETE FROM spo2_malade WHERE ID_MALADE IN (?) AND DATE_PRISE = ?", [patientIds, date]);
-    await pool.query("DELETE FROM bg_malade WHERE ID_MALADE IN (?) AND DATE_PRISE = ?", [patientIds, date]);
+    await pool.query(
+      "DELETE FROM hta_malade WHERE ID_MALADE IN (?) AND DATE_HTA = ?",
+      [patientIds, date],
+    );
+    await pool.query(
+      "DELETE FROM spo2_malade WHERE ID_MALADE IN (?) AND DATE_PRISE = ?",
+      [patientIds, date],
+    );
+    await pool.query(
+      "DELETE FROM bg_malade WHERE ID_MALADE IN (?) AND DATE_PRISE = ?",
+      [patientIds, date],
+    );
 
     res.json({ success: true, message: "Vitals deleted for date." });
   } catch (err) {
@@ -194,7 +253,7 @@ router.get("/:id/observations", async (req, res) => {
     const patId = req.params.id;
     const [patRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
 
     const ids = [];
@@ -209,7 +268,7 @@ router.get("/:id/observations", async (req, res) => {
        FROM obs_malade
        WHERE ID_MALADE IN (?)
        ORDER BY DATE_OBS DESC, ID DESC`,
-      [ids]
+      [ids],
     );
 
     res.json(rows);
@@ -232,7 +291,7 @@ router.post("/:id/observations", async (req, res) => {
 
     const [patRows] = await pool.query(
       "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-      [patId, patId]
+      [patId, patId],
     );
 
     const ids = [];
@@ -243,18 +302,23 @@ router.post("/:id/observations", async (req, res) => {
     if (ids.length === 0) ids.push(patId);
     const patientIdForInsert = ids[0];
 
-    await pool.query("DELETE FROM obs_malade WHERE ID_MALADE IN (?) AND DATE_OBS = ?", [ids, obsDate]);
+    await pool.query(
+      "DELETE FROM obs_malade WHERE ID_MALADE IN (?) AND DATE_OBS = ?",
+      [ids, obsDate],
+    );
 
     const [cols] = await pool.query("SHOW COLUMNS FROM obs_malade");
-    const idCol = cols.find(c => c.Field === 'ID');
-    const isAuto = idCol && idCol.Extra.includes('auto_increment');
+    const idCol = cols.find((c) => c.Field === "ID");
+    const isAuto = idCol && idCol.Extra.includes("auto_increment");
 
     let sql, params;
     if (isAuto) {
-      sql = "INSERT INTO obs_malade (ID_MALADE, DATE_OBS, OBS) VALUES (?, ?, ?)";
+      sql =
+        "INSERT INTO obs_malade (ID_MALADE, DATE_OBS, OBS) VALUES (?, ?, ?)";
       params = [patientIdForInsert, obsDate, observation.trim()];
     } else {
-      sql = "INSERT INTO obs_malade (ID, ID_MALADE, DATE_OBS, OBS) VALUES ((SELECT COALESCE(MAX(t.ID), 0) + 1 FROM obs_malade t), ?, ?, ?)";
+      sql =
+        "INSERT INTO obs_malade (ID, ID_MALADE, DATE_OBS, OBS) VALUES ((SELECT COALESCE(MAX(t.ID), 0) + 1 FROM obs_malade t), ?, ?, ?)";
       params = [patientIdForInsert, obsDate, observation.trim()];
     }
 
@@ -266,11 +330,118 @@ router.post("/:id/observations", async (req, res) => {
       id: newId,
       patientId: patientIdForInsert,
       date: obsDate,
-      observation: observation.trim()
+      observation: observation.trim(),
     });
   } catch (err) {
     console.error("API POST /api/patients/:id/observations Error:", err);
     res.status(500).json({ error: "Failed to save observation" });
+  }
+});
+
+// GET /api/patients/:id/height - List all height records for a patient
+router.get("/:id/height", async (req, res) => {
+  try {
+    const patId = req.params.id;
+    const [patRows] = await pool.query(
+      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+      [patId, patId],
+    );
+
+    const ids = [];
+    if (patRows.length > 0) {
+      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
+      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
+    }
+    if (ids.length === 0) ids.push(patId);
+
+    if (ids.length === 0) {
+      return res.json([]); // Return empty array if no valid patient IDs are found
+    }
+
+    const [rows] = await pool.query(
+      `SELECT ID as id, ID_MALADE as patientId, DATE_FORMAT(DATE_PRISE, '%Y-%m-%d') as date, TAILLE as height
+       FROM malade_measurement
+       WHERE ID_MALADE IN (?)
+       ORDER BY DATE_PRISE DESC, ID DESC`,
+      [ids],
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("API GET /api/patients/:id/height Error:", err);
+    res.status(500).json({ error: "Failed to fetch patient height records" });
+  }
+});
+
+// GET /api/patients/:id/weight - List all weight records for a patient
+router.get("/:id/weight", async (req, res) => {
+  try {
+    const patId = req.params.id;
+    const [patRows] = await pool.query(
+      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+      [patId, patId],
+    );
+
+    const ids = [];
+    if (patRows.length > 0) {
+      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
+      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
+    }
+    if (ids.length === 0) ids.push(patId);
+
+    if (ids.length === 0) {
+      return res.json([]); // Return empty array if no valid patient IDs are found
+    }
+
+    const [rows] = await pool.query(
+      `SELECT ID as id, ID_MALADE as patientId, DATE_FORMAT(DATE_PRISE, '%Y-%m-%d') as date, POIDS as weight
+       FROM malade_measurement
+       WHERE ID_MALADE IN (?)
+       ORDER BY DATE_PRISE DESC, ID DESC`,
+      [ids],
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("API GET /api/patients/:id/weight Error:", err);
+    res.status(500).json({ error: "Failed to fetch patient weight records" });
+  }
+});
+
+// GET /api/patients/:id/head-circ - List all head circumference records for a patient
+router.get("/:id/head-circ", async (req, res) => {
+  try {
+    const patId = req.params.id;
+    const [patRows] = await pool.query(
+      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+      [patId, patId],
+    );
+
+    const ids = [];
+    if (patRows.length > 0) {
+      if (patRows[0].CODE_BARRE) ids.push(patRows[0].CODE_BARRE);
+      if (patRows[0].CODE_MALADE) ids.push(patRows[0].CODE_MALADE);
+    }
+    if (ids.length === 0) ids.push(patId);
+
+    if (ids.length === 0) {
+      return res.json([]); // Return empty array if no valid patient IDs are found
+    }
+
+    const [rows] = await pool.query(
+      `SELECT ID as id, ID_MALADE as patientId, DATE_FORMAT(DATE_PRISE, '%Y-%m-%d') as date, PC as headCirc
+       FROM malade_measurement
+       WHERE ID_MALADE IN (?)
+       ORDER BY DATE_PRISE DESC, ID DESC`,
+      [ids],
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("API GET /api/patients/:id/head-circ Error:", err);
+    res
+      .status(500)
+      .json({ error: "Failed to fetch patient head circumference records" });
   }
 });
 
@@ -288,82 +459,86 @@ router.delete("/observations/:obsId", async (req, res) => {
 
 // GET /api/patients/:id/measurements - List all measurements for a patient
 router.get("/:id/measurements", async (req, res) => {
-    try {
-        const patId = req.params.id;
-        const [patRows] = await pool.query(
-            "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-            [patId, patId]
-        );
+  try {
+    const patId = req.params.id;
+    const [patRows] = await pool.query(
+      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+      [patId, patId],
+    );
 
-        const ids = patRows.length > 0 ? [patRows[0].CODE_BARRE, patRows[0].CODE_MALADE].filter(Boolean) : [patId];
-        if (ids.length === 0) {
-            return res.json([]);
-        }
+    const ids =
+      patRows.length > 0
+        ? [patRows[0].CODE_BARRE, patRows[0].CODE_MALADE].filter(Boolean)
+        : [patId];
+    if (ids.length === 0) {
+      return res.json([]);
+    }
 
-        const [rows] = await pool.query(
-            `SELECT ID as id, ID_MALADE as patientId, DATE_FORMAT(DATE_PRISE, '%Y-%m-%d') as date, TAILLE as height, POIDS as weight, PC as headCirc
+    const [rows] = await pool.query(
+      `SELECT ID as id, ID_MALADE as patientId, DATE_FORMAT(DATE_PRISE, '%Y-%m-%d') as date, TAILLE as height, POIDS as weight, PC as headCirc
        FROM malade_measurement
        WHERE ID_MALADE IN (?)
        ORDER BY DATE_PRISE DESC, ID DESC`,
-            [ids]
-        );
+      [ids],
+    );
 
-        res.json(rows);
-    } catch (err) {
-        console.error("API GET /api/patients/:id/measurements Error:", err);
-        res.status(500).json({ error: "Failed to fetch patient measurements" });
-    }
+    res.json(rows);
+  } catch (err) {
+    console.error("API GET /api/patients/:id/measurements Error:", err);
+    res.status(500).json({ error: "Failed to fetch patient measurements" });
+  }
 });
 
 // POST /api/patients/:id/measurements - Add/Update measurements for a specific date
 router.post("/:id/measurements", async (req, res) => {
-    try {
-        const patId = req.params.id;
-        const { date, height, weight, headCirc } = req.body;
-        const recordDate = date || new Date().toISOString().split("T")[0];
+  try {
+    const patId = req.params.id;
+    const { date, height, weight, headCirc } = req.body;
+    const recordDate = date || new Date().toISOString().split("T")[0];
 
-        const [patRows] = await pool.query(
-            "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
-            [patId, patId]
-        );
+    const [patRows] = await pool.query(
+      "SELECT CODE_BARRE, CODE_MALADE FROM malade WHERE CODE_BARRE = ? OR CODE_MALADE = ?",
+      [patId, patId],
+    );
 
-        if (patRows.length === 0) {
-            return res.status(404).json({ error: "Patient not found" });
-        }
-        const patientIdForInsert = patRows[0].CODE_MALADE || patRows[0].CODE_BARRE;
+    if (patRows.length === 0) {
+      return res.status(404).json({ error: "Patient not found" });
+    }
+    const patientIdForInsert = patRows[0].CODE_MALADE || patRows[0].CODE_BARRE;
 
-        await pool.query(
-            `INSERT INTO malade_measurement (ID_MALADE, DATE_PRISE, TAILLE, POIDS, PC)
+    await pool.query(
+      `INSERT INTO malade_measurement (ID_MALADE, DATE_PRISE, TAILLE, POIDS, PC)
        VALUES (?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE TAILLE = VALUES(TAILLE), POIDS = VALUES(POIDS), PC = VALUES(PC)`,
-            [patientIdForInsert, recordDate, height, weight, headCirc]
-        );
+      [patientIdForInsert, recordDate, height, weight, headCirc],
+    );
 
-        res.status(201).json({
-            success: true,
-            patientId: patientIdForInsert,
-            date: recordDate,
-            height,
-            weight,
-            headCirc
-        });
-    } catch (err) {
-        console.error("API POST /api/patients/:id/measurements Error:", err);
-        res.status(500).json({ error: "Failed to save measurements" });
-    }
+    res.status(201).json({
+      success: true,
+      patientId: patientIdForInsert,
+      date: recordDate,
+      height,
+      weight,
+      headCirc,
+    });
+  } catch (err) {
+    console.error("API POST /api/patients/:id/measurements Error:", err);
+    res.status(500).json({ error: "Failed to save measurements" });
+  }
 });
 
 // DELETE /api/patients/measurements/:id - Delete a measurement record
 router.delete("/measurements/:id", async (req, res) => {
-    try {
-        const measurementId = req.params.id;
-        await pool.query("DELETE FROM malade_measurement WHERE ID = ?", [measurementId]);
-        res.json({ success: true, deletedId: measurementId });
-    } catch (err) {
-        console.error("API DELETE /api/patients/measurements/:id Error:", err);
-        res.status(500).json({ error: "Failed to delete measurement record" });
-    }
+  try {
+    const measurementId = req.params.id;
+    await pool.query("DELETE FROM malade_measurement WHERE ID = ?", [
+      measurementId,
+    ]);
+    res.json({ success: true, deletedId: measurementId });
+  } catch (err) {
+    console.error("API DELETE /api/patients/measurements/:id Error:", err);
+    res.status(500).json({ error: "Failed to delete measurement record" });
+  }
 });
-
 
 export default router;

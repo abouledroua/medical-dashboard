@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, UserPlus, FileText, Calendar, ChevronRight, Stethoscope, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, Users, UserPlus, FileText, Calendar, ChevronRight, Stethoscope, Settings, PanelLeftClose, PanelLeftOpen, Sliders } from 'lucide-react';
 import { translations } from '../translations';
 
 export default function Sidebar({ activeTab, setActiveTab, selectedPatient, ongoingConsultations = [], activeConsultationPatientId, onSelectConsultationDraft, lang = 'fr' }) {
@@ -115,6 +115,12 @@ export default function Sidebar({ activeTab, setActiveTab, selectedPatient, ongo
       id: 'settings',
       label: lang === 'fr' ? 'Paramètres' : 'Settings',
       icon: Settings,
+      badge: null
+    },
+    {
+      id: 'data-templates',
+      label: lang === 'fr' ? 'Données & Gabarit' : 'Data & Templates',
+      icon: Sliders,
       badge: null
     }
   ];

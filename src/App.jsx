@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import LoginScreen from './components/LoginScreen';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -11,28 +12,29 @@ import ClinicSettings from './components/ClinicSettings';
 import NewAppointmentModal from './components/NewAppointmentModal';
 import AddConsultationModal from './components/AddConsultationModal';
 import DeviceNameModal from './components/DeviceNameModal';
+import DataTemplates from './components/DataTemplates';
 import { ConfirmDialogProvider } from './context/ConfirmDialogContext';
 
-function getOrCreateDeviceId() {
-  try {
-    let devId = localStorage.getItem('el_iyada_device_id');
-    // If devId is missing, contains 'DEV-', or length is not between 8 and 10 chars, re-generate clean 8-char ID
-    if (!devId || devId.startsWith('DEV-') || devId.length < 8 || devId.length > 10) {
-      devId = (typeof crypto !== 'undefined' && crypto.randomUUID)
-        ? crypto.randomUUID().replace(/-/g, '').substring(0, 8).toUpperCase()
-        : Math.random().toString(36).substring(2, 10).toUpperCase();
-      localStorage.setItem('el_iyada_device_id', devId);
-    }
-    return devId;
-  } catch (e) {
-    return 'A1B2C3D4';
-  }
-}
-
 export default function App() {
-  const [deviceId] = useState(getOrCreateDeviceId);
+  const [deviceId, setDeviceId] = useState(null);
   const [deviceName, setDeviceName] = useState(null);
   const [showDeviceModal, setShowDeviceModal] = useState(false);
+
+  useEffect(() => {
+    const getDeviceId = async () => {
+      try {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        // Use the stable visitorId as the deviceId
+        setDeviceId(result.visitorId.substring(0, 8).toUpperCase());
+      } catch (e) {
+        console.error('FingerprintJS failed to load or get a visitor ID:', e);
+        // Fallback to a random ID if fingerprinting fails
+        setDeviceId(Math.random().toString(36).substring(2, 10).toUpperCase());
+      }
+    };
+    getDeviceId();
+  }, []);
 
   const checkDevicePoste = async (devId, triggerModalOnMissing = false) => {
     if (!devId) return;
@@ -111,11 +113,11 @@ export default function App() {
   const getInitialTab = () => {
     try {
       const hash = window.location.hash.replace('#', '').trim();
-      if (hash && ['overview', 'patients', 'add-patient', 'add-consultation', 'medical-history', 'appointments', 'settings'].includes(hash)) {
+      if (hash && ['overview', 'patients', 'add-patient', 'add-consultation', 'medical-history', 'appointments', 'settings', 'data-templates'].includes(hash)) {
         return hash;
       }
       const saved = localStorage.getItem('el_iyada_active_tab');
-      if (saved && ['overview', 'patients', 'add-patient', 'add-consultation', 'medical-history', 'appointments', 'settings'].includes(saved)) {
+      if (saved && ['overview', 'patients', 'add-patient', 'add-consultation', 'medical-history', 'appointments', 'settings', 'data-templates'].includes(saved)) {
         return saved;
       }
     } catch (e) {}
@@ -137,7 +139,7 @@ export default function App() {
   useEffect(() => {
     const handleLocationChange = () => {
       const hash = window.location.hash.replace('#', '').trim();
-      if (hash && ['overview', 'patients', 'add-patient', 'add-consultation', 'medical-history', 'appointments', 'settings'].includes(hash)) {
+      if (hash && ['overview', 'patients', 'add-patient', 'add-consultation', 'medical-history', 'appointments', 'settings', 'data-templates'].includes(hash)) {
         setActiveTabState(hash);
       }
     };
@@ -830,6 +832,12 @@ export default function App() {
                     lang={lang}
                     currentTheme={theme}
                     onThemeChange={setTheme}
+                  />
+                )}
+
+                {activeTab === 'data-templates' && (
+                  <DataTemplates
+                    lang={lang}
                   />
                 )}
               </>

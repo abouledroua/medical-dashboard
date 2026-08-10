@@ -3,25 +3,93 @@ import pool from "../db.js";
 
 const router = express.Router();
 
+// GET /api/medications - Get all medications
+router.get("/", async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        m.ID_MEDICAMENT as id, 
+        m.DESIGNATION as designation,
+        m.DCI as dci,
+        m.STATUT as etat,
+        MAX(f.DESIGNATION) as forme,
+        MAX(d.DOSAGE) as dosage
+      FROM medicament m 
+      LEFT JOIN forme_medicament fm ON m.ID_MEDICAMENT = fm.ID_MEDICAMENT
+      LEFT JOIN forme f ON fm.ID_FORME = f.ID_FORME
+      LEFT JOIN dosage d ON m.ID_MEDICAMENT = d.ID_MEDICAMENT
+      GROUP BY m.ID_MEDICAMENT, m.DESIGNATION, m.DCI, m.STATUT
+      ORDER BY m.DESIGNATION ASC
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error("API GET /api/medications Error:", err);
+    res.status(500).json({ error: "Failed to fetch medications" });
+  }
+});
+
 const defaultPopularPresets = [
-  { name: 'Amoxicilline', forme: 'Gélule', dosage: '1g', frequency: '2 fois / jour', duration: '7 jours' },
-  { name: 'Paracétamol', forme: 'Comprimé', dosage: '1g', frequency: '3 fois / jour', duration: '5 jours' },
-  { name: 'Solupred', forme: 'Comprimé', dosage: '20mg', frequency: '1 fois / jour', duration: '5 jours' },
-  { name: 'Oflocet Auriculaire', forme: 'Gouttes', dosage: '5 gouttes', frequency: '2 fois / jour', duration: '7 jours' },
-  { name: 'Rhinoflux Spray', forme: 'Spray', dosage: '2 pulvérisations', frequency: '3 fois / jour', duration: '5 jours' },
-  { name: 'Augmentin', forme: 'Sachet', dosage: '1g', frequency: '2 fois / jour', duration: '7 jours' }
+  {
+    name: "Amoxicilline",
+    forme: "Gélule",
+    dosage: "1g",
+    frequency: "2 fois / jour",
+    duration: "7 jours",
+  },
+  {
+    name: "Paracétamol",
+    forme: "Comprimé",
+    dosage: "1g",
+    frequency: "3 fois / jour",
+    duration: "5 jours",
+  },
+  {
+    name: "Solupred",
+    forme: "Comprimé",
+    dosage: "20mg",
+    frequency: "1 fois / jour",
+    duration: "5 jours",
+  },
+  {
+    name: "Oflocet Auriculaire",
+    forme: "Gouttes",
+    dosage: "5 gouttes",
+    frequency: "2 fois / jour",
+    duration: "7 jours",
+  },
+  {
+    name: "Rhinoflux Spray",
+    forme: "Spray",
+    dosage: "2 pulvérisations",
+    frequency: "3 fois / jour",
+    duration: "5 jours",
+  },
+  {
+    name: "Augmentin",
+    forme: "Sachet",
+    dosage: "1g",
+    frequency: "2 fois / jour",
+    duration: "7 jours",
+  },
 ];
 
 // GET /api/medications/popular - Get top most used medications with most common forme, dosage, frequency, and duration
 router.get("/popular", async (req, res) => {
   try {
-    const [tables] = await pool.query("SHOW TABLES LIKE 'details_ordonnance_%'");
+    const [tables] = await pool.query(
+      "SHOW TABLES LIKE 'details_ordonnance_%'",
+    );
     const tableNames = tables
-      .map(t => Object.values(t)[0])
-      .filter(tName => typeof tName === 'string' && tName.startsWith("details_ordonnance_"));
+      .map((t) => Object.values(t)[0])
+      .filter(
+        (tName) =>
+          typeof tName === "string" && tName.startsWith("details_ordonnance_"),
+      );
 
     if (tableNames.length === 0) {
-      const [singleCheck] = await pool.query("SHOW TABLES LIKE 'details_ordonnance'");
+      const [singleCheck] = await pool.query(
+        "SHOW TABLES LIKE 'details_ordonnance'",
+      );
       if (singleCheck.length > 0) tableNames.push("details_ordonnance");
     }
 
@@ -30,12 +98,14 @@ router.get("/popular", async (req, res) => {
     }
 
     const sqlQueries = tableNames.map(
-      tbl => `SELECT m.DESIGNATION as name, f.DESIGNATION as forme, d.DOSAGE as dosage, d.FREQUENCE as frequency, d.QTE as duration, COUNT(*) as cnt
+      (
+        tbl,
+      ) => `SELECT m.DESIGNATION as name, f.DESIGNATION as forme, d.DOSAGE as dosage, d.FREQUENCE as frequency, d.QTE as duration, COUNT(*) as cnt
               FROM \`${tbl}\` d
               JOIN medicament m ON d.ID_MEDICAMENT = m.ID_MEDICAMENT
               LEFT JOIN forme f ON d.ID_FORME = f.ID_FORME
               WHERE m.DESIGNATION IS NOT NULL AND TRIM(m.DESIGNATION) != ''
-              GROUP BY m.DESIGNATION, f.DESIGNATION, d.DOSAGE, d.FREQUENCE, d.QTE`
+              GROUP BY m.DESIGNATION, f.DESIGNATION, d.DOSAGE, d.FREQUENCE, d.QTE`,
     );
 
     const fullSql = `SELECT name, forme, dosage, frequency, duration, SUM(cnt) as total_count 
@@ -50,18 +120,20 @@ router.get("/popular", async (req, res) => {
       rows = results;
     } catch (eSql) {
       const fallbackQueries = tableNames.map(
-        tbl => `SELECT m.DESIGNATION as name, d.DOSAGE as dosage, d.FREQUENCE as frequency, d.QTE as duration, COUNT(*) as cnt
+        (
+          tbl,
+        ) => `SELECT m.DESIGNATION as name, d.DOSAGE as dosage, d.FREQUENCE as frequency, d.QTE as duration, COUNT(*) as cnt
                 FROM \`${tbl}\` d
                 JOIN medicament m ON d.ID_MEDICAMENT = m.ID_MEDICAMENT
                 WHERE m.DESIGNATION IS NOT NULL AND TRIM(m.DESIGNATION) != ''
-                GROUP BY m.DESIGNATION, d.DOSAGE, d.FREQUENCE, d.QTE`
+                GROUP BY m.DESIGNATION, d.DOSAGE, d.FREQUENCE, d.QTE`,
       );
       const [results] = await pool.query(
         `SELECT name, dosage, frequency, duration, SUM(cnt) as total_count 
          FROM (${fallbackQueries.join(" UNION ALL ")}) AS combined 
          GROUP BY name, dosage, frequency, duration 
          ORDER BY total_count DESC 
-         LIMIT 30`
+         LIMIT 30`,
       );
       rows = results;
     }
@@ -71,17 +143,17 @@ router.get("/popular", async (req, res) => {
       const uniquePresets = [];
 
       for (const r of rows) {
-        const rawName = r.name ? r.name.trim() : '';
+        const rawName = r.name ? r.name.trim() : "";
         const normKey = rawName.toLowerCase();
         if (!normKey || seenNames.has(normKey)) continue;
 
         seenNames.add(normKey);
         uniquePresets.push({
           name: rawName,
-          forme: r.forme ? r.forme.trim() : '',
-          dosage: r.dosage ? r.dosage.trim() : '1 comprimé',
-          frequency: r.frequency ? r.frequency.trim() : '2 fois / jour',
-          duration: r.duration ? r.duration.trim() : '7 jours'
+          forme: r.forme ? r.forme.trim() : "",
+          dosage: r.dosage ? r.dosage.trim() : "1 comprimé",
+          frequency: r.frequency ? r.frequency.trim() : "2 fois / jour",
+          duration: r.duration ? r.duration.trim() : "7 jours",
         });
 
         if (uniquePresets.length >= 6) break;
@@ -118,7 +190,7 @@ router.get("/suggestions", async (req, res) => {
          GROUP BY m.DESIGNATION
          ORDER BY m.DESIGNATION ASC 
          LIMIT 40`,
-        [query]
+        [query],
       );
       rows = resRows;
     } catch (eJoin) {
@@ -131,16 +203,18 @@ router.get("/suggestions", async (req, res) => {
          GROUP BY DESIGNATION
          ORDER BY DESIGNATION ASC 
          LIMIT 40`,
-        [query]
+        [query],
       );
       rows = resRows;
     }
 
-    res.json(rows.map(r => ({
-      id: r.ID_MEDICAMENT,
-      designation: r.DESIGNATION ? r.DESIGNATION.trim() : "",
-      forme: r.FORME ? r.FORME.trim() : ""
-    })));
+    res.json(
+      rows.map((r) => ({
+        id: r.ID_MEDICAMENT,
+        designation: r.DESIGNATION ? r.DESIGNATION.trim() : "",
+        forme: r.FORME ? r.FORME.trim() : "",
+      })),
+    );
   } catch (err) {
     console.error("API GET /api/medications/suggestions Error:", err);
     res.status(500).json({ error: "Failed to fetch medication suggestions" });
@@ -157,7 +231,7 @@ router.get("/resolve", async (req, res) => {
     if (medication && medication.trim()) {
       const [mRows] = await pool.query(
         "SELECT ID_MEDICAMENT FROM medicament WHERE DESIGNATION = ? OR LOWER(TRIM(DESIGNATION)) = LOWER(?) LIMIT 1",
-        [medication.trim(), medication.trim()]
+        [medication.trim(), medication.trim()],
       );
       if (mRows.length > 0) medId = mRows[0].ID_MEDICAMENT;
     }
@@ -165,7 +239,7 @@ router.get("/resolve", async (req, res) => {
     if (forme && forme.trim()) {
       const [fRows] = await pool.query(
         "SELECT ID_FORME FROM forme WHERE DESIGNATION = ? OR LOWER(TRIM(DESIGNATION)) = LOWER(?) LIMIT 1",
-        [forme.trim(), forme.trim()]
+        [forme.trim(), forme.trim()],
       );
       if (fRows.length > 0) formeId = fRows[0].ID_FORME;
     }
@@ -189,9 +263,10 @@ router.get("/forme", async (req, res) => {
          FROM forme_medicament fm
          JOIN forme f ON fm.ID_FORME = f.ID_FORME
          WHERE fm.ID_MEDICAMENT = ? AND f.DESIGNATION IS NOT NULL AND TRIM(f.DESIGNATION) != '' LIMIT 1`,
-        [id]
+        [id],
       );
-      if (rows.length > 0 && rows[0].DESIGNATION) forme = rows[0].DESIGNATION.trim();
+      if (rows.length > 0 && rows[0].DESIGNATION)
+        forme = rows[0].DESIGNATION.trim();
     } else if (name && name.trim()) {
       const [rows] = await pool.query(
         `SELECT DISTINCT f.DESIGNATION 
@@ -199,9 +274,10 @@ router.get("/forme", async (req, res) => {
          JOIN forme_medicament fm ON m.ID_MEDICAMENT = fm.ID_MEDICAMENT
          JOIN forme f ON fm.ID_FORME = f.ID_FORME
          WHERE m.DESIGNATION = ? AND f.DESIGNATION IS NOT NULL AND TRIM(f.DESIGNATION) != '' LIMIT 1`,
-        [name.trim()]
+        [name.trim()],
       );
-      if (rows.length > 0 && rows[0].DESIGNATION) forme = rows[0].DESIGNATION.trim();
+      if (rows.length > 0 && rows[0].DESIGNATION)
+        forme = rows[0].DESIGNATION.trim();
     }
 
     res.json({ forme });
@@ -228,7 +304,7 @@ router.get("/formes", async (req, res) => {
            AND TRIM(f.DESIGNATION) != '' 
            AND f.DESIGNATION LIKE ?
          ORDER BY f.DESIGNATION ASC`,
-        [id, qStr]
+        [id, qStr],
       );
       rows = results;
 
@@ -242,7 +318,7 @@ router.get("/formes", async (req, res) => {
              AND TRIM(f.DESIGNATION) != '' 
              AND f.DESIGNATION LIKE ?
            ORDER BY f.DESIGNATION ASC`,
-          [id, qStr]
+          [id, qStr],
         );
         rows = dResults;
       }
@@ -257,7 +333,7 @@ router.get("/formes", async (req, res) => {
            AND TRIM(f.DESIGNATION) != '' 
            AND f.DESIGNATION LIKE ?
          ORDER BY f.DESIGNATION ASC`,
-        [name.trim(), qStr]
+        [name.trim(), qStr],
       );
       rows = results;
 
@@ -272,7 +348,7 @@ router.get("/formes", async (req, res) => {
              AND TRIM(f.DESIGNATION) != '' 
              AND f.DESIGNATION LIKE ?
            ORDER BY f.DESIGNATION ASC`,
-          [name.trim(), qStr]
+          [name.trim(), qStr],
         );
         rows = dResults;
       }
@@ -287,17 +363,17 @@ router.get("/formes", async (req, res) => {
            AND DESIGNATION LIKE ? 
          ORDER BY DESIGNATION ASC 
          LIMIT 50`,
-        [qStr]
+        [qStr],
       );
       rows = allForms;
     }
 
     const cleanRows = rows
-      .map(r => ({
+      .map((r) => ({
         id: r.id,
-        designation: r.designation ? r.designation.trim() : ""
+        designation: r.designation ? r.designation.trim() : "",
       }))
-      .filter(r => r.designation && r.designation.length > 0);
+      .filter((r) => r.designation && r.designation.length > 0);
 
     res.json(cleanRows);
   } catch (err) {
@@ -314,14 +390,14 @@ router.get("/dosages", async (req, res) => {
 
     let resolvedMedId = id || null;
     let resolvedFormeId = formeId || null;
-    const cleanMedName = (name || '').trim();
-    const cleanFormeName = (forme || '').trim();
+    const cleanMedName = (name || "").trim();
+    const cleanFormeName = (forme || "").trim();
 
     if (!resolvedMedId && cleanMedName) {
       try {
         const [mRows] = await pool.query(
           "SELECT ID_MEDICAMENT FROM medicament WHERE DESIGNATION = ? OR LOWER(TRIM(DESIGNATION)) = LOWER(?) LIMIT 1",
-          [cleanMedName, cleanMedName]
+          [cleanMedName, cleanMedName],
         );
         if (mRows.length > 0) resolvedMedId = mRows[0].ID_MEDICAMENT;
       } catch (e) {}
@@ -331,7 +407,7 @@ router.get("/dosages", async (req, res) => {
       try {
         const [fRows] = await pool.query(
           "SELECT ID_FORME FROM forme WHERE DESIGNATION = ? OR LOWER(TRIM(DESIGNATION)) = LOWER(?) LIMIT 1",
-          [cleanFormeName, cleanFormeName]
+          [cleanFormeName, cleanFormeName],
         );
         if (fRows.length > 0) resolvedFormeId = fRows[0].ID_FORME;
       } catch (e) {}
@@ -354,30 +430,46 @@ router.get("/dosages", async (req, res) => {
              AND TRIM(d.DOSAGE) != '' 
            ORDER BY d.DOSAGE ASC`,
           [
-            resolvedMedId || 0, cleanMedName, cleanMedName,
-            resolvedFormeId || 0, cleanFormeName, cleanFormeName
-          ]
+            resolvedMedId || 0,
+            cleanMedName,
+            cleanMedName,
+            resolvedFormeId || 0,
+            cleanFormeName,
+            cleanFormeName,
+          ],
         );
         rows = results;
       }
     }
 
     // 2. Secondary query: details_ordonnance_% tables filtered by medication AND form (ID_FORME or f.DESIGNATION)
-    if (rows.length === 0 && (resolvedMedId || cleanMedName) && (resolvedFormeId || cleanFormeName)) {
+    if (
+      rows.length === 0 &&
+      (resolvedMedId || cleanMedName) &&
+      (resolvedFormeId || cleanFormeName)
+    ) {
       try {
-        const [tables] = await pool.query("SHOW TABLES LIKE 'details_ordonnance_%'");
+        const [tables] = await pool.query(
+          "SHOW TABLES LIKE 'details_ordonnance_%'",
+        );
         const tableNames = tables
-          .map(t => Object.values(t)[0])
-          .filter(tName => typeof tName === 'string' && tName.startsWith("details_ordonnance_"));
+          .map((t) => Object.values(t)[0])
+          .filter(
+            (tName) =>
+              typeof tName === "string" &&
+              tName.startsWith("details_ordonnance_"),
+          );
 
         if (tableNames.length === 0) {
-          const [singleCheck] = await pool.query("SHOW TABLES LIKE 'details_ordonnance'");
+          const [singleCheck] = await pool.query(
+            "SHOW TABLES LIKE 'details_ordonnance'",
+          );
           if (singleCheck.length > 0) tableNames.push("details_ordonnance");
         }
 
         if (tableNames.length > 0) {
           const sqlQueries = tableNames.map(
-            tbl => `SELECT DISTINCT d.DOSAGE 
+            (tbl) => `SELECT DISTINCT d.DOSAGE 
                     FROM \`${tbl}\` d 
                     LEFT JOIN forme f ON d.ID_FORME = f.ID_FORME
                     LEFT JOIN medicament m ON d.ID_MEDICAMENT = m.ID_MEDICAMENT
@@ -386,14 +478,18 @@ router.get("/dosages", async (req, res) => {
                         (d.ID_FORME IS NOT NULL AND d.ID_FORME = ?) 
                         OR (f.DESIGNATION IS NOT NULL AND (f.DESIGNATION = ? OR LOWER(TRIM(f.DESIGNATION)) = LOWER(?)))
                       )
-                      AND d.DOSAGE IS NOT NULL AND TRIM(d.DOSAGE) != ''`
+                      AND d.DOSAGE IS NOT NULL AND TRIM(d.DOSAGE) != ''`,
           );
           const fullSql = `SELECT DISTINCT DOSAGE FROM (${sqlQueries.join(" UNION ")}) AS combined ORDER BY DOSAGE ASC LIMIT 30`;
           const queryParams = [];
           tableNames.forEach(() => {
             queryParams.push(
-              resolvedMedId || 0, cleanMedName, cleanMedName,
-              resolvedFormeId || 0, cleanFormeName, cleanFormeName
+              resolvedMedId || 0,
+              cleanMedName,
+              cleanMedName,
+              resolvedFormeId || 0,
+              cleanFormeName,
+              cleanFormeName,
             );
           });
           const [dtlResults] = await pool.query(fullSql, queryParams);
@@ -415,13 +511,18 @@ router.get("/dosages", async (req, res) => {
          AND d.DOSAGE IS NOT NULL 
          AND TRIM(d.DOSAGE) != '' 
          ORDER BY d.DOSAGE ASC LIMIT 30`,
-        [resolvedFormeId || 0, cleanFormeName, cleanFormeName]
+        [resolvedFormeId || 0, cleanFormeName, cleanFormeName],
       );
       rows = fResults;
     }
 
     // 4. Fallback: if NO form was specified at all, query by medication alone
-    if (rows.length === 0 && !cleanFormeName && !resolvedFormeId && (resolvedMedId || cleanMedName)) {
+    if (
+      rows.length === 0 &&
+      !cleanFormeName &&
+      !resolvedFormeId &&
+      (resolvedMedId || cleanMedName)
+    ) {
       const [results] = await pool.query(
         `SELECT DISTINCT d.DOSAGE 
          FROM dosage d
@@ -430,7 +531,7 @@ router.get("/dosages", async (req, res) => {
            AND d.DOSAGE IS NOT NULL 
            AND TRIM(d.DOSAGE) != '' 
          ORDER BY d.DOSAGE ASC`,
-        [resolvedMedId || 0, cleanMedName, cleanMedName]
+        [resolvedMedId || 0, cleanMedName, cleanMedName],
       );
       rows = results;
     }
@@ -446,12 +547,14 @@ router.get("/dosages", async (req, res) => {
            AND DOSAGE LIKE ? 
          ORDER BY DOSAGE ASC 
          LIMIT 40`,
-        [qStr]
+        [qStr],
       );
       rows = results;
     }
 
-    res.json(rows.map(r => (r.DOSAGE ? r.DOSAGE.trim() : "")).filter(Boolean));
+    res.json(
+      rows.map((r) => (r.DOSAGE ? r.DOSAGE.trim() : "")).filter(Boolean),
+    );
   } catch (err) {
     console.error("API GET /api/medications/dosages Error:", err);
     res.json([]);
@@ -466,22 +569,38 @@ router.get("/frequencies", async (req, res) => {
     // 1. Fetch FREQ_MEDIC from parametre table
     let freqMedic = 1;
     try {
-      const [pRows] = await pool.query("SELECT FREQ_MEDIC FROM parametre LIMIT 1");
-      if (pRows.length > 0 && pRows[0].FREQ_MEDIC !== null && pRows[0].FREQ_MEDIC !== undefined) {
+      const [pRows] = await pool.query(
+        "SELECT FREQ_MEDIC FROM parametre LIMIT 1",
+      );
+      if (
+        pRows.length > 0 &&
+        pRows[0].FREQ_MEDIC !== null &&
+        pRows[0].FREQ_MEDIC !== undefined
+      ) {
         freqMedic = Number(pRows[0].FREQ_MEDIC);
       }
     } catch (eParam) {
-      console.warn("Could not fetch FREQ_MEDIC from parametre:", eParam.message);
+      console.warn(
+        "Could not fetch FREQ_MEDIC from parametre:",
+        eParam.message,
+      );
     }
 
     // 2. Discover exercise details tables (details_ordonnance_YYYY)
-    const [tables] = await pool.query("SHOW TABLES LIKE 'details_ordonnance_%'");
+    const [tables] = await pool.query(
+      "SHOW TABLES LIKE 'details_ordonnance_%'",
+    );
     const tableNames = tables
-      .map(t => Object.values(t)[0])
-      .filter(tName => typeof tName === 'string' && tName.startsWith("details_ordonnance_"));
+      .map((t) => Object.values(t)[0])
+      .filter(
+        (tName) =>
+          typeof tName === "string" && tName.startsWith("details_ordonnance_"),
+      );
 
     if (tableNames.length === 0) {
-      const [singleCheck] = await pool.query("SHOW TABLES LIKE 'details_ordonnance'");
+      const [singleCheck] = await pool.query(
+        "SHOW TABLES LIKE 'details_ordonnance'",
+      );
       if (singleCheck.length > 0) tableNames.push("details_ordonnance");
     }
 
@@ -493,7 +612,10 @@ router.get("/frequencies", async (req, res) => {
     let targetMedId = id || null;
     if (freqMedic === 1 && !targetMedId && name && name.trim()) {
       try {
-        const [mRows] = await pool.query("SELECT ID_MEDICAMENT FROM medicament WHERE DESIGNATION = ? LIMIT 1", [name.trim()]);
+        const [mRows] = await pool.query(
+          "SELECT ID_MEDICAMENT FROM medicament WHERE DESIGNATION = ? LIMIT 1",
+          [name.trim()],
+        );
         if (mRows.length > 0) {
           targetMedId = mRows[0].ID_MEDICAMENT;
         }
@@ -503,25 +625,26 @@ router.get("/frequencies", async (req, res) => {
     }
 
     // 4. Build UNION query over discovered exercise tables
-    const filterByMed = (freqMedic === 1 && targetMedId !== null && targetMedId !== undefined);
+    const filterByMed =
+      freqMedic === 1 && targetMedId !== null && targetMedId !== undefined;
     const sqlQueries = [];
     const params = [];
 
     for (const tbl of tableNames) {
       if (filterByMed) {
         sqlQueries.push(
-          `SELECT DISTINCT FREQUENCE FROM \`${tbl}\` WHERE ID_MEDICAMENT = ? AND FREQUENCE IS NOT NULL AND TRIM(FREQUENCE) != ''`
+          `SELECT DISTINCT FREQUENCE FROM \`${tbl}\` WHERE ID_MEDICAMENT = ? AND FREQUENCE IS NOT NULL AND TRIM(FREQUENCE) != ''`,
         );
         params.push(targetMedId);
       } else {
         if (q && q.trim()) {
           sqlQueries.push(
-            `SELECT DISTINCT FREQUENCE FROM \`${tbl}\` WHERE FREQUENCE IS NOT NULL AND TRIM(FREQUENCE) != '' AND FREQUENCE LIKE ?`
+            `SELECT DISTINCT FREQUENCE FROM \`${tbl}\` WHERE FREQUENCE IS NOT NULL AND TRIM(FREQUENCE) != '' AND FREQUENCE LIKE ?`,
           );
           params.push(`%${q.trim()}%`);
         } else {
           sqlQueries.push(
-            `SELECT DISTINCT FREQUENCE FROM \`${tbl}\` WHERE FREQUENCE IS NOT NULL AND TRIM(FREQUENCE) != ''`
+            `SELECT DISTINCT FREQUENCE FROM \`${tbl}\` WHERE FREQUENCE IS NOT NULL AND TRIM(FREQUENCE) != ''`,
           );
         }
       }
@@ -530,7 +653,9 @@ router.get("/frequencies", async (req, res) => {
     const fullSql = `SELECT DISTINCT FREQUENCE FROM (${sqlQueries.join(" UNION ")}) AS combined ORDER BY FREQUENCE ASC LIMIT 50`;
     const [rows] = await pool.query(fullSql, params);
 
-    res.json(rows.map(r => (r.FREQUENCE ? r.FREQUENCE.trim() : "")).filter(Boolean));
+    res.json(
+      rows.map((r) => (r.FREQUENCE ? r.FREQUENCE.trim() : "")).filter(Boolean),
+    );
   } catch (err) {
     console.error("API GET /api/medications/frequencies Error:", err);
     res.json([]);
@@ -551,10 +676,14 @@ router.get("/durations", async (req, res) => {
          AND DESIGNATION LIKE ? 
        ORDER BY DESIGNATION ASC 
        LIMIT 50`,
-      [query]
+      [query],
     );
 
-    res.json(rows.map(r => (r.DESIGNATION ? r.DESIGNATION.trim() : "")).filter(Boolean));
+    res.json(
+      rows
+        .map((r) => (r.DESIGNATION ? r.DESIGNATION.trim() : ""))
+        .filter(Boolean),
+    );
   } catch (err) {
     console.error("API GET /api/medications/durations Error:", err);
     res.json([]);
@@ -575,13 +704,99 @@ router.get("/prescriptions", async (req, res) => {
          AND PRESCRIPTION LIKE ? 
        ORDER BY PRESCRIPTION ASC 
        LIMIT 50`,
-      [query]
+      [query],
     );
 
-    res.json(rows.map(r => (r.PRESCRIPTION ? r.PRESCRIPTION.trim() : "")).filter(Boolean));
+    res.json(
+      rows
+        .map((r) => (r.PRESCRIPTION ? r.PRESCRIPTION.trim() : ""))
+        .filter(Boolean),
+    );
   } catch (err) {
     console.error("API GET /api/medications/prescriptions Error:", err);
     res.json([]);
+  }
+});
+
+// POST /api/medications - Add a new medication
+router.post("/", async (req, res) => {
+  const { designation, format, conditionnement, dci } = req.body;
+  try {
+    const [result] = await pool.query(
+      "INSERT INTO medicament (DESIGNATION, FORMAT, CONDITIONNEMENT, DCI, STATUT) VALUES (?, ?, ?, ?, ?)",
+      [designation, format, conditionnement, dci, 1],
+    );
+    res
+      .status(201)
+      .json({
+        id: result.insertId,
+        designation,
+        format,
+        conditionnement,
+        dci,
+        status: 1,
+      });
+  } catch (err) {
+    console.error("API POST /api/medications Error:", err);
+    res.status(500).json({ error: "Failed to add medication" });
+  }
+});
+
+// PUT /api/medications/:id - Update a medication
+router.put("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { designation, format, conditionnement, dci } = req.body;
+  try {
+    await pool.query(
+      "UPDATE medicament SET DESIGNATION = ?, FORMAT = ?, CONDITIONNEMENT = ?, DCI = ? WHERE ID_MEDICAMENT = ?",
+      [designation, format, conditionnement, dci, id],
+    );
+    res.json({ id, designation, format, conditionnement, dci });
+  } catch (err) {
+    console.error(`API PUT /api/medications/${id} Error:`, err);
+    res.status(500).json({ error: "Failed to update medication" });
+  }
+});
+
+// DELETE /api/medications/:id - Delete a medication
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query("DELETE FROM medicament WHERE ID_MEDICAMENT = ?", [id]);
+    res.status(204).send();
+  } catch (err) {
+    console.error(`API DELETE /api/medications/${id} Error:`, err);
+    res.status(500).json({ error: "Failed to delete medication" });
+  }
+});
+
+// PUT /api/medications/:id/activate - Activate a medication
+router.put("/:id/activate", async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query(
+      "UPDATE medicament SET STATUT = 1 WHERE ID_MEDICAMENT = ?",
+      [id],
+    );
+    res.json({ id, status: 1 });
+  } catch (err) {
+    console.error(`API PUT /api/medications/${id}/activate Error:`, err);
+    res.status(500).json({ error: "Failed to activate medication" });
+  }
+});
+
+// PUT /api/medications/:id/deactivate - Deactivate a medication
+router.put("/:id/deactivate", async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query(
+      "UPDATE medicament SET STATUT = 0 WHERE ID_MEDICAMENT = ?",
+      [id],
+    );
+    res.json({ id, status: 0 });
+  } catch (err) {
+    console.error(`API PUT /api/medications/${id}/deactivate Error:`, err);
+    res.status(500).json({ error: "Failed to deactivate medication" });
   }
 });
 

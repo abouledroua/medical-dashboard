@@ -507,6 +507,41 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
     notifyDraftUpdate({ bilan: newBilan });
   };
 
+  const formatDateToLocale = (dateString) => {
+    if (!dateString) return '';
+    try {
+      return new Date(dateString).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US');
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  const handleDeleteBilan = async (row) => {
+    const confirmObj = confirm({
+      title: lang === 'fr' ? 'Supprimer le Bilan' : 'Delete Bilan',
+      message: lang === 'fr'
+        ? `Voulez-vous vraiment supprimer ce bilan du ${formatDateToLocale(row.DATE_BILAN)} ?`
+        : `Are you sure you want to delete this bilan from ${formatDateToLocale(row.DATE_BILAN)}?`,
+      confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
+      cancelText: lang === 'fr' ? 'Annuler' : 'Cancel',
+      variant: 'danger'
+    });
+
+    const ok = await confirmObj;
+    if (!ok) return;
+
+    const patId = activePatient?.id || activePatient?.codeBarre || activePatient?.mrn;
+    if (!patId) return;
+
+    const idConsult = row.ID_CONSULTATION;
+    const exYear = row.EXERCICE || new Date().getFullYear();
+
+    const res = await fetch(`/api/patients/${encodeURIComponent(patId)}/bilan-coche/${idConsult}/${exYear}`, { method: 'DELETE' });
+    if (res.ok) {
+      fetchBilanCocheHistory(patId);
+    }
+  };
+
   // 4. ORIENTATION (Referral Letter) State
   const [orientation, setOrientation] = useState(
     draft?.orientation || {
@@ -559,8 +594,8 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
     const confirmObj = confirm({
       title: lang === 'fr' ? 'Supprimer l\'Arrêt de Travail' : 'Delete Sick Leave',
       message: lang === 'fr'
-        ? `Voulez-vous vraiment supprimer cet arrêt de travail (${row.dateDebut || ''} - ${row.dateFin || ''}) ?`
-        : `Are you sure you want to delete this sick leave record (${row.dateDebut || ''} - ${row.dateFin || ''})?`,
+        ? `Voulez-vous vraiment supprimer cet arrêt de travail (${formatDateToLocale(row.dateDebut)} - ${formatDateToLocale(row.dateFin)}) ?`
+        : `Are you sure you want to delete this sick leave record (${formatDateToLocale(row.dateDebut)} - ${formatDateToLocale(row.dateFin)})?`,
       confirmText: lang === 'fr' ? 'Supprimer' : 'Delete',
       cancelText: lang === 'fr' ? 'Annuler' : 'Cancel',
       variant: 'danger'
@@ -3521,9 +3556,7 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
 
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setBilanCocheRows((prev) => prev.filter((_, i) => i !== idx));
-                                  }}
+                                  onClick={() => handleDeleteBilan(row)}
                                   className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-slate-900 rounded-lg transition cursor-pointer"
                                   title={lang === 'fr' ? 'Supprimer de la liste' : 'Delete'}
                                 >
@@ -3927,6 +3960,15 @@ export default function AddConsultationModal({ draft, patient, patients = [], on
                                       title={lang === 'fr' ? 'Imprimer' : 'Print'}
                                     >
                                       <Printer className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteArret(row)}
+                                      className="p-1 text-rose-400 hover:text-rose-300 hover:bg-slate-900 rounded-lg transition cursor-pointer"
+                                      title={lang === 'fr' ? 'Supprimer' : 'Delete'}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                   </div>
                                 </td>

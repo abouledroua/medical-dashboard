@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Laptop, Check, ShieldAlert, AlertCircle } from 'lucide-react';
+import { Laptop, Check, ShieldAlert, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { translations } from '../translations';
 
 export default function DeviceNameModal({ isOpen, onSave, currentDeviceId, lang = 'fr' }) {
   const [deviceName, setDeviceName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [selectedTheme, setSelectedTheme] = useState('dark-emerald');
 
   const t = translations[lang] || translations.fr;
 
@@ -14,10 +15,19 @@ export default function DeviceNameModal({ isOpen, onSave, currentDeviceId, lang 
       setDeviceName('');
       setIsSubmitting(false);
       setError('');
+      const savedTheme = localStorage.getItem('el_iyada_theme') || 'dark-emerald';
+      setSelectedTheme(savedTheme);
+      document.documentElement.dataset.theme = savedTheme;
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const handleThemeChange = (themeId) => {
+    setSelectedTheme(themeId);
+    document.documentElement.dataset.theme = themeId;
+    localStorage.setItem('el_iyada_theme', themeId);
+  };
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -39,10 +49,85 @@ export default function DeviceNameModal({ isOpen, onSave, currentDeviceId, lang 
     }
   };
 
+  const themesList = [
+    {
+      id: 'dark-emerald',
+      name: 'Cyber Emerald',
+      mode: 'dark',
+      accentColor: '#14b8a6',
+      bgPreview: '#070d1e',
+      cardPreview: '#0f172a',
+      textPreview: '#f8fafc',
+      borderPreview: '#334155',
+      badgeStyle: 'bg-teal-950 text-teal-300 border-teal-800',
+      desc: lang === 'fr' ? 'Obsidienne & Émeraude Lumineuse' : 'Deep Obsidian & Cyber Teal'
+    },
+    {
+      id: 'dark-violet',
+      name: 'Violet Nebula',
+      mode: 'dark',
+      accentColor: '#a855f7',
+      bgPreview: '#0d0a1a',
+      cardPreview: '#18122b',
+      textPreview: '#fae8ff',
+      borderPreview: '#581c87',
+      badgeStyle: 'bg-purple-950 text-purple-300 border-purple-800',
+      desc: lang === 'fr' ? 'Midnight & Violet Électrique' : 'Cosmic Indigo & Violet Glow'
+    },
+    {
+      id: 'dark-nordic',
+      name: 'Nordic Ocean',
+      mode: 'dark',
+      accentColor: '#38bdf8',
+      bgPreview: '#06152d',
+      cardPreview: '#0f2240',
+      textPreview: '#f0f9ff',
+      borderPreview: '#0c4a6e',
+      badgeStyle: 'bg-sky-950 text-sky-300 border-sky-800',
+      desc: lang === 'fr' ? 'Bleu Arctique & Cyan Glacé' : 'Arctic Navy & Ice Cyan'
+    },
+    {
+      id: 'light-medical',
+      name: 'Crimson Red',
+      mode: 'light',
+      accentColor: '#e11d48',
+      bgPreview: '#fff1f2',
+      cardPreview: '#ffffff',
+      textPreview: '#4c0519',
+      borderPreview: '#fda4af',
+      badgeStyle: 'bg-rose-100 text-rose-900 border-rose-300',
+      desc: lang === 'fr' ? 'Porcelaine Rose & Rouge Crimson' : 'Rose Porcelain & Crimson Red'
+    },
+    {
+      id: 'light-amber',
+      name: 'Onyx Slate',
+      mode: 'light',
+      accentColor: '#0f172a',
+      bgPreview: '#f8fafc',
+      cardPreview: '#ffffff',
+      textPreview: '#020617',
+      borderPreview: '#94a3b8',
+      badgeStyle: 'bg-slate-900 text-white border-slate-700',
+      desc: lang === 'fr' ? 'Porcelaine & Noir Onyx Monochromatique' : 'Monochrome Slate & Onyx Black'
+    },
+    {
+      id: 'light-mint',
+      name: 'Sage Botanical',
+      mode: 'light',
+      accentColor: '#059669',
+      bgPreview: '#ecfdf5',
+      cardPreview: '#f0fdf4',
+      textPreview: '#064e3b',
+      borderPreview: '#a7f3d0',
+      badgeStyle: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      desc: lang === 'fr' ? 'Menthe & Émeraude Botanique' : 'Mint Sage & Forest Emerald'
+    }
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-lg animate-fade-in">
       <div 
-        className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden relative"
+        className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Glow backdrop */}
@@ -59,14 +144,14 @@ export default function DeviceNameModal({ isOpen, onSave, currentDeviceId, lang 
             </h3>
             <p className="text-xs text-slate-400 mt-1 leading-relaxed">
               {lang === 'fr'
-                ? `Ce poste (${currentDeviceId || 'Inconnu'}) n'est pas encore enregistré. Veuillez saisir un nom pour valider l'accès.`
-                : `This device (${currentDeviceId || 'Unknown'}) is not registered. Please enter a name to validate access.`}
+                ? `Ce poste (${currentDeviceId || 'Inconnu'}) n'est pas encore enregistré. Veuillez saisir un nom et choisir un thème pour valider l'accès.`
+                : `This device (${currentDeviceId || 'Unknown'}) is not registered. Please enter a name and choose a theme to validate access.`}
             </p>
           </div>
         </div>
 
         {/* Body Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
             <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-800/60 text-rose-300 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
@@ -90,16 +175,57 @@ export default function DeviceNameModal({ isOpen, onSave, currentDeviceId, lang 
               className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
               disabled={isSubmitting}
             />
-            <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
-              <ShieldAlert className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-              {lang === 'fr' 
-                ? 'Saisissez le nom de ce poste pour valider et enregistrer.' 
-                : 'Enter the device name to validate and save.'}
-            </p>
+          </div>
+          
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-3">
+              {lang === 'fr' ? 'Thème visuel par défaut *' : 'Default Visual Theme *'}
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {themesList.map((tItem) => {
+                const isActive = selectedTheme === tItem.id;
+                return (
+                  <div
+                    key={tItem.id}
+                    onClick={() => handleThemeChange(tItem.id)}
+                    className={`relative p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between h-32 overflow-hidden group ${
+                      isActive
+                        ? 'border-teal-400 ring-2 ring-teal-400/40 shadow-lg'
+                        : 'border-slate-800 hover:border-slate-600'
+                    }`}
+                    style={{ background: tItem.bgPreview }}
+                  >
+                    <div className="flex items-start justify-between z-10">
+                      <span className="text-xs font-bold tracking-tight" style={{ color: tItem.textPreview }}>
+                        {tItem.name}
+                      </span>
+                      <span className={`px-1.5 py-0.5 text-[8px] font-extrabold uppercase rounded-full border ${tItem.badgeStyle}`}>
+                        {tItem.mode === 'dark' ? (lang === 'fr' ? 'Sombre' : 'Dark') : (lang === 'fr' ? 'Clair' : 'Light')}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 z-10">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-md shadow-sm" style={{ background: tItem.accentColor }} />
+                        <div className="h-1.5 rounded-full flex-1" style={{ background: tItem.cardPreview, border: `1px solid ${tItem.borderPreview}` }} />
+                      </div>
+                      <div className="h-2 rounded-md w-3/4 opacity-80" style={{ background: tItem.textPreview }} />
+                    </div>
+
+                    {isActive && (
+                      <div className="absolute inset-0 bg-teal-500/10 flex items-center justify-center">
+                        <CheckCircle2 className="w-6 h-6 text-teal-300" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
+
           {/* Footer Button (Only Validate button - mandatory) */}
-          <div className="flex items-center justify-end pt-2">
+          <div className="flex items-center justify-end pt-2 border-t border-slate-800">
             <button
               type="submit"
               disabled={isSubmitting || !deviceName.trim()}
