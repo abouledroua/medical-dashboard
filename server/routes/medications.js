@@ -10,15 +10,14 @@ router.get("/", async (req, res) => {
       SELECT 
         m.ID_MEDICAMENT as id, 
         m.DESIGNATION as designation,
-        m.DCI as dci,
-        m.STATUT as etat,
+        m.ETAT as etat,
         MAX(f.DESIGNATION) as forme,
         MAX(d.DOSAGE) as dosage
       FROM medicament m 
       LEFT JOIN forme_medicament fm ON m.ID_MEDICAMENT = fm.ID_MEDICAMENT
       LEFT JOIN forme f ON fm.ID_FORME = f.ID_FORME
       LEFT JOIN dosage d ON m.ID_MEDICAMENT = d.ID_MEDICAMENT
-      GROUP BY m.ID_MEDICAMENT, m.DESIGNATION, m.DCI, m.STATUT
+      GROUP BY m.ID_MEDICAMENT, m.DESIGNATION, m.ETAT
       ORDER BY m.DESIGNATION ASC
     `);
     res.json(rows);
@@ -718,13 +717,132 @@ router.get("/prescriptions", async (req, res) => {
   }
 });
 
+// POST /api/medications/bulk - Add multiple medications
+router.post("/bulk", async (req, res) => {
+  const { medications } = req.body;
+  if (!Array.isArray(medications)) {
+    return res.status(400).json({ error: "Invalid data format. Expected an array of medications.", code: 'INVALID_FORMAT' });
+  }
+
+  try {
+    // 1. Get unique forms
+    const uniqueForms = [...new Set(medications.map(m => String(m.format || '').trim()).filter(Boolean))];
+    
+    const formMap = new Map();
+    if (uniqueForms.length > 0) {
+      // 2. Fetch existing forms from db
+      const [existingForms] = await pool.query("SELECT ID_FORME, DESIGNATION FROM forme WHERE DESIGNATION IN (?)", [uniqueForms]);
+      for(const f of existingForms) formMap.set(f.DESIGNATION.toLowerCase(), f.ID_FORME);
+      
+      // 3. Find forms to insert
+      const formsToInsert = [];
+      const [fMax] = await pool.query("SELECT COALESCE(MAX(ID_FORME), 0) AS maxId FROM forme");
+      let nextFormId = fMax[0].maxId + 1;
+      
+      for(const f of uniqueForms) {
+        if(!formMap.has(f.toLowerCase())) {
+           formsToInsert.push([nextFormId, f, 1]); // ETAT=1
+           formMap.set(f.toLowerCase(), nextFormId);
+           nextFormId++;
+        }
+      }
+      if (formsToInsert.length > 0) {
+         await pool.query("INSERT INTO forme (ID_FORME, DESIGNATION, ETAT) VALUES ?", [formsToInsert]);
+      }
+    }
+    
+    // 4. Get unique medications and existing ones
+    const uniqueMedNames = [...new Set(medications.map(m => String(m.designation || '').trim()).filter(Boolean))];
+    const medMap = new Map();
+    if (uniqueMedNames.length > 0) {
+      const [existingMeds] = await pool.query("SELECT ID_MEDICAMENT, DESIGNATION FROM medicament WHERE DESIGNATION IN (?)", [uniqueMedNames]);
+      for(const m of existingMeds) medMap.set(m.DESIGNATION.toLowerCase(), m.ID_MEDICAMENT);
+    }
+    
+    const [mMax] = await pool.query("SELECT COALESCE(MAX(ID_MEDICAMENT), 0) AS maxId FROM medicament");
+    let nextMedId = mMax[0].maxId + 1;
+    
+    const medValues = [];
+    const fmValues = [];
+    const dosValues = [];
+    
+    const fmSet = new Set();
+    const dosSet = new Set();
+    
+    // Pre-populate sets with existing associations if any existing meds are matched
+    const existingMedIds = Array.from(medMap.values());
+    if (existingMedIds.length > 0) {
+        const [existingFm] = await pool.query("SELECT ID_MEDICAMENT, ID_FORME FROM forme_medicament WHERE ID_MEDICAMENT IN (?)", [existingMedIds]);
+        for(const row of existingFm) {
+            fmSet.add(`${row.ID_MEDICAMENT}-${row.ID_FORME}`);
+        }
+        
+        const [existingDos] = await pool.query("SELECT ID_MEDICAMENT, ID_FORME, DOSAGE FROM dosage WHERE ID_MEDICAMENT IN (?)", [existingMedIds]);
+        for(const row of existingDos) {
+            if (row.DOSAGE) {
+                dosSet.add(`${row.ID_MEDICAMENT}-${row.ID_FORME}-${row.DOSAGE.toLowerCase()}`);
+            }
+        }
+    }
+    
+    for(const med of medications) {
+       const designation = String(med.designation || '').trim();
+       if(!designation) continue;
+       
+       const lowerDesig = designation.toLowerCase();
+       let curMedId = medMap.get(lowerDesig);
+       
+       if (!curMedId) {
+          curMedId = nextMedId++;
+          medValues.push([curMedId, designation, 1]);
+          medMap.set(lowerDesig, curMedId);
+       }
+       
+       const formeStr = String(med.format || '').trim();
+       const curFormId = formeStr ? formMap.get(formeStr.toLowerCase()) : null;
+       
+       if (curFormId) {
+          const fmKey = `${curMedId}-${curFormId}`;
+          if (!fmSet.has(fmKey)) {
+             fmValues.push([curMedId, curFormId]);
+             fmSet.add(fmKey);
+          }
+          
+          const dosageStr = String(med.conditionnement || '').trim();
+          if (dosageStr) {
+             const dosKey = `${curMedId}-${curFormId}-${dosageStr.toLowerCase()}`;
+             if (!dosSet.has(dosKey)) {
+                dosValues.push([curMedId, curFormId, dosageStr, 1]);
+                dosSet.add(dosKey);
+             }
+          }
+       }
+    }
+
+    if (medValues.length > 0) {
+      await pool.query("INSERT INTO medicament (ID_MEDICAMENT, DESIGNATION, ETAT) VALUES ?", [medValues]);
+    }
+    if (fmValues.length > 0) {
+      await pool.query("INSERT IGNORE INTO forme_medicament (ID_MEDICAMENT, ID_FORME) VALUES ?", [fmValues]);
+    }
+    if (dosValues.length > 0) {
+      await pool.query("INSERT IGNORE INTO dosage (ID_MEDICAMENT, ID_FORME, DOSAGE, ETAT) VALUES ?", [dosValues]);
+    }
+
+    res.status(201).json({ message: `Successfully inserted ${medValues.length} medications.` });
+  } catch (err) {
+    console.error("API POST /api/medications/bulk Error:", err);
+    res.status(500).json({ error: "Failed to add bulk medications", code: 'INSERT_FAILED' });
+  }
+});
+
 // POST /api/medications - Add a new medication
 router.post("/", async (req, res) => {
   const { designation, format, conditionnement, dci } = req.body;
   try {
     const [result] = await pool.query(
-      "INSERT INTO medicament (DESIGNATION, FORMAT, CONDITIONNEMENT, DCI, STATUT) VALUES (?, ?, ?, ?, ?)",
-      [designation, format, conditionnement, dci, 1],
+      "INSERT INTO medicament (DESIGNATION, FORMAT, CONDITIONNEMENT, ETAT) VALUES (?, ?, ?, ?)",
+      [designation, format, conditionnement, 1],
     );
     res
       .status(201)
@@ -748,8 +866,8 @@ router.put("/:id", async (req, res) => {
   const { designation, format, conditionnement, dci } = req.body;
   try {
     await pool.query(
-      "UPDATE medicament SET DESIGNATION = ?, FORMAT = ?, CONDITIONNEMENT = ?, DCI = ? WHERE ID_MEDICAMENT = ?",
-      [designation, format, conditionnement, dci, id],
+      "UPDATE medicament SET DESIGNATION = ?, FORMAT = ?, CONDITIONNEMENT = ? WHERE ID_MEDICAMENT = ?",
+      [designation, format, conditionnement, id],
     );
     res.json({ id, designation, format, conditionnement, dci });
   } catch (err) {
@@ -762,6 +880,29 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
   try {
+    const [tables] = await pool.query("SHOW TABLES LIKE 'details_ordonnance_%'");
+    const tableNames = tables
+      .map((t) => Object.values(t)[0])
+      .filter((tName) => typeof tName === "string" && (tName.startsWith("details_ordonnance_") || tName === "details_ordonnance"));
+
+    if (tableNames.length === 0) {
+      const [singleCheck] = await pool.query("SHOW TABLES LIKE 'details_ordonnance'");
+      if (singleCheck.length > 0) tableNames.push("details_ordonnance");
+    }
+
+    let isUsed = false;
+    for (const tbl of tableNames) {
+      const [rows] = await pool.query(`SELECT 1 FROM \`${tbl}\` WHERE ID_MEDICAMENT = ? AND TYPE = 1 LIMIT 1`, [id]);
+      if (rows.length > 0) {
+        isUsed = true;
+        break;
+      }
+    }
+
+    if (isUsed) {
+      return res.status(400).json({ error: "Cannot delete medication: it is already used in one or more prescriptions." });
+    }
+
     await pool.query("DELETE FROM medicament WHERE ID_MEDICAMENT = ?", [id]);
     res.status(204).send();
   } catch (err) {
@@ -775,7 +916,7 @@ router.put("/:id/activate", async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query(
-      "UPDATE medicament SET STATUT = 1 WHERE ID_MEDICAMENT = ?",
+      "UPDATE medicament SET ETAT = 1 WHERE ID_MEDICAMENT = ?",
       [id],
     );
     res.json({ id, status: 1 });
@@ -790,13 +931,112 @@ router.put("/:id/deactivate", async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query(
-      "UPDATE medicament SET STATUT = 0 WHERE ID_MEDICAMENT = ?",
+      "UPDATE medicament SET ETAT = 0 WHERE ID_MEDICAMENT = ?",
       [id],
     );
     res.json({ id, status: 0 });
   } catch (err) {
     console.error(`API PUT /api/medications/${id}/deactivate Error:`, err);
     res.status(500).json({ error: "Failed to deactivate medication" });
+  }
+});
+
+// --- PRESCRIPTIONS (medicament_p) CRUD ---
+
+// GET /api/medications/p
+router.get('/p', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT ID_MEDICAMENT as id, PRESCRIPTION as prescription, etat FROM medicament_p ORDER BY PRESCRIPTION ASC');
+    res.json(rows);
+  } catch (err) {
+    console.error('API GET /api/medications/p Error:', err);
+    res.status(500).json({ error: 'Failed to fetch prescriptions' });
+  }
+});
+
+// POST /api/medications/p
+router.post('/p', async (req, res) => {
+  try {
+    const { prescription } = req.body;
+    if (!prescription) return res.status(400).json({ error: 'Prescription is required' });
+    
+    const [mMax] = await pool.query('SELECT COALESCE(MAX(ID_MEDICAMENT), 0) AS maxId FROM medicament_p');
+    let nextId = mMax[0].maxId + 1;
+    
+    await pool.query('INSERT INTO medicament_p (ID_MEDICAMENT, PRESCRIPTION, etat) VALUES (?, ?, 1)', [nextId, prescription]);
+    res.status(201).json({ id: nextId, prescription, etat: 1 });
+  } catch (err) {
+    console.error('API POST /api/medications/p Error:', err);
+    res.status(500).json({ error: 'Failed to add prescription' });
+  }
+});
+
+// PUT /api/medications/p/:id
+router.put('/p/:id', async (req, res) => {
+  try {
+    const { prescription } = req.body;
+    await pool.query('UPDATE medicament_p SET PRESCRIPTION = ? WHERE ID_MEDICAMENT = ?', [prescription, req.params.id]);
+    res.json({ message: 'Prescription updated successfully' });
+  } catch (err) {
+    console.error('API PUT /api/medications/p/:id Error:', err);
+    res.status(500).json({ error: 'Failed to update prescription' });
+  }
+});
+
+// DELETE /api/medications/p/:id
+router.delete('/p/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [tables] = await pool.query("SHOW TABLES LIKE 'details_ordonnance_%'");
+    const tableNames = tables
+      .map((t) => Object.values(t)[0])
+      .filter((tName) => typeof tName === "string" && (tName.startsWith("details_ordonnance_") || tName === "details_ordonnance"));
+
+    if (tableNames.length === 0) {
+      const [singleCheck] = await pool.query("SHOW TABLES LIKE 'details_ordonnance'");
+      if (singleCheck.length > 0) tableNames.push("details_ordonnance");
+    }
+
+    let isUsed = false;
+    for (const tbl of tableNames) {
+      const [rows] = await pool.query(`SELECT 1 FROM \`${tbl}\` WHERE ID_MEDICAMENT = ? AND TYPE = 2 LIMIT 1`, [id]);
+      if (rows.length > 0) {
+        isUsed = true;
+        break;
+      }
+    }
+
+    if (isUsed) {
+      return res.status(400).json({ error: "Cannot delete prescription: it is already used in one or more consultations." });
+    }
+
+    await pool.query('DELETE FROM medicament_p WHERE ID_MEDICAMENT = ?', [id]);
+    res.json({ message: 'Prescription deleted successfully' });
+  } catch (err) {
+    console.error('API DELETE /api/medications/p/:id Error:', err);
+    res.status(500).json({ error: 'Failed to delete prescription' });
+  }
+});
+
+// PUT /api/medications/p/:id/activate
+router.put('/p/:id/activate', async (req, res) => {
+  try {
+    await pool.query('UPDATE medicament_p SET etat = 1 WHERE ID_MEDICAMENT = ?', [req.params.id]);
+    res.json({ message: 'Prescription activated' });
+  } catch (err) {
+    console.error('API PUT /api/medications/p/:id/activate Error:', err);
+    res.status(500).json({ error: 'Failed to activate prescription' });
+  }
+});
+
+// PUT /api/medications/p/:id/deactivate
+router.put('/p/:id/deactivate', async (req, res) => {
+  try {
+    await pool.query('UPDATE medicament_p SET etat = 0 WHERE ID_MEDICAMENT = ?', [req.params.id]);
+    res.json({ message: 'Prescription deactivated' });
+  } catch (err) {
+    console.error('API PUT /api/medications/p/:id/deactivate Error:', err);
+    res.status(500).json({ error: 'Failed to deactivate prescription' });
   }
 });
 
