@@ -7,6 +7,7 @@ export default function DeviceNameModal({ isOpen, onSave, currentDeviceId, lang 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('dark-emerald');
+  const [workspacePath, setWorkspacePath] = useState(() => localStorage.getItem('clinicWorkspacePath') || '');
 
   const t = translations[lang] || translations.fr;
 
@@ -18,6 +19,7 @@ export default function DeviceNameModal({ isOpen, onSave, currentDeviceId, lang 
       const savedTheme = localStorage.getItem('el_iyada_theme') || 'dark-emerald';
       setSelectedTheme(savedTheme);
       document.documentElement.dataset.theme = savedTheme;
+      setWorkspacePath(localStorage.getItem('clinicWorkspacePath') || '');
     }
   }, [isOpen]);
 
@@ -32,15 +34,20 @@ export default function DeviceNameModal({ isOpen, onSave, currentDeviceId, lang 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     const trimmed = deviceName.trim();
+    const trimmedPath = workspacePath.trim();
     if (!trimmed) {
       setError(lang === 'fr' ? 'Veuillez saisir le nom du poste avant de valider.' : 'Please enter a device name before saving.');
+      return;
+    }
+    if (!trimmedPath) {
+      setError(lang === 'fr' ? 'Veuillez sélectionner un dossier de travail.' : 'Please select a workspace folder.');
       return;
     }
 
     setError('');
     setIsSubmitting(true);
     try {
-      await onSave(trimmed);
+      await onSave(trimmed, trimmedPath);
     } catch (err) {
       console.error('Error saving device name:', err);
       setError(lang === 'fr' ? 'Échec de l\'enregistrement.' : 'Failed to save.');
@@ -127,7 +134,7 @@ export default function DeviceNameModal({ isOpen, onSave, currentDeviceId, lang 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-lg animate-fade-in">
       <div 
-        className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden relative"
+        className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden relative flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Glow backdrop */}
@@ -151,7 +158,7 @@ export default function DeviceNameModal({ isOpen, onSave, currentDeviceId, lang 
         </div>
 
         {/* Body Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
           {error && (
             <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-800/60 text-rose-300 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
@@ -175,6 +182,47 @@ export default function DeviceNameModal({ isOpen, onSave, currentDeviceId, lang 
               className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
               disabled={isSubmitting}
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-2">
+              {lang === 'fr' ? 'Dossier de Travail (Workspace) *' : 'Workspace Folder *'}
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={workspacePath}
+                onChange={(e) => {
+                  setWorkspacePath(e.target.value);
+                  if (error) setError('');
+                }}
+                placeholder={lang === 'fr' ? 'Chemin du dossier...' : 'Folder path...'}
+                className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
+                disabled={isSubmitting}
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch('/api/select-folder');
+                    if (res.ok) {
+                      const data = await res.json();
+                      if (data.path) {
+                        setWorkspacePath(data.path);
+                        if (error) setError('');
+                      }
+                    }
+                  } catch (err) {
+                    console.error("Failed to open folder picker", err);
+                  }
+                }}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-xl border border-slate-700 transition"
+                title={lang === 'fr' ? 'Sélectionner un dossier' : 'Select folder'}
+                disabled={isSubmitting}
+              >
+                ...
+              </button>
+            </div>
           </div>
           
           <div>
@@ -225,10 +273,10 @@ export default function DeviceNameModal({ isOpen, onSave, currentDeviceId, lang 
 
 
           {/* Footer Button (Only Validate button - mandatory) */}
-          <div className="flex items-center justify-end pt-2 border-t border-slate-800">
+          <div className="flex items-center justify-end pt-2 border-t border-slate-800 shrink-0">
             <button
               type="submit"
-              disabled={isSubmitting || !deviceName.trim()}
+              disabled={isSubmitting || !deviceName.trim() || !workspacePath.trim()}
               className="w-full sm:w-auto px-6 py-2.5 text-xs font-bold text-slate-950 bg-gradient-to-r from-teal-400 to-cyan-400 hover:from-teal-300 hover:to-cyan-300 rounded-xl shadow-lg shadow-teal-500/20 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (

@@ -186,6 +186,7 @@ router.get("/suggestions", async (req, res) => {
          WHERE m.DESIGNATION IS NOT NULL 
            AND TRIM(m.DESIGNATION) != '' 
            AND m.DESIGNATION LIKE ? 
+           AND m.ETAT = 1
          GROUP BY m.DESIGNATION
          ORDER BY m.DESIGNATION ASC 
          LIMIT 40`,
@@ -199,6 +200,7 @@ router.get("/suggestions", async (req, res) => {
          WHERE DESIGNATION IS NOT NULL 
            AND TRIM(DESIGNATION) != '' 
            AND DESIGNATION LIKE ? 
+           AND ETAT = 1
          GROUP BY DESIGNATION
          ORDER BY DESIGNATION ASC 
          LIMIT 40`,
@@ -701,6 +703,7 @@ router.get("/prescriptions", async (req, res) => {
        WHERE PRESCRIPTION IS NOT NULL 
          AND TRIM(PRESCRIPTION) != '' 
          AND PRESCRIPTION LIKE ? 
+         AND etat = 1
        ORDER BY PRESCRIPTION ASC 
        LIMIT 50`,
       [query],

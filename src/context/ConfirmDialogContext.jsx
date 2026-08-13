@@ -21,7 +21,7 @@ export function ConfirmDialogProvider({ children }) {
         title: options.title || 'Confirmation',
         message: options.message || 'Êtes-vous sûr de vouloir effectuer cette action ?',
         confirmText: options.confirmText || 'Confirmer',
-        cancelText: options.cancelText || 'Annuler',
+        cancelText: options.cancelText !== undefined ? options.cancelText : 'Annuler',
         variant: options.variant || 'danger',
         resolve
       });

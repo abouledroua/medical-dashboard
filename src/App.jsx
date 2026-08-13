@@ -579,8 +579,11 @@ export default function App() {
     checkDevicePoste(deviceId, true);
   };
 
-  const handleSaveDeviceName = async (enteredName) => {
+  const handleSaveDeviceName = async (enteredName, workspacePath) => {
     try {
+      if (workspacePath) {
+        localStorage.setItem('clinicWorkspacePath', workspacePath);
+      }
       const res = await fetch('/api/poste', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -1,5 +1,11 @@
 import express from "express";
 import cors from "cors";
+import { exec } from "child_process";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import authRouter from "./routes/auth.js";
 import statsRouter from "./routes/stats.js";
@@ -10,6 +16,8 @@ import consultationsRouter from "./routes/consultations.js";
 import posteRouter from "./routes/poste.js";
 import medicationsRouter from "./routes/medications.js";
 import medicamentsRouter from "./routes/medicaments.js"; // Import the new router
+import motifRouter from "./routes/motif.js";
+import bilanRouter from "./routes/bilan.js";
 
 import { myDB } from "./db.js";
 
@@ -31,6 +39,19 @@ app.use("/api/consultations", consultationsRouter);
 app.use("/api/poste", posteRouter);
 app.use("/api/medications", medicationsRouter);
 app.use("/api", medicamentsRouter); // Use the new router
+app.use("/api/motif", motifRouter);
+app.use("/api/bilan", bilanRouter);
+
+app.get("/api/select-folder", (req, res) => {
+  const psPath = path.join(__dirname, "select_folder.ps1");
+  exec(`powershell -ExecutionPolicy Bypass -File "${psPath}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error opening folder dialog: ${error.message}`);
+      return res.status(500).json({ error: "Failed to open folder picker" });
+    }
+    res.json({ path: stdout.trim() });
+  });
+});
 
 app.listen(PORT, () => {
   console.log(

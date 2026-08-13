@@ -1,5 +1,7 @@
 import express from "express";
 import pool from "../../db.js";
+import fs from "fs";
+import path from "path";
 import { getAssureInfoForConsultation } from "../../helpers/utils.js";
 import {
   getOrCreateMedicationId,
@@ -912,6 +914,33 @@ router.post("/:id/arret", async (req, res) => {
   }
 });
 
+// GET /api/patients/:id/motifs - Fetch motif history across all consultations
+router.get("/:id/motifs", async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    // We join consultation and motifs_consult and motif
+    const [rows] = await pool.query(`
+      SELECT 
+        mc.ID_CONSULTATION as idConsultation,
+        mc.ID_MOTIF as idMotif,
+        DATE_FORMAT(c.DATE_CONSULTATION, '%Y-%m-%d') as date,
+        m.DESIGNATION as designation,
+        m.CHEMIN as chemin,
+        m.SHA as sha
+      FROM consultation c
+      JOIN motifs_consult mc ON c.ID_CONSULTATION = mc.ID_CONSULTATION
+      JOIN motif m ON mc.ID_MOTIF = m.ID_MOTIF
+      WHERE c.ID_MALADE = ? OR c.ID_MALADE = ?
+      ORDER BY c.DATE_CONSULTATION DESC
+    `, [patientId, patientId]);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("API GET /api/patients/:id/motifs Error:", err);
+    res.status(500).json({ error: "Failed to fetch motif history for patient" });
+  }
+});
+
 // GET /api/patients/:id/arret-history - List previous sick leave records from arret_consult
 router.get("/:id/arret-history", async (req, res) => {
   try {
@@ -1414,6 +1443,39 @@ router.post("/:id/consultations", async (req, res) => {
         }
       } catch (errBilan) {
         console.error("Error saving to bilan_consult_coche:", errBilan);
+      }
+    }
+
+    // Save selected motifs to motifs_consult
+    const { selectedMotifs } = req.body;
+    if (Array.isArray(selectedMotifs) && selectedMotifs.length > 0 && ids.length > 0) {
+      try {
+        let [cRows] = await pool.query(
+          "SELECT ID_CONSULTATION, EXERCICE FROM consultation WHERE ID_MALADE IN (?) AND DATE(DATE_CONSULTATION) = CURRENT_DATE() AND ETAT != 2 ORDER BY ID_CONSULTATION DESC LIMIT 1",
+          [ids],
+        );
+        if (cRows.length > 0) {
+          const idConsult = cRows[0].ID_CONSULTATION;
+          const exYear = cRows[0].EXERCICE || new Date().getFullYear();
+
+          await pool.query(
+            "DELETE FROM motifs_consult WHERE ID_CONSULTATION = ? AND EXERCICE = ?",
+            [idConsult, String(exYear)]
+          );
+
+          for (const motifId of selectedMotifs) {
+            const [mRow] = await pool.query("SELECT CHEMIN, SHA FROM motif WHERE ID_MOTIF = ?", [motifId]);
+            const chemin = mRow.length > 0 ? (mRow[0].CHEMIN || "") : "";
+            const sha = mRow.length > 0 ? (mRow[0].SHA || "") : "";
+            
+            await pool.query(
+              "INSERT INTO motifs_consult (ID_CONSULTATION, ID_MOTIF, EXERCICE, CHEMIN, SHA) VALUES (?, ?, ?, ?, ?)",
+              [idConsult, motifId, String(exYear), chemin, sha]
+            );
+          }
+        }
+      } catch (errMotif) {
+        console.error("Error saving to motifs_consult:", errMotif);
       }
     }
 

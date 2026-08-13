@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Activity, ShieldAlert, AlertTriangle, Edit3, Plus, Stethoscope, Save, X, CheckCircle2, Heart, Layers, User, Users, Sparkles, Calendar, TestTube, Trash2 } from 'lucide-react';
+
+import ObservationTab from './PatientOverview/ObservationTab';
+import AntecedentsTab from './PatientOverview/AntecedentsTab';
+import VitalsTab from './PatientOverview/VitalsTab';
+import MeasurementsTab from './PatientOverview/MeasurementsTab';
+import DietTab from './PatientOverview/DietTab';
+import ObstetricsTab from './PatientOverview/ObstetricsTab';
+import ConsultDiagnosisTab from './PatientOverview/ConsultDiagnosisTab';
+import GeneralDiagnosisTab from './PatientOverview/GeneralDiagnosisTab';
 import { translations } from '../translations';
 import { useConfirm } from '../context/ConfirmDialogContext';
 
@@ -1336,825 +1345,104 @@ export default function PatientOverviewPanel({
             )}
 
             <form onSubmit={handleSaveVitals} className="space-y-4 text-xs">
-              {/* VIEW 1. Observation */}
               {activeTab === 'observation' && (
-                <div className="space-y-4 p-4 bg-slate-950/80 rounded-xl border border-slate-800 animate-in fade-in duration-200">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-teal-300 uppercase flex items-center gap-2">
-                      <Stethoscope className="w-4 h-4 text-teal-400" />
-                      {lang === 'fr' ? 'Nouvelle Observation / Note Clinique' : 'New Observation / Clinical Note'}
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={editComplaint}
-                      onChange={(e) => setEditComplaint(e.target.value)}
-                      placeholder={lang === 'fr' ? 'Saisir une observation clinique...' : 'Enter a clinical observation...'}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 text-xs focus:outline-none focus:border-teal-500"
-                    />
-                    <div className="flex justify-end pt-1">
-                      <button
-                        type="submit"
-                        disabled={isSaving}
-                        className="px-5 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold rounded-xl flex items-center gap-2 shadow-md shadow-teal-500/20 transition text-xs"
-                      >
-                        <Save className="w-4 h-4" />
-                        {isSaving ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Enregistrer' : 'Save')}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* List of Observations for this Patient */}
-                  <div className="pt-3 border-t border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold uppercase text-slate-300 tracking-wider flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-teal-400" />
-                        {lang === 'fr' ? 'Liste des Observations du Patient' : 'Patient Observations List'}
-                      </h4>
-                      {loadingObservations && (
-                        <span className="text-[10px] text-teal-400 animate-pulse">{lang === 'fr' ? 'Chargement...' : 'Loading...'}</span>
-                      )}
-                    </div>
-
-                    {patientObservations.length > 0 ? (
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                        {patientObservations.map((obs) => (
-                          <div
-                            key={obs.id}
-                            className="p-3 bg-slate-900/90 border border-slate-800/90 rounded-xl flex items-start justify-between gap-6 hover:border-slate-700 transition"
-                          >
-                            <div className="space-y-1 flex-1">
-                              <div className="flex items-center gap-2 text-[11px] font-bold text-teal-400">
-                                <Calendar className="w-3 h-3 text-teal-400 shrink-0" />
-                                <span>{obs.date}</span>
-                              </div>
-                              <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">{obs.observation}</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteObservation(obs.id)}
-                              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-lg transition shrink-0"
-                              title={lang === 'fr' ? 'Supprimer cette observation' : 'Delete this observation'}
-                            >
-                              <Trash2 className="w-4 h-4 text-red-400" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl text-center text-slate-400 text-xs italic">
-                        {lang === 'fr' ? 'Aucune observation enregistrée pour ce patient.' : 'No observations recorded for this patient.'}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <ObservationTab
+                  lang={lang}
+                  editComplaint={editComplaint} setEditComplaint={setEditComplaint}
+                  isSaving={isSaving} onSave={handleSaveVitals}
+                  loadingObservations={loadingObservations}
+                  patientObservations={patientObservations}
+                  onDeleteObservation={handleDeleteObservation}
+                />
               )}
-
-              {/* VIEW 2. Antécédent & Allergies */}
               {activeTab === 'antecedent' && (
-                <div className="p-5 bg-slate-950/90 rounded-2xl border border-slate-800 space-y-4 animate-in fade-in duration-200">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative">
-                    {/* Left Column: Antécédents Personnels */}
-                    <div className="space-y-4 lg:pr-3">
-                      <label className="text-xs font-bold text-amber-400 uppercase flex items-center gap-2 tracking-wider">
-                        <Activity className="w-4 h-4 text-amber-400" />
-                        {lang === 'fr' ? 'Antécédents Personnels' : 'Personal Antecedents'}
-                      </label>
-
-                      {/* Input + Assistance + Enregistrer Button */}
-                      <div className="space-y-2 relative">
-                        <input
-                          type="text"
-                          value={newPersonalInput}
-                          onFocus={() => setShowPersonalDropdown(true)}
-                          onBlur={() => setTimeout(() => setShowPersonalDropdown(false), 200)}
-                          onChange={(e) => {
-                            setNewPersonalInput(e.target.value);
-                            setShowPersonalDropdown(true);
-                          }}
-                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddPersonalAntecedent(); } }}
-                          placeholder={lang === 'fr' ? 'Ajouter un antécédent personnel...' : 'Add personal antecedent...'}
-                          className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 text-slate-100 text-xs focus:outline-none focus:border-amber-500"
-                        />
-
-                        <datalist id="personal-antecedents-list">
-                          {personalDbSuggestions.map((item, idx) => (
-                            <option key={idx} value={item} />
-                          ))}
-                        </datalist>
-
-                        {/* Dropdown Suggestions Assistance from DB table 'antecedent' */}
-                        {showPersonalDropdown && personalDbSuggestions.length > 0 && (
-                          <div className="absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-amber-500/50 rounded-xl shadow-2xl z-50 max-h-52 overflow-y-auto p-1 divide-y divide-slate-800">
-                            {personalDbSuggestions
-                              .filter(item => !newPersonalInput.trim() || item.toLowerCase().includes(newPersonalInput.toLowerCase()))
-                              .slice(0, 20)
-                              .map((suggestion, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onMouseDown={() => {
-                                    setNewPersonalInput(suggestion);
-                                    setShowPersonalDropdown(false);
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-xs text-amber-200 hover:bg-amber-950/60 hover:text-amber-100 rounded-lg transition font-medium flex items-center justify-between"
-                                >
-                                  <span>{suggestion}</span>
-                                  <span className="text-[10px] text-slate-500 font-mono font-normal">antecedent</span>
-                                </button>
-                              ))}
-                          </div>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={handleAddPersonalAntecedent}
-                          className="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold rounded-xl flex items-center justify-center gap-1.5 transition text-xs shadow-md shadow-amber-500/10"
-                        >
-                          <Plus className="w-4 h-4 stroke-[3]" />
-                          {lang === 'fr' ? 'Enregistrer' : 'Save'}
-                        </button>
-                      </div>
-
-                      {/* List of Personal Antecedents */}
-                      <div className="space-y-2 pt-1">
-                        <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider block">
-                          {lang === 'fr' ? 'Liste des Antécédents Personnels' : 'Personal Antecedents List'} ({personalListState.length})
-                        </span>
-
-                        {personalListState.length > 0 ? (
-                          <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                            {personalListState.map((item, idx) => (
-                              <div
-                                key={idx}
-                                className="p-2.5 bg-slate-900/90 border border-slate-800 rounded-xl flex items-center justify-between gap-2 hover:border-slate-700 transition"
-                              >
-                                <span className="text-xs text-amber-200 font-medium break-words leading-relaxed">{item}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeletePersonalAntecedent(idx)}
-                                  className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition shrink-0"
-                                  title={lang === 'fr' ? 'Supprimer' : 'Delete'}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="p-3 bg-slate-900/40 border border-slate-800/80 rounded-xl text-center text-slate-500 text-xs italic">
-                            {lang === 'fr' ? 'Aucun antécédent personnel' : 'No personal antecedents'}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Middle Column: Antécédents Familiaux */}
-                    <div className="space-y-4 lg:px-3 lg:border-x lg:border-slate-800/80">
-                      <label className="text-xs font-bold text-indigo-400 uppercase flex items-center gap-2 tracking-wider">
-                        <Users className="w-4 h-4 text-indigo-400" />
-                        {lang === 'fr' ? 'Antécédents Familiaux' : 'Family Antecedents'}
-                      </label>
-
-                      {/* Input + Assistance + Enregistrer Button */}
-                      <div className="space-y-2 relative">
-                        <input
-                          type="text"
-                          value={newFamilyInput}
-                          onFocus={() => setShowFamilyDropdown(true)}
-                          onBlur={() => setTimeout(() => setShowFamilyDropdown(false), 200)}
-                          onChange={(e) => {
-                            setNewFamilyInput(e.target.value);
-                            setShowFamilyDropdown(true);
-                          }}
-                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddFamilyAntecedent(); } }}
-                          placeholder={lang === 'fr' ? 'Ajouter un antécédent familial...' : 'Add family antecedent...'}
-                          className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 text-slate-100 text-xs focus:outline-none focus:border-indigo-500"
-                        />
-
-                        {/* Dropdown Suggestions Assistance from DB table 'antecedent_fam' */}
-                        {showFamilyDropdown && familyDbSuggestions.length > 0 && (
-                          <div className="absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-indigo-500/50 rounded-xl shadow-2xl z-50 max-h-52 overflow-y-auto p-1 divide-y divide-slate-800">
-                            {familyDbSuggestions
-                              .filter(item => !newFamilyInput.trim() || item.toLowerCase().includes(newFamilyInput.toLowerCase()))
-                              .slice(0, 20)
-                              .map((suggestion, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onMouseDown={() => {
-                                    setNewFamilyInput(suggestion);
-                                    setShowFamilyDropdown(false);
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-xs text-indigo-200 hover:bg-indigo-950/60 hover:text-indigo-100 rounded-lg transition font-medium flex items-center justify-between"
-                                >
-                                  <span>{suggestion}</span>
-                                  <span className="text-[10px] text-slate-500 font-mono font-normal">antecedent_fam</span>
-                                </button>
-                              ))}
-                          </div>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={handleAddFamilyAntecedent}
-                          className="w-full py-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition text-xs shadow-md shadow-indigo-500/10"
-                        >
-                          <Plus className="w-4 h-4 stroke-[3]" />
-                          {lang === 'fr' ? 'Enregistrer' : 'Save'}
-                        </button>
-                      </div>
-
-                      {/* List of Family Antecedents */}
-                      <div className="space-y-2 pt-1">
-                        <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider block">
-                          {lang === 'fr' ? 'Liste des Antécédents Familiaux' : 'Family Antecedents List'} ({familyListState.length})
-                        </span>
-
-                        {familyListState.length > 0 ? (
-                          <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                            {familyListState.map((item, idx) => (
-                              <div
-                                key={idx}
-                                className="p-2.5 bg-slate-900/90 border border-slate-800 rounded-xl flex items-center justify-between gap-2 hover:border-slate-700 transition"
-                              >
-                                <span className="text-xs text-indigo-200 font-medium break-words leading-relaxed">{item}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteFamilyAntecedent(idx)}
-                                  className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition shrink-0"
-                                  title={lang === 'fr' ? 'Supprimer' : 'Delete'}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="p-3 bg-slate-900/40 border border-slate-800/80 rounded-xl text-center text-slate-500 text-xs italic">
-                            {lang === 'fr' ? 'Aucun antécédent familial' : 'No family antecedents'}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right Column: Allergies Connues */}
-                    <div className="space-y-4 lg:pl-3">
-                      <label className="text-xs font-bold text-rose-400 uppercase flex items-center gap-2 tracking-wider">
-                        <ShieldAlert className="w-4 h-4 text-rose-400" />
-                        {lang === 'fr' ? 'Allergies Connues' : 'Known Allergies'}
-                      </label>
-
-                      {/* Input + Assistance + Enregistrer Button */}
-                      <div className="space-y-2 relative">
-                        <input
-                          type="text"
-                          value={newAllergyInput}
-                          onFocus={() => setShowAllergyDropdown(true)}
-                          onBlur={() => setTimeout(() => setShowAllergyDropdown(false), 200)}
-                          onChange={(e) => {
-                            setNewAllergyInput(e.target.value);
-                            setShowAllergyDropdown(true);
-                          }}
-                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddAllergy(); } }}
-                          placeholder={lang === 'fr' ? 'Ajouter une allergie (ex: Pénicilline...)' : 'Add allergy (e.g. Penicillin...)'}
-                          className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 text-slate-100 text-xs focus:outline-none focus:border-rose-500"
-                        />
-
-                        {/* Dropdown Suggestions Assistance from DB table 'allergie' */}
-                        {showAllergyDropdown && allergyDbSuggestions.length > 0 && (
-                          <div className="absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-rose-500/50 rounded-xl shadow-2xl z-50 max-h-52 overflow-y-auto p-1 divide-y divide-slate-800">
-                            {allergyDbSuggestions
-                              .filter(item => !newAllergyInput.trim() || item.toLowerCase().includes(newAllergyInput.toLowerCase()))
-                              .slice(0, 20)
-                              .map((suggestion, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onMouseDown={() => {
-                                    setNewAllergyInput(suggestion);
-                                    setShowAllergyDropdown(false);
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-xs text-rose-200 hover:bg-rose-950/60 hover:text-rose-100 rounded-lg transition font-medium flex items-center justify-between"
-                                >
-                                  <span>{suggestion}</span>
-                                  <span className="text-[10px] text-slate-500 font-mono font-normal">allergie</span>
-                                </button>
-                              ))}
-                          </div>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={handleAddAllergy}
-                          className="w-full py-2 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition text-xs shadow-md shadow-rose-500/10"
-                        >
-                          <Plus className="w-4 h-4 stroke-[3]" />
-                          {lang === 'fr' ? 'Enregistrer' : 'Save'}
-                        </button>
-                      </div>
-
-                      {/* List of Allergies */}
-                      <div className="space-y-2 pt-1">
-                        <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider block">
-                          {lang === 'fr' ? 'Liste des Allergies' : 'Allergies List'} ({allergyListState.length})
-                        </span>
-
-                        {allergyListState.length > 0 ? (
-                          <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                            {allergyListState.map((item, idx) => (
-                              <div
-                                key={idx}
-                                className="p-2.5 bg-slate-900/90 border border-rose-900/50 rounded-xl flex items-center justify-between gap-2 hover:border-rose-700 transition"
-                              >
-                                <span className="text-xs text-rose-300 font-semibold break-words leading-relaxed flex items-center gap-1.5">
-                                  <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                                  {item}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteAllergy(idx)}
-                                  className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition shrink-0"
-                                  title={lang === 'fr' ? 'Supprimer' : 'Delete'}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="p-3 bg-slate-900/40 border border-slate-800/80 rounded-xl text-center text-slate-500 text-xs italic">
-                            {lang === 'fr' ? 'Aucune allergie connue' : 'No known allergies'}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <AntecedentsTab
+                  lang={lang}
+                  newPersonalInput={newPersonalInput} setNewPersonalInput={setNewPersonalInput}
+                  showPersonalDropdown={showPersonalDropdown} setShowPersonalDropdown={setShowPersonalDropdown}
+                  handleAddPersonalAntecedent={handleAddPersonalAntecedent}
+                  personalDbSuggestions={personalDbSuggestions}
+                  personalListState={personalListState}
+                  handleDeletePersonalAntecedent={handleDeletePersonalAntecedent}
+                  
+                  newFamilyInput={newFamilyInput} setNewFamilyInput={setNewFamilyInput}
+                  showFamilyDropdown={showFamilyDropdown} setShowFamilyDropdown={setShowFamilyDropdown}
+                  handleAddFamilyAntecedent={handleAddFamilyAntecedent}
+                  familyDbSuggestions={familyDbSuggestions}
+                  familyListState={familyListState}
+                  handleDeleteFamilyAntecedent={handleDeleteFamilyAntecedent}
+                  
+                  newAllergyInput={newAllergyInput} setNewAllergyInput={setNewAllergyInput}
+                  showAllergyDropdown={showAllergyDropdown} setShowAllergyDropdown={setShowAllergyDropdown}
+                  handleAddAllergy={handleAddAllergy}
+                  allergyDbSuggestions={allergyDbSuggestions}
+                  allergyListState={allergyListState}
+                  handleDeleteAllergy={handleDeleteAllergy}
+                />
               )}
-
-              {/* VIEW 3. TA & Battement */}
               {activeTab === 'taBattement' && (
-                <div className="p-4 bg-slate-950/80 rounded-xl border border-slate-800 space-y-3 animate-in fade-in duration-200">
-                  <label className="text-xs font-bold text-rose-300 uppercase flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-rose-400" />
-                    {lang === 'fr' ? 'TA & Battement (Signes Vitaux)' : 'BP & Heart Rate'}
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div>
-                      <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">TA (mmHg)</label>
-                      <input
-                        type="text"
-                        value={editBP}
-                        onChange={(e) => setEditBP(e.target.value)}
-                        placeholder="120/80"
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-teal-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Battement / FC (bpm)</label>
-                      <input
-                        type="text"
-                        value={editHR}
-                        onChange={(e) => setEditHR(e.target.value)}
-                        placeholder="75"
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-cyan-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">SpO2 (%)</label>
-                      <input
-                        type="text"
-                        value={editO2}
-                        onChange={(e) => setEditO2(e.target.value)}
-                        placeholder="98%"
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Glycémie (g/L)</label>
-                      <input
-                        type="text"
-                        value={editGlucose}
-                        onChange={(e) => setEditGlucose(e.target.value)}
-                        placeholder="0.95"
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end pt-1">
-                    <button
-                      type="submit"
-                      disabled={isSaving}
-                      className="px-5 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold rounded-xl flex items-center gap-2 shadow-md shadow-teal-500/20 transition text-xs"
-                    >
-                      <Save className="w-4 h-4" />
-                      {isSaving ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Enregistrer' : 'Save')}
-                    </button>
-                  </div>
-                  <div className="pt-4 border-t border-slate-800">
-                    <h4 className="text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">
-                      Historique des Signes Vitaux
-                    </h4>
-                    {loadingVitalsHistory ? (
-                      <div className="text-center text-xs text-slate-400">Chargement...</div>
-                    ) : vitalsHistory.length > 0 ? (
-                      <div className="overflow-x-auto max-h-48">
-                        <table className="w-full text-xs text-left">
-                          <thead className="text-slate-400 uppercase text-[10px] bg-slate-800">
-                            <tr>
-                              <th className="p-2">DATE</th>
-                              <th className="p-2">TA</th>
-                              <th className="p-2">FC</th>
-                              <th className="p-2">SPO2</th>
-                              <th className="p-2">GLYCEMIE</th>
-                              <th className="p-2 text-right">ACTION</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-700">
-                            {vitalsHistory.map((vital, index) => (
-                              <tr key={index} className="hover:bg-slate-800/50">
-                                <td className="p-2 font-mono">{vital.date}</td>
-                                <td className="p-2 font-mono">{vital.bp || 'N/A'}</td>
-                                <td className="p-2 font-mono">{vital.hr || 'N/A'}</td>
-                                <td className="p-2 font-mono">{vital.spo2 || 'N/A'}</td>
-                                <td className="p-2 font-mono">{vital.bg || 'N/A'}</td>
-                                <td className="p-2 text-right">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteVitals(vital.date)}
-                                    className="p-1 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded transition"
-                                    title={lang === 'fr' ? 'Supprimer cet enregistrement' : 'Delete this record'}
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="text-center text-xs text-slate-500 italic">Aucun historique des signes vitaux.</div>
-                    )}
-                  </div>
-                </div>
+                <VitalsTab
+                  lang={lang}
+                  editBP={editBP} setEditBP={setEditBP}
+                  editHR={editHR} setEditHR={setEditHR}
+                  editO2={editO2} setEditO2={setEditO2}
+                  editGlucose={editGlucose} setEditGlucose={setEditGlucose}
+                  isSaving={isSaving} onSave={handleSaveVitals}
+                  loadingVitalsHistory={loadingVitalsHistory}
+                  vitalsHistory={vitalsHistory}
+                  onDeleteVitals={handleDeleteVitals}
+                />
               )}
-
-              {/* VIEW 4. Mensurations */}
               {activeTab === 'mensurations' && (
-                <div className="space-y-4 p-4 bg-slate-950/80 rounded-xl border border-slate-800 animate-in fade-in duration-200">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-cyan-300 uppercase flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-cyan-400" />
-                      {lang === 'fr' ? 'Nouvelles Mesures (Taille, Poids, PC)' : 'New Measurements (Height, Weight, HC)'}
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div>
-                        <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Taille (cm)</label>
-                        <input
-                          type="number"
-                          value={editTaille}
-                          onChange={(e) => setEditTaille(e.target.value)}
-                          placeholder="170"
-                          className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-cyan-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Poids (kg)</label>
-                        <input
-                          type="number"
-                          value={editPoids}
-                          onChange={(e) => setEditPoids(e.target.value)}
-                          placeholder="70"
-                          className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-emerald-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Périm. Crân. (cm)</label>
-                        <input
-                          type="number"
-                          value={editPerimCran}
-                          onChange={(e) => setEditPerimCran(e.target.value)}
-                          placeholder="45"
-                          className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-purple-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-1">
-                    <button
-                      type="submit"
-                      disabled={isSaving}
-                      className="px-5 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold rounded-xl flex items-center gap-2 shadow-md shadow-teal-500/20 transition text-xs"
-                    >
-                      <Save className="w-4 h-4" />
-                      {isSaving ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Enregistrer' : 'Save')}
-                    </button>
-                  </div>
-
-                  {/* List of Mensurations for this Patient */}
-                  <div className="pt-3 border-t border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold uppercase text-slate-300 tracking-wider flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-cyan-400" />
-                        {lang === 'fr' ? 'Historique des Mensurations' : 'Measurement History'}
-                      </h4>
-                      {(loadingHeights || loadingWeights || loadingHeadCircs) && (
-                        <span className="text-[10px] text-cyan-400 animate-pulse">{lang === 'fr' ? 'Chargement...' : 'Loading...'}</span>
-                      )}
-                    </div>
-
-                    {(loadingHeights || loadingWeights || loadingHeadCircs) ? (
-                      <div className="text-center text-xs text-slate-400">Chargement...</div>
-                    ) : combinedMensurationsHistory.length > 0 ? (
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                        {/* Table Headers */}
-                        <div className="grid grid-cols-5 items-center gap-2 text-xs text-slate-400 uppercase font-semibold bg-slate-900/90 p-3 rounded-xl border border-slate-800">
-                          <div className="col-span-1">{lang === 'fr' ? 'Date' : 'Date'}</div>
-                          <div className="text-right col-span-1">{lang === 'fr' ? 'Taille' : 'Height'}</div>
-                          <div className="text-right col-span-1">{lang === 'fr' ? 'Poids' : 'Weight'}</div>
-                          <div className="text-right col-span-1">{lang === 'fr' ? 'PC' : 'HC'}</div>
-                          <div className="text-right col-span-1">{lang === 'fr' ? 'Actions' : 'Actions'}</div>
-                        </div>
-                        {combinedMensurationsHistory.map((m, index) => (
-                          <div
-                            key={index}
-                            className="p-3 bg-slate-900/90 border border-slate-800/90 rounded-xl grid grid-cols-5 items-center gap-2 text-xs hover:border-slate-700 transition"
-                          >
-                            <div className="font-bold text-cyan-400 flex items-center gap-2 col-span-1">
-                              <Calendar className="w-3 h-3 shrink-0" />
-                              <span>{m.date}</span>
-                            </div>
-                            <div className="text-right text-slate-200 col-span-1">
-                              {m.height ? `${m.height} cm` : <span className="text-slate-500">-</span>}
-                            </div>
-                            <div className="text-right text-slate-200 col-span-1">
-                              {m.weight ? `${m.weight} kg` : <span className="text-slate-500">-</span>}
-                            </div>
-                            <div className="text-right text-slate-200 col-span-1">
-                              {m.headCirc ? `${m.headCirc} cm` : <span className="text-slate-500">-</span>}
-                            </div>
-                            <div className="flex items-center gap-0.5 justify-end col-span-1">
-                              {m.heightId && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteHeight(m.heightId)}
-                                  className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-lg transition"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              {m.weightId && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteWeight(m.weightId)}
-                                  className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-lg transition"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              {m.headCircId && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteHeadCirc(m.headCircId)}
-                                  className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-lg transition"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl text-center text-slate-400 text-xs italic">
-                        {lang === 'fr' ? 'Aucun historique de mesures disponible.' : 'No measurement history available.'}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <MeasurementsTab
+                  lang={lang}
+                  editTaille={editTaille} setEditTaille={setEditTaille}
+                  editPoids={editPoids} setEditPoids={setEditPoids}
+                  editPerimCran={editPerimCran} setEditPerimCran={setEditPerimCran}
+                  isSaving={isSaving} onSave={handleSaveVitals}
+                  loadingHeights={loadingHeights}
+                  loadingWeights={loadingWeights}
+                  loadingHeadCircs={loadingHeadCircs}
+                  combinedMensurationsHistory={combinedMensurationsHistory}
+                  onDeleteHeight={handleDeleteHeight}
+                  onDeleteWeight={handleDeleteWeight}
+                  onDeleteHeadCirc={handleDeleteHeadCirc}
+                />
               )}
-
-              {/* VIEW 7. Alimentation */}
               {activeTab === 'alimentation' && (
-                <div className="space-y-3 p-4 bg-slate-950/80 rounded-xl border border-slate-800 animate-in fade-in duration-200">
-                  <label className="text-xs font-bold text-amber-300 uppercase flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                    {lang === 'fr' ? 'Alimentation / Régime' : 'Diet & Nutrition'}
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={editAlimentation}
-                    onChange={(e) => setEditAlimentation(e.target.value)}
-                    placeholder={t.exDiet}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 text-xs focus:outline-none focus:border-amber-500 resize-y"
-                  />
-                  <div className="flex justify-end pt-1">
-                    <button
-                      type="submit"
-                      disabled={isSaving}
-                      className="px-5 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold rounded-xl flex items-center gap-2 shadow-md shadow-teal-500/20 transition text-xs"
-                    >
-                      <Save className="w-4 h-4" />
-                      {isSaving ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Enregistrer' : 'Save')}
-                    </button>
-                  </div>
-                </div>
+                <DietTab
+                  lang={lang} t={t}
+                  editAlimentation={editAlimentation} setEditAlimentation={setEditAlimentation}
+                  isSaving={isSaving} onSave={handleSaveVitals}
+                />
               )}
-
-              {/* VIEW 8. DDR && DPA */}
               {activeTab === 'ddrDpa' && (
-                <div className="p-4 bg-slate-950/80 rounded-xl border border-slate-800 space-y-3 animate-in fade-in duration-200">
-                  <label className="text-xs font-bold text-pink-300 uppercase flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-pink-400" />
-                    {lang === 'fr' ? 'Gynécologie & Obstétrique (DDR && DPA)' : 'Obstetrics (LMP && EDD)'}
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">
-                        DDR (Dernières Règles)
-                      </label>
-                      <input
-                        type="date"
-                        value={editDDR}
-                        onChange={(e) => {
-                          const ddrVal = e.target.value;
-                          setEditDDR(ddrVal);
-                          if (ddrVal) {
-                            const d = new Date(ddrVal);
-                            d.setDate(d.getDate() + 280);
-                            setEditDPA(d.toISOString().split('T')[0]);
-                          }
-                        }}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-rose-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">
-                        DPA (Accouchement Prévu)
-                      </label>
-                      <input
-                        type="date"
-                        value={editDPA}
-                        onChange={(e) => setEditDPA(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-pink-500"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end pt-1">
-                    <button
-                      type="submit"
-                      disabled={isSaving}
-                      className="px-5 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold rounded-xl flex items-center gap-2 shadow-md shadow-teal-500/20 transition text-xs"
-                    >
-                      <Save className="w-4 h-4" />
-                      {isSaving ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Enregistrer' : 'Save')}
-                    </button>
-                  </div>
-                </div>
+                <ObstetricsTab
+                  lang={lang}
+                  editDDR={editDDR} setEditDDR={setEditDDR}
+                  editDPA={editDPA} setEditDPA={setEditDPA}
+                  isSaving={isSaving} onSave={handleSaveVitals}
+                />
               )}
-
-              {/* VIEW 9. Diagnostic Consult. */}
               {activeTab === 'diagConsult' && (
-                <div className="space-y-4 p-4 bg-slate-950/80 rounded-xl border border-slate-800 animate-in fade-in duration-200">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-teal-300 uppercase flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-teal-400" />
-                      {lang === 'fr' ? 'Nouveau Diagnostic Consultation' : 'New Consultation Diagnosis'}
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={editDiagConsult}
-                      onChange={(e) => setEditDiagConsult(e.target.value)}
-                      placeholder={lang === 'fr' ? 'ex: Otite moyenne aiguë droite, Angine érythémateuse...' : 'e.g., Right acute otitis media, Erythematous angina...'}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 text-xs focus:outline-none focus:border-teal-500 font-bold"
-                    />
-                    <div className="flex justify-end pt-1">
-                      <button
-                        type="submit"
-                        disabled={isSaving}
-                        className="px-5 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold rounded-xl flex items-center gap-2 shadow-md shadow-teal-500/20 transition text-xs"
-                      >
-                        <Save className="w-4 h-4" />
-                        {isSaving ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Enregistrer' : 'Save')}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* List of Consult Diagnoses for this Patient */}
-                  <div className="pt-3 border-t border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold uppercase text-slate-300 tracking-wider flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-teal-400" />
-                        {lang === 'fr' ? 'Historique des Diagnostics de Consultation' : 'Consultation Diagnosis History'}
-                      </h4>
-                      {loadingDiagConsults && (
-                        <span className="text-[10px] text-teal-400 animate-pulse">{lang === 'fr' ? 'Chargement...' : 'Loading...'}</span>
-                      )}
-                    </div>
-
-                    {patientDiagConsults.length > 0 ? (
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                        {patientDiagConsults.map((diag) => (
-                          <div
-                            key={diag.id}
-                            className="p-3 bg-slate-900/90 border border-slate-800/90 rounded-xl flex items-start justify-between gap-6 hover:border-slate-700 transition"
-                          >
-                            <div className="space-y-1 flex-1">
-                              <div className="flex items-center gap-2 text-[11px] font-bold text-teal-400">
-                                <Calendar className="w-3 h-3 text-teal-400 shrink-0" />
-                                <span>{diag.date}</span>
-                              </div>
-                              <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed font-semibold">{diag.diagnosis}</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteDiagConsult(diag.id)}
-                              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-lg transition shrink-0"
-                              title={lang === 'fr' ? 'Supprimer ce diagnostic' : 'Delete this diagnosis'}
-                            >
-                              <Trash2 className="w-4 h-4 text-red-400" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl text-center text-slate-400 text-xs italic">
-                        {lang === 'fr' ? 'Aucun diagnostic de consultation enregistré.' : 'No consultation diagnosis recorded.'}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <ConsultDiagnosisTab
+                  lang={lang}
+                  editDiagConsult={editDiagConsult} setEditDiagConsult={setEditDiagConsult}
+                  isSaving={isSaving} onSave={handleSaveVitals}
+                  loadingDiagConsults={loadingDiagConsults}
+                  patientDiagConsults={patientDiagConsults}
+                  onDeleteDiagConsult={handleDeleteDiagConsult}
+                />
               )}
-
-              {/* VIEW 10. Diagnostique Géneral */}
               {activeTab === 'explorConsult' && (
-                <div className="space-y-3 p-4 bg-slate-950/80 rounded-xl border border-slate-800 animate-in fade-in duration-200">
-                  <label className="text-xs font-bold text-indigo-300 uppercase flex items-center gap-2">
-                    <TestTube className="w-4 h-4 text-indigo-400" />
-                    {lang === 'fr' ? 'Diagnostique Général' : 'General Diagnosis'}
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={editExplorConsult}
-                    onChange={(e) => setEditExplorConsult(e.target.value)}
-                    placeholder={t.exGeneralDiag || (lang === 'fr' ? 'Saisir le diagnostique général...' : 'Enter general diagnosis...')}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 text-xs focus:outline-none focus:border-indigo-500"
-                  />
-                  <div className="flex justify-end pt-1">
-                    <button
-                      type="submit"
-                      disabled={isSaving}
-                      className="px-5 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold rounded-xl flex items-center gap-2 shadow-md shadow-teal-500/20 transition text-xs"
-                    >
-                      <Save className="w-4 h-4" />
-                      {isSaving ? (lang === 'fr' ? 'Enregistrement...' : 'Saving...') : (lang === 'fr' ? 'Enregistrer' : 'Save')}
-                    </button>
-                  </div>
-
-                  {/* List of Nutrition records for this Patient */}
-                  <div className="pt-3 border-t border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold uppercase text-slate-300 tracking-wider flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                        {lang === 'fr' ? 'Historique de l\'Alimentation' : 'Nutrition History'}
-                      </h4>
-                      {loadingNutritions && (
-                        <span className="text-[10px] text-amber-400 animate-pulse">{lang === 'fr' ? 'Chargement...' : 'Loading...'}</span>
-                      )}
-                    </div>
-
-                    {patientNutritions.length > 0 ? (
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                        {patientNutritions.map((nutr) => (
-                          <div
-                            key={nutr.id}
-                            className="p-3 bg-slate-900/90 border border-slate-800/90 rounded-xl flex items-start justify-between gap-6 hover:border-slate-700 transition"
-                          >
-                            <div className="space-y-1 flex-1">
-                              <div className="flex items-center gap-2 text-[11px] font-bold text-amber-400">
-                                <Calendar className="w-3 h-3 text-amber-400 shrink-0" />
-                                <span>{nutr.date}</span>
-                              </div>
-                              <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">{nutr.nutrition}</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteNutrition(nutr.id)}
-                              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-lg transition shrink-0"
-                              title={lang === 'fr' ? 'Supprimer cet enregistrement' : 'Delete this record'}
-                            >
-                              <Trash2 className="w-4 h-4 text-red-400" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl text-center text-slate-400 text-xs italic">{lang === 'fr' ? 'Aucun historique d’alimentation.' : 'No nutrition history.'}</div>
-                    )}
-                  </div>
-                </div>
+                <GeneralDiagnosisTab
+                  lang={lang} t={t}
+                  editExplorConsult={editExplorConsult} setEditExplorConsult={setEditExplorConsult}
+                  isSaving={isSaving} onSave={handleSaveVitals}
+                  loadingNutritions={loadingNutritions}
+                  patientNutritions={patientNutritions}
+                  onDeleteNutrition={handleDeleteNutrition}
+                />
               )}
             </form>
           </div>

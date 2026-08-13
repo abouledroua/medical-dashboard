@@ -91,13 +91,15 @@ export default function ConfirmDialog({
 
         {/* Action Footer */}
         <div className="flex items-center justify-end gap-2.5 px-6 py-4 bg-slate-950/50 border-t border-slate-800/80">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition cursor-pointer"
-          >
-            {cancelText}
-          </button>
+          {cancelText && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition cursor-pointer"
+            >
+              {cancelText}
+            </button>
+          )}
           <button
             type="button"
             onClick={onConfirm}
