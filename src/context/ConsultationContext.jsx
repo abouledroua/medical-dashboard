@@ -1227,6 +1227,22 @@ export const ConsultationProvider = ({ children, draft, patient, patients = [], 
     win.document.close();
   };
 
+  // Shared date formatter used in print handlers and exposed via context
+  const formatDateToFrench = (dVal) => {
+    if (!dVal) return new Date().toLocaleDateString('fr-FR');
+    if (typeof dVal === 'string' && dVal.includes('/') && dVal.length <= 10) return dVal;
+    try {
+      const d = new Date(dVal);
+      if (isNaN(d.getTime())) return String(dVal);
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch (e) {
+      return String(dVal);
+    }
+  };
+
   // Print Bilan (Lab/Radiology request) using Design 3 layout
   const handlePrintBilan = (rowToPrint = null) => {
     const win = window.open('', '_blank', 'width=900,height=750');
@@ -1234,21 +1250,6 @@ export const ConsultationProvider = ({ children, draft, patient, patients = [], 
       window.print();
       return;
     }
-
-    const formatDateToFrench = (dVal) => {
-      if (!dVal) return new Date().toLocaleDateString('fr-FR');
-      if (typeof dVal === 'string' && dVal.includes('/') && dVal.length <= 10) return dVal;
-      try {
-        const d = new Date(dVal);
-        if (isNaN(d.getTime())) return String(dVal);
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        return `${day}/${month}/${year}`;
-      } catch (e) {
-        return String(dVal);
-      }
-    };
 
     const dateToPrint = formatDateToFrench(rowToPrint?.DATE_BILAN);
     const assureToPrint = assureInfo;
@@ -1430,21 +1431,6 @@ export const ConsultationProvider = ({ children, draft, patient, patients = [], 
     } else if (item.type !== undefined) {
       typeVal = Number(item.type);
     }
-
-    const formatDateToFrench = (dVal) => {
-      if (!dVal) return new Date().toLocaleDateString('fr-FR');
-      if (typeof dVal === 'string' && dVal.includes('/') && dVal.length <= 10) return dVal;
-      try {
-        const d = new Date(dVal);
-        if (isNaN(d.getTime())) return String(dVal);
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        return `${day}/${month}/${year}`;
-      } catch (e) {
-        return String(dVal);
-      }
-    };
 
     const dateToPrint = formatDateToFrench(item.dateArret || item.startDate || new Date());
     const assureToPrint = assureInfo;

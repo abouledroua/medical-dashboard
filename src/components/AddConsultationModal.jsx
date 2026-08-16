@@ -10,39 +10,59 @@ import ArretTravailTab from './consultation/tabs/ArretTravailTab';
 import DocMedicalTab from './consultation/tabs/DocMedicalTab';
 import ProchainRdvTab from './consultation/tabs/ProchainRdvTab';
 import ConsultationModals from './consultation/ConsultationModals';
-import { Edit3, FileText, CheckCircle2 } from 'lucide-react';
+import PatientOverviewPanel from './PatientOverviewPanel';
+import { Edit3, FileText, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 function ConsultationContent() {
-  const { 
-    lang, activeDocType, clinicInfo, savedSuccessMessage,
-    assureInfo, setAssureInfo, showAssurePanel, setShowAssurePanel, showInfoSupp, setShowInfoSupp, handleAssureInfoChange
+  const {
+    lang, activeDocType, clinicInfo, savedSuccessMessage, error,
+    assureInfo, showAssurePanel, setShowAssurePanel, showInfoSupp, setShowInfoSupp,
+    handleAssureInfoChange, activePatient, fullPatientDetails,
+    onEditPatient, onOpenNewConsultation
   } = useConsultation();
 
   return (
     <div className="w-full space-y-5 select-none">
+      {/* Top Header: Title + Patient Info + Save/Cancel Buttons */}
       <ConsultationHeader />
 
-      {/* Main Content Area: Tabs + Dynamic Panel */}
-      <div className="flex flex-col md:flex-row gap-5 items-start">
-        {/* Left Column: Vertical Tabs Container */}
-        <div className="w-full md:w-36 shrink-0 flex flex-col gap-1 overflow-hidden sticky top-4">
-          <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 px-1">
-            {lang === 'fr' ? 'Documents' : 'Documents'}
-          </h3>
-          <ConsultationSidebarTabs />
+      {/* Document Type Selector Tabs — full-width toolbar below header */}
+      <div className="glass-panel p-2 rounded-2xl border border-slate-800 bg-slate-950/80">
+        <ConsultationSidebarTabs />
+      </div>
+
+      {/* Error / Success Banners */}
+      {error && (
+        <div className="p-3.5 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300 text-xs flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+      {savedSuccessMessage && (
+        <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl flex items-center gap-3 animate-fadeIn">
+          <CheckCircle2 className="w-5 h-5" />
+          <span className="text-sm font-semibold">{savedSuccessMessage}</span>
+        </div>
+      )}
+
+      {/* Main 2-Column Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+        {/* LEFT COLUMN: Patient Vitals / Overview Panel */}
+        <div className="lg:col-span-4 space-y-4">
+          <PatientOverviewPanel
+            patient={fullPatientDetails || activePatient}
+            onEditPatient={onEditPatient}
+            onOpenNewConsultation={onOpenNewConsultation}
+            lang={lang}
+            clinicInfo={clinicInfo}
+          />
         </div>
 
-        {/* Right Column: Active Document Panel */}
-        <div className="flex-1 w-full min-w-0 flex flex-col gap-5">
-          {/* Success Message Banner */}
-          {savedSuccessMessage && (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl flex items-center gap-3 animate-fadeIn">
-              <CheckCircle2 className="w-5 h-5" />
-              <span className="text-sm font-semibold">{savedSuccessMessage}</span>
-            </div>
-          )}
+        {/* RIGHT COLUMN: Active Document */}
+        <div className="lg:col-span-8 space-y-4">
 
-          {/* Assure Panel */}
+          {/* Assure / Insured Person Panel (only when GEST_ASSURE is enabled) */}
           {Number(clinicInfo?.GEST_ASSURE) === 1 && activeDocType !== 'doc_medical' && (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm transition-all relative overflow-hidden">
               <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -52,7 +72,7 @@ function ConsultationContent() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      {lang === 'fr' ? 'Détails de l\'Assuré' : 'Insured Person Details'}
+                      {lang === 'fr' ? "Détails de l'Assuré" : 'Insured Person Details'}
                       {assureInfo.infoSupp && (
                         <span className="px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-md text-[10px] text-amber-400 font-bold uppercase tracking-wider">
                           {lang === 'fr' ? 'Info Supp.' : 'Add. Info'}
@@ -86,21 +106,19 @@ function ConsultationContent() {
                     </p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setShowInfoSupp(!showInfoSupp)}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 ${showInfoSupp || (assureInfo.infoSupp && assureInfo.infoSupp.trim())
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 ${
+                      showInfoSupp || (assureInfo.infoSupp && assureInfo.infoSupp.trim())
                         ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
                         : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                      }`}
-                    title={lang === 'fr' ? "Afficher/Masquer l'Information Supplémentaire" : 'Toggle Additional Information'}
+                    }`}
                   >
                     <FileText className="w-3.5 h-3.5 text-amber-400" />
                     <span>{lang === 'fr' ? 'Info Supp.' : 'Add. Info'}</span>
                   </button>
-
                   <button
                     type="button"
                     onClick={() => setShowAssurePanel(!showAssurePanel)}
@@ -126,7 +144,6 @@ function ConsultationContent() {
                       placeholder={lang === 'fr' ? "Nom et prénom de l'assuré..." : 'Full name...'}
                     />
                   </div>
-
                   <div className="flex items-center gap-2">
                     <div className="flex-1">
                       <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">
@@ -141,7 +158,6 @@ function ConsultationContent() {
                         placeholder={lang === 'fr' ? 'ex: 30' : 'e.g. 30'}
                       />
                     </div>
-
                     <div className="flex-1">
                       <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">
                         {lang === 'fr' ? 'Unité' : 'Unit'}
@@ -157,7 +173,6 @@ function ConsultationContent() {
                       </select>
                     </div>
                   </div>
-
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">
                       {lang === 'fr' ? 'Sexe' : 'Sex'}
@@ -171,7 +186,6 @@ function ConsultationContent() {
                       <option value="F">{lang === 'fr' ? 'Féminin' : 'Female'}</option>
                     </select>
                   </div>
-
                   <div className="col-span-full pt-2 border-t border-slate-800/60">
                     <label className="block text-[10px] font-bold text-amber-400 mb-1 uppercase tracking-wider flex items-center gap-1.5">
                       <FileText className="w-3 h-3 text-amber-400" />
@@ -190,17 +204,20 @@ function ConsultationContent() {
             </div>
           )}
 
-          {activeDocType === 'ordonnance' && <OrdonnanceTab />}
-          {activeDocType === 'certificat' && <CertificatTab />}
-          {activeDocType === 'bilan' && <BilanTab />}
-          {activeDocType === 'orientation' && <OrientationTab />}
-          {activeDocType === 'arret_travail' && <ArretTravailTab />}
-          {activeDocType === 'doc_medical' && <DocMedicalTab />}
-          {activeDocType === 'prochain_rdv' && <ProchainRdvTab />}
+          {/* Active Document Content Panel */}
+          <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-5 min-h-[460px] bg-slate-900/90">
+            {activeDocType === 'ordonnance' && <OrdonnanceTab />}
+            {activeDocType === 'certificat' && <CertificatTab />}
+            {activeDocType === 'bilan' && <BilanTab />}
+            {activeDocType === 'orientation' && <OrientationTab />}
+            {activeDocType === 'arret_travail' && <ArretTravailTab />}
+            {activeDocType === 'doc_medical' && <DocMedicalTab />}
+            {activeDocType === 'prochain_rdv' && <ProchainRdvTab />}
+          </div>
 
-        </div>
-      </div>
-      
+        </div>{/* end RIGHT COLUMN */}
+      </div>{/* end 2-column grid */}
+
       <ConsultationModals />
     </div>
   );

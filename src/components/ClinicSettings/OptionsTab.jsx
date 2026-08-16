@@ -170,7 +170,7 @@ export default function OptionsTab({
             </div>
             <div className="flex items-center gap-3">
               <input type="radio" name="GEST_BILAN" value="2" checked={formData?.GEST_BILAN === 2} onChange={handleChange} className="w-4 h-4 text-teal-500 bg-slate-900 border-slate-700 cursor-pointer" />
-              <label className="text-sm text-slate-300 cursor-pointer">{t.gestBilanCase}</label>
+              <label className="text-sm text-slate-300 cursor-pointer">{t.gestBilanCheckbox}</label>
             </div>
           </div>
         </div>
